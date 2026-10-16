@@ -1,6 +1,6 @@
 # Clasificador de personajes de Los Simpson con un MLP
 
-Este repositorio contiene un proyecto de Machine Learning que entrena, compara y evalúa un **Perceptrón Multicapa (MLP)** para identificar cuál de **25 personajes de Los Simpson** aparece en una imagen RGB. La implementación, el análisis y la predicción están en el notebook [LosSimpsonsPMC.ipynb](notebooks/LosSimpsonsPMC.ipynb).
+Este repositorio contiene un proyecto de Machine Learning que entrena, compara y evalúa un **Perceptrón Multicapa (MLP)** para identificar cuál de **25 personajes de Los Simpson** aparece en una imagen RGB. La implementación, el análisis y la predicción están en el notebook [LosSimpsonsPMC.ipynb](notebooks/oldDataset/LosSimpsonsPMC.ipynb).
 
 > Es un proyecto didáctico de clasificación de imágenes. No detecta la posición de un personaje, no dibuja cajas y no asigna varias etiquetas a una misma imagen.
 
@@ -82,14 +82,14 @@ flowchart LR
 Cada imagen de `64 × 64 × 3` se convierte en una fila de 12.288 números. La arquitectura E2 procesa esa fila así:
 
 <p align="center">
-  <img src="images/arquitectura_mlp.png" alt="Diagrama del perceptrón multicapa: la imagen se redimensiona a 64 × 64, se aplana en 12.288 valores y atraviesa tres capas densas de 1024, 512 y 256 neuronas con ReLU, BatchNorm y Dropout, hasta una capa softmax de 25 salidas" width="100%">
+  <img src="images/oldDataset/arquitectura_mlp.png" alt="Diagrama del perceptrón multicapa: la imagen se redimensiona a 64 × 64, se aplana en 12.288 valores y atraviesa tres capas densas de 1024, 512 y 256 neuronas con ReLU, BatchNorm y Dropout, hasta una capa softmax de 25 salidas" width="100%">
 </p>
 
 <p align="center"><em>Recorrido de una imagen de prueba por la red. Cada círculo es una neurona y cada
 línea, un peso: todas las neuronas de una capa reciben la salida de todas las anteriores. El dibujo
 muestra unas pocas neuronas por capa —las reales son 1024, 512 y 256— y las probabilidades de la
-derecha son la salida real de <code>models/mlp_final.keras</code> para esa imagen. Se regenera con
-<code>scripts/generar_diagrama_arquitectura.py</code>.</em></p>
+derecha son la salida real de <code>models/oldDataset/mlp_final.keras</code> para esa imagen. Se regenera con
+<code>scripts/oldDataset/generar_diagrama_arquitectura.py</code>.</em></p>
 
 El mismo recorrido, capa por capa:
 
@@ -143,7 +143,7 @@ Cada experimento modifica una sola variable, manteniendo la semilla, división d
 Los dos notebooks entrenan el mismo MLP sobre los mismos datos y la misma partición. Las seis
 corridas se hicieron en el mismo equipo —Intel Core i7-13620H con NVIDIA GeForce RTX 4060
 Laptop, conectado a la corriente— y cada una deja su resumen en
-`resultados/<CPU|GPU>/rendimiento_<entorno>_<resolución>.json`.
+`resultados/oldDataset/<CPU|GPU>/rendimiento_<entorno>_<resolución>.json`.
 
 **Los dos entornos no usan el mismo framework.** El notebook de CPU corre sobre TensorFlow
 2.21 en Windows; el de GPU, sobre Keras 3 con backend PyTorch, también en Windows nativo.
@@ -196,11 +196,11 @@ Conviene ser preciso con lo que eso significa, porque el porcentaje de uso enga�
 así es más del doble de rápido, porque desperdicia menos tiempo en cada paso. La tarjeta solo
 se acerca al 97 % cuando el lote sube a 512 o más, donde cada paso ya trae trabajo suficiente
 para mantenerla ocupada. Los detalles están en
-[notebooks/README_GPU.md](notebooks/README_GPU.md).
+[notebooks/oldDataset/README_GPU.md](notebooks/oldDataset/README_GPU.md).
 
 <p align="center">
-  <img src="images/imageCPU.png" alt="Administrador de tareas durante el entrenamiento en CPU: procesador al 92%" width="49%">
-  <img src="images/imageGPU.png" alt="Administrador de tareas durante el entrenamiento en GPU con el montaje anterior: VRAM reservada y uso a picos" width="49%">
+  <img src="images/oldDataset/imageCPU.png" alt="Administrador de tareas durante el entrenamiento en CPU: procesador al 92%" width="49%">
+  <img src="images/oldDataset/imageGPU.png" alt="Administrador de tareas durante el entrenamiento en GPU con el montaje anterior: VRAM reservada y uso a picos" width="49%">
 </p>
 
 <p align="center"><em>Capturas del montaje anterior (WSL2 + TensorFlow), conservadas porque
@@ -269,24 +269,32 @@ valores como estructura espacial y no como un vector plano.
 ```text
 .
 ├── notebooks/
-│   ├── LosSimpsonsPMC.ipynb        # MLP: código, entrenamiento, evaluación y predicción
-│   ├── LosSimpsons_GPU_4060M.ipynb # Mismo MLP en GPU (Windows nativo + RTX 4060)
-│   └── README_GPU.md               # Cómo ejecutar el notebook en GPU
+│   ├── oldDataset/
+│   │   ├── LosSimpsonsPMC.ipynb        # MLP: código, entrenamiento, evaluación y predicción
+│   │   ├── LosSimpsons_GPU_4060M.ipynb # Mismo MLP en GPU (Windows nativo + RTX 4060)
+│   │   └── README_GPU.md               # Cómo ejecutar el notebook en GPU
+│   └── newDataset/                     # Dataset de 64 personajes, una carpeta por personaje
 ├── docs/
-│   ├── Informe.md                  # Informe técnico del proyecto
+│   ├── oldDataset/
+│   │   └── Informe.md                  # Informe técnico del proyecto
 │   ├── EP1_TLY1102_Instrucciones y Pauta PRESENTACIÓN_Estudiante.pdf
 │   └── material_complementario/    # Material de apoyo de la asignatura
-├── models/                         # Modelos .keras regenerables, ignorados por Git
-├── models_gpu/                     # Modelos de las corridas en GPU, ignorados por Git
+├── models/<oldDataset|newDataset>/      # Modelos .keras regenerables, ignorados por Git
+├── models_gpu/<oldDataset|newDataset>/  # Modelos de las corridas en GPU, ignorados por Git
 ├── resultados/
-│   ├── CPU/                        # rendimiento_cpu_<resolucion>.json
-│   └── GPU/                        # rendimiento_gpu_<resolucion>.json
+│   ├── oldDataset/
+│   │   ├── CPU/                        # rendimiento_cpu_<resolucion>.json
+│   │   └── GPU/                        # rendimiento_gpu_<resolucion>.json
+│   └── newDataset/
 ├── images/                         # Recursos visuales
-│   ├── arquitectura_mlp.png        # Diagrama de la red (generado por script)
-│   └── ejemplo_homer.jpg           # Imagen de prueba usada en el diagrama
+│   └── oldDataset/
+│       ├── arquitectura_mlp.png        # Diagrama de la red (generado por script)
+│       └── ejemplo_homer.jpg           # Imagen de prueba usada en el diagrama
 ├── scripts/
-│   ├── ejecutar_notebook_gpu.ps1   # Ejecuta el notebook de GPU sin abrir Jupyter
-│   └── generar_diagrama_arquitectura.py  # Redibuja images/arquitectura_mlp.png
+│   ├── oldDataset/
+│   │   ├── ejecutar_notebook_gpu.ps1   # Ejecuta el notebook de GPU sin abrir Jupyter
+│   │   └── generar_diagrama_arquitectura.py  # Redibuja images/oldDataset/arquitectura_mlp.png
+│   └── newDataset/
 ├── requirements.txt                # Dependencias Python (CPU)
 ├── requirements-gpu-windows.txt    # Dependencias del entorno GPU
 └── README.md                       # Este documento
@@ -298,7 +306,7 @@ El dataset no forma parte del repositorio: se descarga aparte y se deja en una u
 
 ### 1. Instalar dependencias
 
-Se requiere Python y Jupyter. El notebook de CPU usa TensorFlow; el de GPU usa Keras 3 sobre PyTorch y tiene su propio entorno, descrito en `requirements-gpu-windows.txt` y en [notebooks/README_GPU.md](notebooks/README_GPU.md).
+Se requiere Python y Jupyter. El notebook de CPU usa TensorFlow; el de GPU usa Keras 3 sobre PyTorch y tiene su propio entorno, descrito en `requirements-gpu-windows.txt` y en [notebooks/oldDataset/README_GPU.md](notebooks/oldDataset/README_GPU.md).
 
 ```bash
 python -m venv .venv
@@ -336,10 +344,10 @@ El conjunto de prueba es siempre el opuesto: si se entrena con `train`, el noteb
 ### 3. Ejecutar el notebook en orden
 
 ```bash
-jupyter notebook notebooks/LosSimpsonsPMC.ipynb
+jupyter notebook notebooks/oldDataset/LosSimpsonsPMC.ipynb
 ```
 
-Los modelos resultantes se generan en `models/`: `mlp_base.keras`, `mlp_e1.keras` a `mlp_e5.keras` y `mlp_final.keras`. Son artefactos regenerables e ignorados por Git.
+Los modelos resultantes se generan en `models/oldDataset/`: `mlp_base.keras`, `mlp_e1.keras` a `mlp_e5.keras` y `mlp_final.keras`. Son artefactos regenerables e ignorados por Git.
 
 ## Límites del enfoque y mejoras
 
@@ -355,12 +363,12 @@ La principal limitación del MLP aparece al aplanar la imagen: no entiende que d
 
 ## Referencias internas
 
-- [Informe técnico](docs/Informe.md): problema de negocio, KPIs, EDA, metodología CRISP-DM y análisis de resultados.
+- [Informe técnico](docs/oldDataset/Informe.md): problema de negocio, KPIs, EDA, metodología CRISP-DM y análisis de resultados.
 - [Pauta de la evaluación](docs/EP1_TLY1102_Instrucciones%20y%20Pauta%20PRESENTACI%C3%93N_Estudiante.pdf): instrucciones y rúbrica.
-- [Notebook principal](notebooks/LosSimpsonsPMC.ipynb): implementación ejecutable.
-- [Notebook GPU](notebooks/LosSimpsons_GPU_4060M.ipynb): mismo MLP entrenado sobre GPU en Windows nativo, con un bucle de entrenamiento propio sobre PyTorch.
-- [Guía de ejecución en GPU](notebooks/README_GPU.md): entorno de Windows nativo, decisiones de rendimiento y solución de problemas.
-- [Resúmenes de rendimiento](resultados/): un JSON por corrida con tiempos, entorno y métricas.
+- [Notebook principal](notebooks/oldDataset/LosSimpsonsPMC.ipynb): implementación ejecutable.
+- [Notebook GPU](notebooks/oldDataset/LosSimpsons_GPU_4060M.ipynb): mismo MLP entrenado sobre GPU en Windows nativo, con un bucle de entrenamiento propio sobre PyTorch.
+- [Guía de ejecución en GPU](notebooks/oldDataset/README_GPU.md): entorno de Windows nativo, decisiones de rendimiento y solución de problemas.
+- [Resúmenes de rendimiento](resultados/oldDataset/): un JSON por corrida con tiempos, entorno y métricas.
 
 ## Integrantes
 

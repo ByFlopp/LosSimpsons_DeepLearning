@@ -5,7 +5,7 @@ Laptop. Esta guía explica cómo montar el entorno, cómo comprobar que la GPU s
 de verdad y qué decisiones de rendimiento hay detrás.
 
 El entorno anterior (WSL2 + TensorFlow), con el que se hicieron las corridas guardadas en
-`resultados/GPU/`, está documentado en el [apéndice](#apéndice-entorno-anterior-wsl2--tensorflow).
+`resultados/oldDataset/GPU/`, está documentado en el [apéndice](#apéndice-entorno-anterior-wsl2--tensorflow).
 
 ---
 
@@ -158,7 +158,7 @@ ubicación, cambia `DATASET_BASE` en la celda de configuración del notebook.
 ### Paso 9 — Abrir el notebook
 
 ```powershell
-.\scripts\ejecutar_notebook_gpu.ps1
+.\scripts\oldDataset\ejecutar_notebook_gpu.ps1
 ```
 
 El script valida el entorno, avisa si el equipo está con batería y abre Jupyter. Como
@@ -183,7 +183,7 @@ Si el límite de potencia sale bajo (50 W o menos), vuelve al paso 0. La celda f
 error explícito si el backend no es `torch` o si PyTorch no ve la tarjeta.
 
 Con eso, *Run All* entrena las seis configuraciones y escribe el resumen en
-`resultados/GPU/`. La corrida completa a 128 × 128 tarda unos 4 minutos y medio.
+`resultados/oldDataset/GPU/`. La corrida completa a 128 × 128 tarda unos 4 minutos y medio.
 
 ---
 
@@ -267,7 +267,7 @@ utilización solo se dispara al 97 % cuando el lote sube a 512, porque entonces 
 trae trabajo suficiente para que la GPU no se quede sin nada que hacer entre lanzamientos.
 
 Las corridas reales del notebook confirman ese comportamiento. Estas cifras sí salen de
-`resultados/GPU/rendimiento_gpu_<resolución>.json`, con el bucle propio a batch 128:
+`resultados/oldDataset/GPU/rendimiento_gpu_<resolución>.json`, con el bucle propio a batch 128:
 
 | Resolución | s/época (benchmark) | utilización GPU | potencia |
 | --- | ---: | ---: | ---: |
@@ -369,13 +369,13 @@ poder citarlo sin cambiar la configuración del estudio.
 | PyTorch | 2.14.0+cu130 |
 | Keras | 3.15.1 |
 | Entorno | `.venv-gpu/` en la raíz del repositorio |
-| Modelos | `models_gpu/` |
+| Modelos | `models_gpu/oldDataset/` |
 
 ---
 
 ## Apéndice: entorno anterior (WSL2 + TensorFlow)
 
-Las corridas guardadas en `resultados/GPU/` se hicieron con este montaje, anterior a la
+Las corridas guardadas en `resultados/oldDataset/GPU/` se hicieron con este montaje, anterior a la
 migración a Windows nativo. Se conserva porque documenta esos resultados y porque sigue
 siendo la única forma de usar TensorFlow con GPU en este equipo.
 

@@ -1,0 +1,10 @@
+# Dependencias adicionales de los notebooks de notebooks/newDataset.
+#
+# Se instalan encima de requirements.txt (CPU) o de requirements-gpu-windows.txt (GPU):
+#   .venv-gpu\Scripts\python.exe -m pip install -r requirements-newDataset.txt
+#
+# scikit-image calcula los descriptores de color (HSV, Lab) y de textura (LBP, Gabor, HOG)
+# que reciben los MLP del dataset nuevo. joblib, que paraleliza su cálculo, ya viene con
+# scikit-learn.
+
+scikit-image>=0.26

@@ -1,0 +1,5 @@
+# La imagen solo necesita los requirements; el codigo se monta en tiempo de ejecucion.
+*
+!requirements.txt
+!requirements-gpu-windows.txt
+!requirements-newDataset.txt
