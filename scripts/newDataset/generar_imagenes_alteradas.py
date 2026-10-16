@@ -1,15 +1,18 @@
-"""Genera variantes alteradas de las imágenes de cada personaje y diversifica las casi idénticas.
+"""Genera variantes alteradas de las imágenes de cada personaje, diversifica las casi idénticas y
+detecta las imágenes que comparten personajes de distintas carpetas.
 
 Uso:
     .venv-gpu/Scripts/python.exe scripts/newDataset/generar_imagenes_alteradas.py
-    .venv-gpu/Scripts/python.exe scripts/newDataset/generar_imagenes_alteradas.py --dataset RUTA --fraccion 0.25 --umbral 0.90 --semilla 42
+    .venv-gpu/Scripts/python.exe scripts/newDataset/generar_imagenes_alteradas.py --dataset RUTA --fraccion 0.25 --umbral 0.90 --umbral-gemelas 0.90 --semilla 42
     .venv-gpu/Scripts/python.exe scripts/newDataset/generar_imagenes_alteradas.py --limpiar
 
-El dataset es una carpeta por personaje. El script hace dos cosas con las imágenes originales, y cada
-imagen que genera lleva un giro de 10 a 20 grados, un cambio de color y un filtro de textura:
+El dataset es una carpeta por personaje. El script hace tres cosas con las imágenes originales; cada
+imagen que genera en los pasos 1 y 2 lleva un giro de 10 a 20 grados, un cambio de color y un filtro de
+textura:
 
 1. Variantes alteradas. Para cada personaje elige al azar una fracción de sus originales y guarda,
-   junto a cada elegida, una variante en el mismo formato. El notebook solo las usa para entrenar:
+   junto a cada elegida, una variante en el mismo formato. El notebook de GPU pone cada variante en el
+   mismo conjunto que su original (entrenamiento, validación o test); el de CPU solo la usa para entrenar:
 
        homer_simpson/pic_0012.jpg  ->  homer_simpson/pic_0012__alterada.jpg
 
@@ -23,21 +26,37 @@ imagen que genera lleva un giro de 10 a 20 grados, un cambio de color y un filtr
    El notebook usa la variante __parecida EN LUGAR de su original, en cualquier conjunto: así el
    dataset deja de tener dos imágenes casi idénticas del mismo personaje.
 
+3. Gemelas entre personajes. Compara las originales de carpetas DISTINTAS con las mismas miniaturas
+   (similitud >= --umbral-gemelas): una imagen casi idéntica guardada en la carpeta de otro personaje
+   es la misma escena, así que los dos personajes aparecen en ella. El notebook cuenta como acierto
+   que el modelo nombre a cualquiera de los dos. Además, copia cada imagen a una carpeta de revisión
+   FUERA del dataset, en la subcarpeta del otro personaje y con su nombre original, para que el
+   equipo decida a mano si la agrega también a esa carpeta:
+
+       homer_simpson/homer_simpson__S18E11__t1225141.jpg  (gemela de una imagen de rich_texan)
+           ->  gemelas_por_revisar/rich_texan/homer_simpson__S18E11__t1225141.jpg
+
+   Una imagen no se copia si la carpeta del otro personaje ya la tiene (similitud >= 0,999).
+
 Las originales solo se leen; la etiqueta de cada imagen la da su carpeta, nunca su nombre.
 
 Reproducible y sin rastro: cada ejecución borra primero todo lo que generó la anterior (los archivos
-cuyo nombre termina en "__alterada" o "__parecida" y los registros _alteraciones.csv y _parecidas.csv)
-y lo vuelve a generar con la misma semilla, de modo que el resultado es idéntico byte a byte.
---limpiar solo borra, y deja el dataset exactamente como estaba antes de la primera ejecución.
+cuyo nombre termina en "__alterada" o "__parecida", los registros _alteraciones.csv, _parecidas.csv y
+_gemelas.csv, y las copias de la carpeta de revisión) y lo vuelve a generar con la misma semilla, de
+modo que el resultado es idéntico byte a byte. --limpiar solo borra, y deja el dataset exactamente como
+estaba antes de la primera ejecución. La carpeta de revisión solo se vacía si lleva la marca que deja
+el script (_generado_por_script.txt).
 
 La ruta del dataset sale de --dataset, de la variable SIMPSONS_DATASET o, si no hay ninguna,
-de ~/Desktop/simpsons_dataset/simpsons_dataset.
+de ~/Desktop/simpsons_dataset/simpsons_dataset. La carpeta de revisión sale de --revision o, si no
+se indica, es gemelas_por_revisar junto a la carpeta del dataset.
 """
 
 import argparse
 import csv
 import math
 import os
+import shutil
 import sys
 import time
 import zlib
@@ -54,15 +73,36 @@ MARCAS = (MARCA_ALTERADA, MARCA_PARECIDA)
 SUFIJO_TEMPORAL = ".tmp"
 REGISTRO = "_alteraciones.csv"
 REGISTRO_PARECIDAS = "_parecidas.csv"
+REGISTRO_GEMELAS = "_gemelas.csv"
 CAMPOS_TRANSFORMACION = ("rotacion", "color", "parametro_color", "textura", "parametro_textura")
 CAMPOS_REGISTRO = ("personaje", "original", "alterada", *CAMPOS_TRANSFORMACION)
 CAMPOS_PARECIDAS = ("personaje", "grupo", "representante", "original", "parecida",
                     "similitud_original", "similitud_final", "intentos", *CAMPOS_TRANSFORMACION)
+# copia_original: dónde quedó la copia de "original" en la carpeta de revisión (vacío si la carpeta
+# de otro_personaje ya la tenía); copia_otro, lo mismo para "otro_original"
+CAMPOS_GEMELAS = ("personaje", "original", "otro_personaje", "otro_original", "similitud",
+                  "copia_original", "copia_otro")
 FRACCION = 0.25
 UMBRAL = 0.90
+UMBRAL_GEMELAS = 0.90
 SEMILLA = 42
 CALIDAD = 92
 RUTA_POR_DEFECTO = Path.home() / "Desktop" / "simpsons_dataset" / "simpsons_dataset"
+# Carpeta de revisión de las gemelas, junto a la del dataset (nunca dentro: cada subcarpeta del
+# dataset se toma como un personaje)
+NOMBRE_REVISION = "gemelas_por_revisar"
+MARCA_REVISION = "_generado_por_script.txt"
+TEXTO_MARCA_REVISION = (
+    "Esta carpeta la genera scripts/newDataset/generar_imagenes_alteradas.py.\n"
+    "Cada subcarpeta es un personaje y contiene imagenes de OTRAS carpetas del dataset en las que\n"
+    "tambien aparece ese personaje (una imagen casi identica esta guardada en su carpeta).\n"
+    "Si una imagen debe sumarse a ese personaje, copiala a su carpeta del dataset.\n"
+    "Cada ejecucion del script vacia esta carpeta y la vuelve a llenar: no guardes aqui nada propio.\n"
+)
+# Similitud a partir de la cual la carpeta del otro personaje ya tiene la imagen y no se propone
+SIMILITUD_IDENTICA = 0.999
+# Filas de la matriz de similitud que se calculan a la vez al buscar gemelas entre personajes
+BLOQUE_GEMELAS = 1024
 
 # Giro de cada variante: entre ROTACION_MINIMA y ROTACION_MAXIMA grados, en un sentido al azar
 ROTACION_MINIMA = 10.0
@@ -244,11 +284,33 @@ def limpiar(dataset: Path) -> int:
             if ruta.is_file() and es_generado(ruta):
                 ruta.unlink()
                 borrados += 1
-    for nombre in (REGISTRO, REGISTRO_PARECIDAS):
+    for nombre in (REGISTRO, REGISTRO_PARECIDAS, REGISTRO_GEMELAS):
         registro = dataset / nombre
         for ruta in (registro, registro.with_name(registro.name + SUFIJO_TEMPORAL)):
             if ruta.exists():
                 ruta.unlink()
+    return borrados
+
+
+def limpiar_revision(revision: Path) -> int:
+    """Vacía la carpeta de revisión de una ejecución anterior: borra las imágenes copiadas, la marca
+    y las subcarpetas que quedan vacías. Solo toca una carpeta que lleve la marca del script."""
+    if not revision.exists():
+        return 0
+    if not (revision / MARCA_REVISION).is_file():
+        if any(revision.iterdir()):
+            sys.exit(f"{revision} existe y no la creó este script: indica otra carpeta con --revision")
+        return 0
+    borrados = 0
+    # Primero los archivos y luego las carpetas, de la más profunda a la raíz
+    for ruta in sorted(revision.rglob("*"), key=lambda p: len(p.parts), reverse=True):
+        if ruta.is_file() and (ruta.suffix.lower() in EXTENSIONES_VALIDAS or ruta.name == MARCA_REVISION):
+            ruta.unlink()
+            borrados += 1
+        elif ruta.is_dir() and not any(ruta.iterdir()):
+            ruta.rmdir()
+    if not any(revision.iterdir()):
+        revision.rmdir()
     return borrados
 
 
@@ -350,6 +412,77 @@ def diversificar(rutas: list[Path], miniaturas: np.ndarray, grupo: list[int], id
     return filas, nuevas
 
 
+# --- 3. Gemelas entre personajes ---------------------------------------------------------
+
+def gemelas_entre_personajes(miniaturas: dict[str, np.ndarray], umbral: float
+                             ) -> tuple[list[tuple[str, int, str, int, float]], set[tuple[str, int, str]]]:
+    """Pares de originales de personajes distintos con similitud >= umbral, como
+    (personaje_a, i, personaje_b, j, similitud), con índices dentro de cada carpeta y cada par una
+    sola vez. Devuelve también las (personaje, i, otro_personaje) cuya imagen ya está en la carpeta de
+    otro_personaje (similitud >= SIMILITUD_IDENTICA): esas no se proponen para revisión."""
+    nombres = list(miniaturas)
+    todas = np.concatenate([miniaturas[nombre] for nombre in nombres])
+    personaje = np.concatenate([np.full(len(miniaturas[nombre]), k) for k, nombre in enumerate(nombres)])
+    primera = np.concatenate(([0], np.cumsum([len(miniaturas[nombre]) for nombre in nombres])[:-1]))
+
+    def local(indice: int) -> tuple[str, int]:
+        k = int(personaje[indice])
+        return nombres[k], indice - int(primera[k])
+
+    pares, ya_en_carpeta = [], set()
+    # Por bloques de filas: la matriz completa (decenas de miles al cuadrado) no cabe en memoria
+    for desde in range(0, len(todas), BLOQUE_GEMELAS):
+        similitud = todas[desde:desde + BLOQUE_GEMELAS] @ todas.T
+        distinto = personaje[desde:desde + len(similitud), None] != personaje[None, :]
+        filas, columnas = np.nonzero((similitud >= umbral) & distinto)
+        for fila, columna in zip(filas.tolist(), columnas.tolist()):
+            indice = desde + fila
+            valor = float(similitud[fila, columna])
+            if valor >= SIMILITUD_IDENTICA:
+                ya_en_carpeta.add((*local(indice), nombres[int(personaje[columna])]))
+            if indice < columna:
+                pares.append((*local(indice), *local(columna), valor))
+    return pares, ya_en_carpeta
+
+
+def copiar_gemelas(pares: list[tuple[str, int, str, int, float]], ya_en_carpeta: set[tuple[str, int, str]],
+                   originales: dict[str, list[Path]], revision: Path) -> tuple[list[dict], int]:
+    """Copia cada imagen de un par a la subcarpeta del OTRO personaje en la carpeta de revisión,
+    con su nombre original, y devuelve las filas del registro y el número de copias."""
+    destinos: dict[Path, Path] = {}  # copia -> original copiado
+
+    def copia(nombre: str, indice: int, otro: str) -> str:
+        if (nombre, indice, otro) in ya_en_carpeta:
+            return ""
+        original = originales[nombre][indice]
+        destino = revision / otro / original.name
+        # El mismo nombre hacia la misma carpeta es la misma imagen guardada en dos carpetas
+        # (los nombres llevan personaje, episodio e instante o un número): se copia una sola vez
+        destinos.setdefault(destino, original)
+        return destino.relative_to(revision).as_posix()
+
+    filas = []
+    for nombre_a, i, nombre_b, j, similitud in pares:
+        filas.append({
+            "personaje": nombre_a,
+            "original": originales[nombre_a][i].name,
+            "otro_personaje": nombre_b,
+            "otro_original": originales[nombre_b][j].name,
+            "similitud": round(similitud, 4),
+            "copia_original": copia(nombre_a, i, nombre_b),
+            "copia_otro": copia(nombre_b, j, nombre_a),
+        })
+
+    if destinos:
+        revision.mkdir(parents=True, exist_ok=True)
+        (revision / MARCA_REVISION).write_text(TEXTO_MARCA_REVISION, encoding="utf-8")
+        for destino in {destino.parent for destino in destinos}:
+            destino.mkdir(exist_ok=True)
+        with ThreadPoolExecutor(max_workers=os.cpu_count()) as ejecutor:
+            list(ejecutor.map(lambda par: shutil.copy2(par[1], par[0]), destinos.items()))
+    return filas, len(destinos)
+
+
 def validar(dataset: Path) -> list[Path]:
     if not dataset.is_dir():
         sys.exit(f"No existe el dataset: {dataset}")
@@ -372,6 +505,11 @@ def main() -> None:
                         help="fracción de imágenes de cada personaje que reciben una variante alterada")
     parser.add_argument("--umbral", type=float, default=UMBRAL,
                         help="similitud coseno de las miniaturas a partir de la cual dos imágenes son parecidas")
+    parser.add_argument("--umbral-gemelas", type=float, default=UMBRAL_GEMELAS,
+                        help="similitud a partir de la cual dos imágenes de personajes distintos son gemelas")
+    parser.add_argument("--revision", type=Path, default=None,
+                        help="carpeta, fuera del dataset, donde se copian las gemelas para revisarlas "
+                             f"(por defecto, {NOMBRE_REVISION} junto a la carpeta del dataset)")
     parser.add_argument("--semilla", type=int, default=SEMILLA)
     parser.add_argument("--limpiar", action="store_true",
                         help="solo borra lo generado y deja el dataset como estaba")
@@ -379,18 +517,25 @@ def main() -> None:
 
     dataset = args.dataset or Path(os.environ.get("SIMPSONS_DATASET", RUTA_POR_DEFECTO))
     dataset = dataset.expanduser().resolve()
+    revision = (args.revision or dataset.parent / NOMBRE_REVISION).expanduser().resolve()
     if not 0 < args.fraccion <= 1:
         sys.exit("--fraccion debe estar en (0, 1]")
     if not 0 < args.umbral <= 1:
         sys.exit("--umbral debe estar en (0, 1]")
+    if not 0 < args.umbral_gemelas <= 1:
+        sys.exit("--umbral-gemelas debe estar en (0, 1]")
     if args.semilla < 0:
         sys.exit("--semilla debe ser un entero no negativo")
+    if revision == dataset or revision.is_relative_to(dataset):
+        sys.exit("--revision debe quedar fuera del dataset: cada subcarpeta del dataset es un personaje")
 
     carpetas = validar(dataset)
     print(f"Dataset: {dataset}  ({len(carpetas)} personajes)")
 
     borrados = limpiar(dataset)
-    print(f"Limpieza: {borrados} archivos generados en ejecuciones anteriores eliminados")
+    borrados_revision = limpiar_revision(revision)
+    print(f"Limpieza: {borrados} archivos generados en ejecuciones anteriores eliminados"
+          f" y {borrados_revision} de la carpeta de revisión")
     if args.limpiar:
         return
 
@@ -440,8 +585,15 @@ def main() -> None:
             resumen.append((nombre, len(rutas), cantidad, grupos_por_personaje[nombre], parecidas))
         filas_alteradas = list(ejecutor.map(lambda ruta: alterar(ruta, args.semilla), elegidas))
 
+    # Gemelas entre personajes: se comparan las miniaturas de las originales, no las parecidas
+    inicio_gemelas = time.perf_counter()
+    pares_gemelas, ya_en_carpeta = gemelas_entre_personajes(miniaturas, args.umbral_gemelas)
+    filas_gemelas, copias = copiar_gemelas(pares_gemelas, ya_en_carpeta, originales, revision)
+    segundos_gemelas = time.perf_counter() - inicio_gemelas
+
     escribir_registro(dataset / REGISTRO, CAMPOS_REGISTRO, filas_alteradas)
     escribir_registro(dataset / REGISTRO_PARECIDAS, CAMPOS_PARECIDAS, filas_parecidas)
+    escribir_registro(dataset / REGISTRO_GEMELAS, CAMPOS_GEMELAS, filas_gemelas)
 
     ancho = max(len(nombre) for nombre, *_ in resumen)
     print(f"\n{'personaje':<{ancho}}  originales  alteradas  grupos_parecidas  parecidas")
@@ -455,8 +607,15 @@ def main() -> None:
           f"{pares_antes} antes -> {pares_despues} después")
     if sin_resolver:
         print(f"  {sin_resolver} parecidas siguen sobre el umbral tras {INTENTOS_PARECIDA} sorteos")
+    imagenes_con_gemela = len({(fila[k], fila[o]) for fila in filas_gemelas
+                               for k, o in (("personaje", "original"), ("otro_personaje", "otro_original"))})
+    print(f"Gemelas entre personajes (similitud >= {args.umbral_gemelas:.2f}): {len(filas_gemelas)} pares en "
+          f"{imagenes_con_gemela} imágenes ({segundos_gemelas:.1f} s)")
+    if copias:
+        print(f"  {copias} copias para revisar en {revision}")
     print(f"{len(filas_alteradas)} alteradas y {len(filas_parecidas)} parecidas en "
-          f"{time.perf_counter() - inicio:.1f} s. Registros: {dataset / REGISTRO}, {dataset / REGISTRO_PARECIDAS}")
+          f"{time.perf_counter() - inicio:.1f} s. Registros: {dataset / REGISTRO}, {dataset / REGISTRO_PARECIDAS}, "
+          f"{dataset / REGISTRO_GEMELAS}")
 
 
 if __name__ == "__main__":

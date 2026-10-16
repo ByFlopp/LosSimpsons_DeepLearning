@@ -2,7 +2,8 @@
 #
 # - GPU: Keras 3 sobre PyTorch con CUDA 13.0. El wheel de torch trae sus propias
 #   bibliotecas CUDA; el contenedor solo necesita el driver NVIDIA del host.
-# - CPU: TensorFlow, como en requirements.txt.
+# - CPU: el mismo Keras 3 sobre PyTorch, sin TensorFlow. El notebook oculta la GPU
+#   (CUDA_VISIBLE_DEVICES=-1) desde su primera celda, y su kernel la oculta también.
 # - Descriptores de color y textura: scikit-image (requirements-newDataset.txt).
 #
 # Cada notebook abre con su kernel, registrado con el mismo nombre que guarda en
@@ -36,7 +37,8 @@ RUN pip install -r /tmp/requirements/requirements-gpu-windows.txt \
 RUN python -m ipykernel install --name simpsons-gpu-win \
         --display-name "Python 3.13 (Simpsons GPU Docker)" --env KERAS_BACKEND torch \
  && python -m ipykernel install --name python313-global \
-        --display-name "Python 3.13 (Simpsons CPU Docker)" --env KERAS_BACKEND tensorflow
+        --display-name "Python 3.13 (Simpsons CPU Docker)" --env KERAS_BACKEND torch \
+        --env KERAS_TORCH_DEVICE cpu --env CUDA_VISIBLE_DEVICES -1
 
 RUN useradd --create-home --uid 1000 simpsons
 USER simpsons
