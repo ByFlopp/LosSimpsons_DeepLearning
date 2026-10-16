@@ -9,24 +9,31 @@ se conserva intacto en [`../oldDataset/`](../oldDataset/).
 | [LosSimpsons_GPU_4060M.ipynb](LosSimpsons_GPU_4060M.ipynb) | GPU: Keras 3 sobre PyTorch, en Windows nativo o en Docker | 128 × 128 |
 | [LosSimpsonsPMC.ipynb](LosSimpsonsPMC.ipynb) | CPU: TensorFlow, en Docker o en un Python con TensorFlow | 64 × 64 |
 
-Los dos tienen la misma estructura que los del dataset anterior. Se guardan sin salidas: las genera la
-primera corrida sobre el dataset real.
+Los dos tienen la misma estructura que los del dataset anterior.
 
 ## Qué cambia respecto del dataset anterior
 
-1. **Partición propia.** El notebook reparte las imágenes originales de cada personaje en entrenamiento
-   (70 %), validación (15 %) y test (15 %), de forma estratificada y con semilla fija. Validación y test
-   conservan la distribución real del dataset y solo contienen originales.
-2. **Unas 300 imágenes por personaje para entrenar.** Del 70 % de cada personaje se toman como máximo 300
-   originales. El desbalance de entrenamiento baja de 35:1 (3.060 imágenes de Homer frente a 87 de Louie)
-   a unas 5:1, y `class_weight` compensa lo que queda.
-3. **Imágenes alteradas.** Un cuarto de las imágenes de cada personaje tiene una variante con un cambio de
-   color (brillo, contraste, saturación o tono) y un filtro de textura (desenfoque, nitidez, ruido o
-   realce de bordes). Solo entran al entrenamiento, y solo las de originales elegidas para entrenar.
+1. **Partición propia, con todo el dataset.** El notebook de GPU reparte todas las imágenes originales de
+   cada personaje en entrenamiento (70 %), validación (20 %) y test (10 %), de forma estratificada y con
+   semilla fija, sin tope por personaje. El desbalance (35:1, de 3.060 imágenes de Homer a 87 de Louie) se
+   compensa con pesos por clase suavizados, la raíz cuadrada de los balanceados. El notebook de CPU
+   conserva todavía el esquema anterior: 70/15/15 y un máximo de 300 originales por personaje para entrenar.
+2. **Imágenes alteradas.** Un cuarto de las imágenes de cada personaje tiene una variante con un giro de 10
+   a 20°, un cambio de color (brillo, contraste, saturación o tono) y un filtro de textura (desenfoque,
+   nitidez, ruido o realce de bordes). Solo entran al entrenamiento, y solo las de originales que quedan en
+   él.
+3. **Imágenes parecidas.** Las imágenes casi idénticas a otra del mismo personaje (fotogramas seguidos de
+   una escena, recortes repetidos) entran con una versión filtrada de la misma forma, en cualquier
+   conjunto: así el modelo no puede acertar en test solo porque vio casi la misma imagen al entrenar.
 4. **Descriptores de color y textura.** El modelo base no recibe los píxeles, sino unos 2.460 descriptores
    por imagen: histogramas HSV y Lab, LBP, filtros de Gabor y HOG. La experimentación los compara con los
    píxeles crudos (R1), con el color solo (R2) y con la textura sola (R3), además de las variantes de
-   arquitectura E1–E5 de siempre.
+   arquitectura E1–E5 de siempre. El notebook de GPU suma dropout (E6), pesos por clase (P1, P2),
+   suavizado de etiquetas (S1), etiquetas de escena (S2), entrenamiento sin alteradas (A1) y una
+   combinación de los cambios que mejoran al modelo base (C1).
+5. **Escenas con varios personajes (GPU).** Los fotogramas de episodio indican qué otros personajes salen
+   en la misma escena: se usan como etiqueta secundaria al entrenar y para medir una accuracy tolerante,
+   que da por buena la predicción de un personaje que también está en pantalla.
 
 ## Paso 1: colocar el dataset
 
@@ -45,7 +52,7 @@ La etiqueta de cada imagen es siempre el nombre de su carpeta. Algunas carpetas 
 nombre de archivo es el de otro personaje: los añadió el equipo a propósito, porque en ellos el
 protagonista es el personaje de la carpeta.
 
-## Paso 2: generar las imágenes alteradas (una sola vez)
+## Paso 2: generar las imágenes alteradas y parecidas
 
 Desde la raíz del repositorio:
 
@@ -53,17 +60,30 @@ Desde la raíz del repositorio:
 .\.venv-gpu\Scripts\python.exe scripts\newDataset\generar_imagenes_alteradas.py
 ```
 
-El script elige al azar un cuarto de las imágenes de cada personaje y guarda junto a cada una su variante,
-`<original>__alterada.<ext>`, con el mismo formato. Además deja un registro de qué transformación recibió
-cada imagen en `_alteraciones.csv`, en la raíz del dataset.
+El script hace dos cosas, y cada imagen que genera lleva un giro de 10 a 20° (con las esquinas vacías
+recortadas), un cambio de color y un filtro de textura:
+
+- **Alteradas.** Elige al azar un cuarto de las imágenes de cada personaje y guarda junto a cada una su
+  variante, `<original>__alterada.<ext>`, con el mismo formato.
+- **Parecidas.** Compara entre sí las imágenes de cada personaje (miniaturas a color de 16 × 16,
+  similitud coseno ≥ 0,90) y agrupa las casi idénticas. En cada grupo una queda intacta y cada una de las
+  demás recibe su versión filtrada, `<original>__parecida.<ext>`, que se vuelve a sortear hasta que deja de
+  parecerse a las del grupo. Los notebooks usan esa versión en lugar de la original.
+
+Deja un registro de cada transformación en `_alteraciones.csv` y `_parecidas.csv`, en la raíz del
+dataset. Con el dataset del 15-10-2026 (39.000 originales) generó 9.756 alteradas y 7.894 parecidas, de
+5.573 grupos, en unos 3 minutos, y bajó los pares casi idénticos de 11.223 a 237.
 
 - **Las originales no se modifican nunca**: el script solo las lee.
 - **Es reproducible**: con la misma semilla genera exactamente los mismos archivos, byte a byte.
 - **No deja rastro**: cada ejecución borra primero lo que generó la anterior, así que se puede repetir
   sin acumular archivos.
 - `--limpiar` borra todo lo generado y deja el dataset como se descargó.
-- `--fraccion` y `--semilla` permiten cambiar la proporción de alteradas (0,25 por defecto) y la semilla
-  (42).
+- `--fraccion`, `--umbral` y `--semilla` cambian la proporción de alteradas (0,25 por defecto), la
+  similitud a partir de la cual dos imágenes son parecidas (0,90) y la semilla (42).
+
+Hay que volver a ejecutarlo cada vez que se agregan o quitan imágenes del dataset: qué imágenes son
+parecidas depende de las demás de su carpeta.
 
 Si se usa Docker en lugar de `.venv-gpu`, la misma imagen sirve para ejecutar el script montando el
 dataset con permiso de escritura:
@@ -106,12 +126,12 @@ volver a entrenar.
 
 ## Estado y tiempos de referencia
 
-- Los dos notebooks y el script se probaron de principio a fin con un **dataset sintético** que imita la
+- El notebook de GPU se ejecutó de principio a fin con el dataset real (64 personajes, 39.000 originales)
+  el 15-10-2026: unos 25 minutos, de los que cerca de 7 son la carga de las imágenes y el cálculo de los
+  descriptores en la CPU. El de CPU solo se ha probado con un **dataset sintético** que imita la
   estructura del real: 20 personajes, archivos `.png` y `.webp`, nombres con `__` y nombres de otro
-  personaje. No se han ejecutado todavía con el dataset real.
-- Las celdas de "Lectura" que interpretan resultados están marcadas como **pendientes**. Se escribieron
-  para la corrida del dataset anterior y hay que reescribirlas con las cifras de la primera corrida.
-- El cálculo de descriptores es la etapa más lenta del pre-procesamiento: en el portátil del equipo, con
-  imágenes sintéticas, rinde entre 60 y 160 imágenes por segundo. Con las unas 27.000 imágenes que usa
-  el notebook de GPU son varios minutos. El KPI de costo de catalogación incluye ese cálculo, porque es
-  parte del costo real de clasificar una imagen nueva.
+  personaje.
+- Las celdas de "Lectura" marcadas como **pendientes** se escribieron para la corrida del dataset anterior
+  y hay que reescribirlas con las cifras de la corrida nueva.
+- El cálculo de descriptores es la etapa más lenta del pre-procesamiento. El KPI de costo de catalogación
+  incluye ese cálculo, porque es parte del costo real de clasificar una imagen nueva.
