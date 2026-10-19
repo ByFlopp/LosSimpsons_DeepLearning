@@ -6,7 +6,7 @@
 #
 # El script de alteraciones escribe en el dataset, así que no se ejecuta en este servicio;
 # se ejecuta en el host o con la misma imagen y el dataset montado con escritura
-# (los pasos están en notebooks/newDataset/README.md).
+# (los pasos están en PMC/notebooks/newDataset/README.md).
 
 services:
   jupyter:

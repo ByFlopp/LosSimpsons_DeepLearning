@@ -1,4 +1,4 @@
-# Dependencias adicionales de los notebooks de notebooks/newDataset.
+# Dependencias adicionales de los notebooks de PMC/notebooks/newDataset.
 #
 # Se instalan encima de requirements.txt (CPU) o de requirements-gpu-windows.txt (GPU):
 #   .venv-gpu\Scripts\python.exe -m pip install -r requirements-newDataset.txt

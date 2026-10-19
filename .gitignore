@@ -17,11 +17,12 @@ data/processed/*
 !data/processed/.gitkeep
 
 # Artefactos de entrenamiento (se regeneran al ejecutar el notebook)
-# Una subcarpeta por dataset (oldDataset/newDataset); solo se versionan sus .gitkeep
-models/**
-!models/*/
-!models/*/.gitkeep
-models_gpu/
+# Una carpeta por tipo de modelo (PMC/, CNN/) y dentro una subcarpeta por dataset
+# (oldDataset/newDataset); solo se versionan sus .gitkeep
+*/models/**
+!*/models/*/
+!*/models/*/.gitkeep
+*/models_gpu/
 *.keras
 *.h5
 

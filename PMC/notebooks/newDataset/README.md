@@ -123,7 +123,7 @@ docker run --rm -v "${PWD}:/workspace" -v "C:/ruta/al/simpsons_dataset:/data/sim
 
 ```powershell
 .\.venv-gpu\Scripts\python.exe -m pip install -r requirements-newDataset.txt
-.\scripts\newDataset\ejecutar_notebook_gpu.ps1
+.\PMC\scripts\newDataset\ejecutar_notebook_gpu.ps1
 ```
 
 **En Windows, en la CPU.** El mismo entorno `.venv-gpu`, sin TensorFlow: abre `LosSimpsonsPMC.ipynb` con
@@ -138,15 +138,15 @@ levanta el contenedor:
 docker compose up --build
 ```
 
-Después abre <http://localhost:8888> y entra en `notebooks/newDataset/`. Los dos notebooks usan Keras
+Después abre <http://localhost:8888> y entra en `PMC/notebooks/newDataset/`. Los dos notebooks usan Keras
 sobre PyTorch; el de CPU oculta la GPU desde su primera celda.
 
 ## Dónde quedan los resultados
 
 | Qué | Dónde |
 |---|---|
-| Modelos `.keras` y `mlp_final.json` | `models_gpu/newDataset/` (GPU) y `models/newDataset/` (CPU), ignorados por Git |
-| Resumen de rendimiento de cada corrida | `resultados/newDataset/<CPU\|GPU>/rendimiento_<entorno>_<resolución>.json` |
+| Modelos `.keras` y `mlp_final.json` | `PMC/models_gpu/newDataset/` (GPU) y `PMC/models/newDataset/` (CPU), ignorados por Git |
+| Resumen de rendimiento de cada corrida | `PMC/resultados/newDataset/<CPU\|GPU>/rendimiento_<entorno>_<resolución>.json` |
 
 `mlp_final.json` guarda la representación, la resolución y el orden de las clases del modelo final. La
 sección «Probar el modelo con una imagen cualquiera» lo usa para repetir el mismo pre-procesamiento sin

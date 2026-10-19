@@ -1,14 +1,15 @@
-# Entorno de los notebooks de notebooks/newDataset (CPU y GPU) en un solo contenedor Linux.
+# Entorno de los notebooks de PMC/notebooks/newDataset y CNN/notebooks/newDataset (CPU y GPU)
+# en un solo contenedor Linux.
 #
 # - GPU: Keras 3 sobre PyTorch con CUDA 13.0. El wheel de torch trae sus propias
 #   bibliotecas CUDA; el contenedor solo necesita el driver NVIDIA del host.
 # - CPU: el mismo Keras 3 sobre PyTorch, sin TensorFlow. El notebook oculta la GPU
 #   (CUDA_VISIBLE_DEVICES=-1) desde su primera celda, y su kernel la oculta también.
-# - Descriptores de color y textura: scikit-image (requirements-newDataset.txt).
+# - Descriptores de color y textura del MLP: scikit-image (requirements-newDataset.txt).
 #
 # Cada notebook abre con su kernel, registrado con el mismo nombre que guarda en
 # sus metadatos y con KERAS_BACKEND fijado en el kernel.json. Los notebooks de
-# notebooks/oldDataset apuntan a una ruta absoluta de Windows y se ejecutan fuera
+# PMC/notebooks/oldDataset apuntan a una ruta absoluta de Windows y se ejecutan fuera
 # del contenedor.
 #
 # Uso (desde la raiz del repositorio, con Docker Desktop sobre WSL2):

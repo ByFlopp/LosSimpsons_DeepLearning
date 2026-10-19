@@ -1,20 +1,20 @@
 <#
 .SYNOPSIS
-    Lanza Jupyter sobre el entorno GPU de Windows nativo.
+    Lanza Jupyter con el notebook de GPU de la CNN sobre el dataset nuevo (64 personajes).
 
 .DESCRIPTION
-    Comprueba que el entorno .venv-gpu existe, que PyTorch ve la RTX 4060 y que
-    el equipo no esta con bateria (con bateria el firmware recorta la potencia
-    de la GPU y los tiempos se duplican), y abre el notebook.
+    Comprueba que el entorno .venv-gpu existe, que PyTorch ve la GPU y que el
+    equipo no esta con bateria (con bateria el firmware recorta la potencia de la
+    GPU y los tiempos se duplican), y abre el notebook.
 
-    Sustituye a ejecutar_notebook_gpu.sh, que servia para el entorno anterior
-    basado en WSL2 + TensorFlow.
+    Antes de la primera ejecucion hay que generar las imagenes alteradas con
+    scripts\newDataset\generar_imagenes_alteradas.py, en la raiz del repositorio.
 #>
 $ErrorActionPreference = "Stop"
 
-$raiz = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
+$raiz = Split-Path -Parent (Split-Path -Parent (Split-Path -Parent $PSScriptRoot))
 $python = Join-Path $raiz ".venv-gpu\Scripts\python.exe"
-$notebook = Join-Path $raiz "notebooks\oldDataset\LosSimpsons_GPU_4060M.ipynb"
+$notebook = Join-Path $raiz "CNN\notebooks\newDataset\LosSimpsons_GPU_4060M.ipynb"
 
 if (-not (Test-Path $python)) {
     throw "No existe $python. Crea el entorno siguiendo requirements-gpu-windows.txt."
@@ -29,7 +29,7 @@ mayor, menor = torch.cuda.get_device_capability(0)
 print(f'  PyTorch {torch.__version__} (CUDA {torch.version.cuda})')
 print(f'  {torch.cuda.get_device_name(0)}  CC {mayor}.{menor}')
 "@
-if ($LASTEXITCODE -ne 0) { throw "La comprobacion de la GPU fallo." }
+if ($LASTEXITCODE -ne 0) { throw "La comprobacion del entorno fallo." }
 
 # Con bateria, el limite de potencia de la GPU baja y el entrenamiento se ralentiza
 # a la mitad. Merece la pena avisar antes de medir tiempos.

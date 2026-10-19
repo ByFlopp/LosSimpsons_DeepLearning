@@ -6,8 +6,8 @@
 |---|---|
 | Tipo de proyecto | Clasificación supervisada de imágenes RGB mediante un Perceptrón Multicapa (MLP). |
 | Unidad de predicción | Una imagen recibe una sola etiqueta entre 25 personajes. |
-| Implementaciones | `notebooks/oldDataset/LosSimpsonsPMC.ipynb` (CPU/Windows, TensorFlow) y `notebooks/oldDataset/LosSimpsons_GPU_4060M.ipynb` (GPU/Windows nativo, Keras 3 sobre PyTorch). |
-| Evidencia de ejecución | Ambos notebooks conservan sus salidas; los resúmenes de rendimiento están en `resultados/oldDataset/CPU/` y `resultados/oldDataset/GPU/`. |
+| Implementaciones | `PMC/notebooks/oldDataset/LosSimpsonsPMC.ipynb` (CPU/Windows, TensorFlow) y `PMC/notebooks/oldDataset/LosSimpsons_GPU_4060M.ipynb` (GPU/Windows nativo, Keras 3 sobre PyTorch). |
+| Evidencia de ejecución | Ambos notebooks conservan sus salidas; los resúmenes de rendimiento están en `PMC/resultados/oldDataset/CPU/` y `PMC/resultados/oldDataset/GPU/`. |
 | Integrantes | Vincent Farenden Cerón; Rodrigo Ignacio Martínez Becker; Iván Manuel Pavón Barría; Diego Ignacio Peña y Lillo Luhrs. |
 
 Este informe describe el estado que realmente está implementado. Las métricas, configuraciones y conclusiones se separan por entorno cuando las corridas no produjeron el mismo modelo final.
@@ -350,16 +350,16 @@ Por estos motivos, el resultado se presenta como ejercicio académico y no como 
 ### 12.1 Archivos principales
 
 ```text
-README.md
 requirements.txt
-notebooks/oldDataset/LosSimpsonsPMC.ipynb
-notebooks/oldDataset/LosSimpsons_GPU_4060M.ipynb
-notebooks/oldDataset/README_GPU.md
-resultados/oldDataset/CPU/rendimiento_cpu_*.json
-resultados/oldDataset/GPU/rendimiento_gpu_*.json
-models/oldDataset/.gitkeep
-images/
-docs/oldDataset/Informe.md
+PMC/README.md
+PMC/notebooks/oldDataset/LosSimpsonsPMC.ipynb
+PMC/notebooks/oldDataset/LosSimpsons_GPU_4060M.ipynb
+PMC/notebooks/oldDataset/README_GPU.md
+PMC/resultados/oldDataset/CPU/rendimiento_cpu_*.json
+PMC/resultados/oldDataset/GPU/rendimiento_gpu_*.json
+PMC/models/oldDataset/.gitkeep
+PMC/images/
+PMC/docs/oldDataset/Informe.md
 ```
 
 ### 12.2 Requisitos de ejecución
@@ -368,7 +368,7 @@ docs/oldDataset/Informe.md
 2. Descargar el dataset desde la fuente citada y mantener la estructura `train/<clase>` y `test/<clase>`.
 3. Configurar `DATASET_BASE` en la primera celda del notebook con la ubicación real del dataset.
 4. Ejecutar las celdas en orden.
-5. Para GPU, seguir `notebooks/oldDataset/README_GPU.md`, que documenta el entorno de Windows nativo con PyTorch y la verificación de que la tarjeta se está usando.
+5. Para GPU, seguir `PMC/notebooks/oldDataset/README_GPU.md`, que documenta el entorno de Windows nativo con PyTorch y la verificación de que la tarjeta se está usando.
 
 ### 12.3 Estado de reproducibilidad
 

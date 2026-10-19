@@ -1,7 +1,7 @@
-"""Genera images/oldDataset/arquitectura_mlp.png: representación visual del MLP (E2).
+"""Genera PMC/images/oldDataset/arquitectura_mlp.png: representación visual del MLP (E2).
 
 Uso:
-    .venv-gpu/Scripts/python.exe scripts/oldDataset/generar_diagrama_arquitectura.py
+    .venv-gpu/Scripts/python.exe PMC/scripts/oldDataset/generar_diagrama_arquitectura.py
 
 Dibuja el recorrido completo de una imagen: redimensionado a 64 x 64, aplanado a
 12.288 valores, las tres capas ocultas (1024 -> 512 -> 256) con sus neuronas y
