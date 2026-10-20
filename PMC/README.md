@@ -15,7 +15,7 @@ Esta carpeta contiene un proyecto de Machine Learning que entrena, compara y eva
   <img src="../images/logoLosSimpsons.png" alt="Logo de Los Simpson" width="480">
 </p>
 
-**Presentación de resultados.** [presentacion_resultados.html](presentacion_resultados.html) resume el dataset nuevo en 19 diapositivas: experimentos, KPIs, análisis de errores, costo en CPU frente a GPU y anexos con las tablas completas. Es un solo archivo: descárgalo y ábrelo en el navegador (GitHub solo muestra su código). El botón **Presentar** muestra una diapositiva a la vez en pantalla completa; las flechas avanzan y `Esc` sale.
+**Presentación de resultados.** [presentacion_resultados_PMC.html](presentacion_resultados_PMC.html) resume el dataset nuevo en 19 diapositivas: experimentos, KPIs, análisis de errores, costo en CPU frente a GPU y anexos con las tablas completas. Es un solo archivo: descárgalo y ábrelo en el navegador (GitHub solo muestra su código). El botón **Presentar** muestra una diapositiva a la vez en pantalla completa; las flechas avanzan y `Esc` sale.
 
 ## Dataset nuevo: 64 personajes
 
@@ -462,7 +462,7 @@ PMC/
 │   │   └── generar_diagrama_arquitectura.py  # Redibuja images/oldDataset/arquitectura_mlp.png
 │   └── newDataset/
 │       └── ejecutar_notebook_gpu.ps1   # Ejecuta el notebook de GPU del dataset nuevo
-├── presentacion_resultados.html    # Presentación de resultados del dataset nuevo (19 diapositivas)
+├── presentacion_resultados_PMC.html  # Presentación de resultados del dataset nuevo (19 diapositivas)
 └── README.md                       # Este documento
 ```
 
@@ -474,7 +474,7 @@ El dataset no forma parte del repositorio: se descarga aparte y se deja en una u
 
 **Dataset nuevo**
 
-- [Presentación de resultados](presentacion_resultados.html): 19 diapositivas con experimentos, KPIs, errores y las seis corridas en CPU y GPU.
+- [Presentación de resultados](presentacion_resultados_PMC.html): 19 diapositivas con experimentos, KPIs, errores y las seis corridas en CPU y GPU.
 - [Guía del dataset nuevo](notebooks/newDataset/README.md): qué cambia, cómo preparar el dataset, cómo ejecutar los notebooks y resultados.
 - [Notebook GPU](notebooks/newDataset/LosSimpsons_GPU_4060M.ipynb) y [notebook CPU](notebooks/newDataset/LosSimpsonsPMC.ipynb): el mismo proceso en cada dispositivo.
 - [Resúmenes de rendimiento](resultados/newDataset/): un JSON por corrida con tiempos, entorno y métricas.
