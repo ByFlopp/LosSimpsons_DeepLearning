@@ -11,7 +11,8 @@ cambio de diseño en esa presentación llega a esta al volver a generarla.
 Las cifras no se escriben a mano. Salen de:
 
 1. Los resúmenes de rendimiento de cada corrida: resultados/newDataset/GPU/*.json de la CNN y del MLP.
-2. Las salidas guardadas del notebook de GPU de la CNN, que son las de la corrida a 128 x 128.
+2. Las salidas guardadas del notebook de GPU de la CNN, que son las de la corrida a 128 x 128. Las cuatro
+   celdas que se agregaron después se ejecutaron con el modelo final que guardó esa corrida.
 3. Las salidas de la corrida a 64 x 64, que quedaron en el commit --revision-64 y se leen con git show:
    después el notebook se volvió a ejecutar a 32 x 32 y a 128 x 128, y de la de 32 x 32 solo queda su JSON.
 4. Las salidas de los notebooks del MLP (corridas a 64 x 64 en GPU y a 32 x 32 en CPU), para el F1 por
@@ -65,7 +66,9 @@ CELDAS = {
     "por_clase": "cnn-8822db2d",
     "kpis": "cnn-42a0e188",
     "recorrido": "cnn-1385974e",
+    "recorrido_varias": "cnn-recorrido-varias",
     "gradcam": "cnn-f2217062",
+    "gradcam_clases": "cnn-gradcam-clases",
     "aciertos": "cnn-8ac5ce95",
     "errores": "cnn-8d809ece",
     "confusiones": "cnn-a418c228",
@@ -391,6 +394,22 @@ def leer_cnn(nb, json_corrida):
     return datos
 
 
+def texto_linea(texto, patron):
+    """El grupo de la primera línea que coincide con el patrón, sin espacios a los lados."""
+    coincidencia = re.search(patron, texto, re.M)
+    if not coincidencia:
+        raise ValueError(f"no se encontró {patron!r}")
+    return coincidencia.group(1).strip()
+
+
+def por_bloque(texto, etiqueta):
+    """Valores de una línea «etiqueta: 1: v   |   2: v   |   …   |   cabeza: v», por bloque."""
+    linea = re.search(rf"^{re.escape(etiqueta)}: (.*)$", texto, re.M)
+    if not linea:
+        raise ValueError(f"no se encontró la línea {etiqueta!r}")
+    return {clave: float(numero) for clave, numero in re.findall(r"(\w+): (-?[\d.]+)", linea[1])}
+
+
 def leer_detalle_128(nb):
     """Cifras que solo se usan de la corrida a 128 x 128, la de las salidas guardadas."""
     campo = nb.texto("campo_receptivo")
@@ -404,7 +423,18 @@ def leer_detalle_128(nb):
     errores = nb.texto("errores")
     aciertos = nb.texto("aciertos")
     pesos = re.search(r"^\s*\d+\s+128x128\s+(\d+)\s+(\d+)\s+(\d+)\s", nb.texto("pesos_primera_capa"), re.M)
+    varias = nb.texto("recorrido_varias")
+    clases_gradcam = nb.texto("gradcam_clases")
     return {
+        "varias_correlacion": por_bloque(varias, "Correlacion entre las cuatro imagenes"),
+        "varias_activos": por_bloque(varias, "Valores activos (%)"),
+        "varias_confianza": [float(v) for v in re.findall(r"-> prediccion \w+ con ([\d.]+) % de confianza", varias)],
+        "gradcam_clases_10": valor(clases_gradcam, r"más cálidos: media ([\d.]+)"),
+        "gradcam_clases_centro": valor(clases_gradcam, r"mitad central: media ([\d.]+)"),
+        "gradcam_clases_recall": valor(clases_gradcam, r"y su recall: (-?[\d.]+)"),
+        "gradcam_concentrado": texto_linea(clases_gradcam, r"Calor mas concentrado: (.*)$").split(", "),
+        "gradcam_disperso": texto_linea(clases_gradcam, r"Calor mas disperso\s*: (.*)$").split(", "),
+        "gradcam_ejemplos": texto_linea(clases_gradcam, r"Ejemplos por tipo: (.*)$"),
         "campo_receptivo": [(b, lado, pct) for (b, lado), pct in zip(bloques, lados)],
         "activos": activos,
         "filtros_activos_ultimo": filtros[-1],
@@ -466,11 +496,28 @@ def comprobar_lecturas(cnn, mlp):
                          "script antes de generarla:\n- " + "\n- ".join(problemas))
 
 
+def comprobar_detalle(d128):
+    """Hechos de las diapositivas de mapas de activación y de Grad-CAM por personaje."""
+    problemas = []
+    if d128["gradcam_ejemplos"] != "{'original acertada': 64}":
+        problemas.append(f"no todos los ejemplos por personaje son originales acertadas: {d128['gradcam_ejemplos']}")
+    corr = d128["varias_correlacion"]
+    if not corr["4"] < 0.1 or corr["4"] >= min(corr["1"], corr["2"], corr["3"]):
+        problemas.append(f"la correlación entre los cuatro personajes ya no cae en el bloque 4: {corr}")
+    if abs(d128["gradcam_clases_recall"]) >= 0.2:
+        problemas.append(f"la concentración de Grad-CAM ya se correlaciona con el recall: {d128['gradcam_clases_recall']}")
+    if len(d128["varias_confianza"]) != 4:
+        problemas.append("el recorrido de cuatro imágenes no tiene cuatro predicciones")
+    if problemas:
+        raise SystemExit("Las lecturas de la presentación ya no describen los datos; revisa los textos del "
+                         "script antes de generarla:\n- " + "\n- ".join(problemas))
+
+
 # ---------------------------------------------------------------------------------------------------
 # Figuras
 # ---------------------------------------------------------------------------------------------------
 
-def figura(png, formato, alt):
+def figura(png, formato, alt, clase="lamina"):
     imagen = Image.open(io.BytesIO(png))
     if imagen.mode in ("RGBA", "LA", "P"):
         imagen = imagen.convert("RGBA")
@@ -490,7 +537,7 @@ def figura(png, formato, alt):
         imagen.save(buffer, "PNG", optimize=True)
         tipo = "image/png"
     datos = base64.b64encode(buffer.getvalue()).decode("ascii")
-    return (f'<figure class="lamina"><img src="data:{tipo};base64,{datos}" width="{imagen.width}" '
+    return (f'<figure class="{clase}"><img src="data:{tipo};base64,{datos}" width="{imagen.width}" '
             f'height="{imagen.height}" alt="{esc(alt)}"></figure>')
 
 
@@ -885,6 +932,28 @@ def construir_diapositivas(cnn, mlp, d128, n_train):
         ])}
       </div>"""))
 
+    d.append(("Contexto · Cambio de dataset", "Dejamos el dataset de la EP1 por uno más cercano al archivo real", "dos mitad", "", f"""<div class="columna">
+        <div class="desliza">
+          {tabla([th(""), th("EP1"), th("EP2")], [
+              [td("Personajes"), td("25"), td("64")],
+              [td("Imágenes originales"), td("20.074"), td("40.123")],
+              [td("Partición"), td("train y test fijos de Kaggle, con criterio no documentado"), td("Propia: 70 / 20 / 10, estratificada y con semilla 42")],
+              [td("Fotogramas con episodio e instante"), td("—"), td("Cerca del 45 %: permiten saber quién comparte la escena")],
+              [td("Modelos entrenados"), td("MLP"), td("MLP y CNN, con los mismos datos y la misma partición")],
+          ], "tabla densa")}
+        </div>
+        <p class="leyenda-figura">El MLP de la comparación es el que se volvió a entrenar sobre el dataset nuevo, no el de la EP1.</p>
+      </div>
+      <div class="columna">
+        {lista([
+            "<strong>Más cerca del negocio:</strong> un archivo audiovisual también tiene a los secundarios, no solo a los 25 personajes más conocidos.",
+            "<strong>El doble de datos:</strong> una CNN aprende sus filtros de los píxeles y necesita más ejemplos que un MLP sobre descriptores.",
+            "<strong>Partición bajo control:</strong> cada alterada en el conjunto de su original y las casi idénticas filtradas, para no acertar en test por haber visto la misma imagen.",
+            "<strong>Comparación justa:</strong> las dos redes ven las mismas imágenes; la diferencia la pone el modelo.",
+            "<strong>El costo:</strong> un desbalance de 33:1 y escenas con varios personajes, que se tratan con pesos por clase y con el criterio de acierto por escena.",
+        ])}
+      </div>"""))
+
     ultimo_campo = campo[-1]
     d.append(("Modelo · Fundamentos", "Filtros que se aprenden y recorren toda la imagen", "dos figura-ancha", "", f"""{figuras['recorrido']}
       <div class="columna">
@@ -897,6 +966,21 @@ def construir_diapositivas(cnn, mlp, d128, n_train):
             f"<strong>Del borde al personaje:</strong> en el cuarto bloque, los filtros más activos se encienden sobre la cabeza de {NOMBRES.get(prediccion[0], prediccion[0])}.",
         ])}
         <p class="leyenda-figura">Los 8 filtros más activos de cada bloque para una imagen de test, predicha con {num(prediccion[1], 1)} % de confianza.</p>
+      </div>"""))
+
+    corr, activos = d128["varias_correlacion"], d128["varias_activos"]
+    corr_primeros = [corr[b] for b in ("1", "2", "3")]
+    d.append(("Modelo · Mapas de activación", "Los mismos filtros con cuatro personajes: del color a la cara", "dos figura-ancha", "", f"""{figuras['recorrido_varias']}
+      <div class="columna">
+        <div class="cifras" style="--n: 1; gap: 1.2cqw">
+          {cifra("Correlación entre los cuatro, bloque 4", num(corr['4'], 2), f"de {num(min(corr_primeros), 2)} a {num(max(corr_primeros), 2)} en los bloques 1 a 3")}
+          {cifra("Valores activos", f"{entero(activos['1'])} % → {entero(activos['4'])} %", "del primer al cuarto bloque")}
+        </div>
+        {lista([
+            "<strong>Bloques 1 a 3:</strong> zonas de color, contornos y combinaciones de bordes, del personaje y del fondo.",
+            "<strong>Bloque 4:</strong> pocas manchas sobre el personaje, y cada uno activa sus propios filtros.",
+        ])}
+        <p class="leyenda-figura">Homero, Marge, Bart y Lisa, acertados con {num(min(d128['varias_confianza']), 1)} a {num(max(d128['varias_confianza']), 1)} % de confianza. Cada columna es el mismo filtro con la misma escala.</p>
       </div>"""))
 
     d.append(("Modelo", "La red recibe la imagen entera: 128 × 128 × 3 valores", "columna", "gap: 2.2cqw", f"""<ol class="flujo">
@@ -997,7 +1081,7 @@ def construir_diapositivas(cnn, mlp, d128, n_train):
             f"<strong>{fuertes} de 64</strong> personajes con F1 de 0,60 o más y ninguno bajo 0,30; el MLP tenía {en_palabras(debiles_mlp)} bajo 0,30.",
             f"Homero, Marge, Bart y Lisa pasan de {num(min(fam_mlp), 2)}–{num(max(fam_mlp), 2)} en el MLP a {num(min(fam_cnn), 2)}–{num(max(fam_cnn), 2)}: <mark>lo que separa a Bart de Lisa es el peinado</mark>, no el color.",
             f"Ahora sí pesa el tamaño: la correlación entre imágenes de entrenamiento y F1 es {num(c128['correlacion'], 2)} ({num(mlp['correlacion_64'], 2)} en el MLP).",
-            "Abajo quedan personajes con poco más de cien imágenes de entrenamiento: Disco Stu, Maggie, Rod Flanders y Helen Lovejoy.",
+            "Abajo quedan personajes con alrededor de cien imágenes de entrenamiento: Disco Stu, Maggie, Rod Flanders y Helen Lovejoy.",
         ])}
       </div>"""))
 
@@ -1034,6 +1118,19 @@ def construir_diapositivas(cnn, mlp, d128, n_train):
             "Los tres errores más confiados miran a un personaje que sí está: Homero en dos imágenes de la carpeta de Bart y Chalmers junto a Skinner.",
         ])}
         <p class="leyenda-figura">Tres aciertos y tres errores con la mayor confianza, corrida de GPU a 128 × 128.</p>
+      </div>"""))
+
+    d.append(("Análisis · Grad-CAM por personaje", "En los 64 personajes la red mira sobre todo la cabeza", "dos", "", f"""{figuras['gradcam_clases']}
+      <div class="columna">
+        <div class="cifras" style="--n: 1; gap: 1.2cqw">
+          {cifra("Calor en el 10 % de píxeles más cálidos", porcentaje(d128['gradcam_clases_10']), "10 % si mirara toda la imagen")}
+          {cifra("Calor en la mitad central", porcentaje(d128['gradcam_clases_centro']), "25 % si fuera uniforme")}
+        </div>
+        {lista([
+            "Casi siempre en la cabeza: el peinado de Marge, el bigote de Ned, los lentes de Milhouse. En unos pocos, en la ropa.",
+            f"No explica qué personajes cuestan más: correlación de {num(d128['gradcam_clases_recall'], 2)} con el recall.",
+        ])}
+        <p class="leyenda-figura">Grad-CAM de la clase de la carpeta sobre su imagen original de test más probable.</p>
       </div>"""))
 
     d.append(("Análisis de errores · Aciertos", "Aciertos seguros aunque el personaje sea pequeño", "dos figura-ancha", "", f"""{figuras['aciertos']}
@@ -1149,6 +1246,30 @@ def construir_diapositivas(cnn, mlp, d128, n_train):
         ])}
       </div>"""))
 
+    helen, homero = por_clase["helen_lovejoy"], por_clase["homer_simpson"]
+    d.append(("Cierre · Impacto ético", "El modelo propone; una persona revisa y decide", "dos mitad", "", f"""<div class="columna">
+        <p class="seccion">Derechos de autor</p>
+        {lista([
+            "Personajes y fotogramas son obras protegidas: los usamos solo con fines académicos, y ni el dataset ni los modelos entrenados se versionan o redistribuyen.",
+            "Un uso comercial exige la licencia del titular, también sobre las imágenes de entrenamiento. Detectar a un personaje no prueba una infracción: la cita o la parodia pueden estar permitidas.",
+        ])}
+        <p class="seccion">Sesgo por el desbalance de 33:1</p>
+        {lista([
+            f"El modelo encuentra a Helen Lovejoy en el {porcentaje(helen['recall'], 0)} de sus imágenes y a Homero en el {porcentaje(homero['recall'], 0)}; Homero recibe {c128['absorbe_homero']} errores de otros personajes.",
+            f"Contando apariciones, daría a Homero {num(homero['recall'] / homero['precision'], 2)} veces las reales y a Helen {num(helen['recall'] / helen['precision'], 2)}: un sesgo que llegaría a las licencias y al merchandising.",
+        ])}
+      </div>
+      <div class="columna">
+        <p class="seccion">Revisión humana</p>
+        {lista([
+            f"Se equivoca en el {porcentaje(1 - j['128x128']['accuracy_test'], 0)} del test y siempre responde algo, aunque la imagen no tenga a ningún personaje del catálogo.",
+            f"{j['128x128']['errores_confiados_test']} errores superan una confianza de 0,80: una confianza alta no basta para automatizar.",
+            f"Mostrar las tres sugerencias, que contienen la respuesta en el {porcentaje(j['128x128']['top3_test'], 0)} de los casos, y revisar siempre lo que afecte a terceros: reclamos, pagos de licencias o retiro de material.",
+        ])}
+        <p class="seccion">Fuera del dominio</p>
+        {lista(["Con fotos de personas reales sería reconocimiento facial, con problemas de privacidad y consentimiento que este proyecto no aborda: el modelo no debe usarse así."])}
+      </div>"""))
+
     d.append(("Cierre · Conclusiones", "Lo que nos llevamos de las tres corridas", "dos mitad", "", f"""{lista([
             f"<strong>La forma es lo que le faltaba al MLP.</strong> Con el mismo proceso, a 128 × 128 la accuracy pasa de {num(m['128x128']['accuracy_test'])} a {num(j['128x128']['accuracy_test'])} y el F1 macro de {num(m['128x128']['f1_macro_test'])} a {num(j['128x128']['f1_macro_test'])}.",
             "<strong>La representación decide más que el ajuste fino.</strong> Ninguna variante de hiperparámetros, en el MLP o en la CNN, ganó más de 3 puntos.",
@@ -1220,6 +1341,10 @@ CSS_PROPIO = """
 .graf .t-r128 { stroke: var(--s1); }
 .graf .t-r64 { stroke: var(--s2); }
 .graf .t-mlp { stroke: var(--tinta-3); }
+/* ---------- figuras más altas que anchas: se limitan al alto de la diapositiva ---------- */
+.lamina.alta { justify-self: start; }
+.lamina.alta img { width: auto; height: 36cqw; }
+@media (max-width: 760px) { .lamina.alta img { width: 100%; height: auto; } }
 """
 
 
@@ -1280,6 +1405,7 @@ def main():
     mlp = leer_mlp(jsons_mlp)
     comprobar_lecturas(cnn, mlp)
     d128 = leer_detalle_128(nb128)
+    comprobar_detalle(d128)
     n_train = imagenes_entrenamiento(nb128.texto("por_clase"), nb128.texto("confusiones"),
                                      nb64.texto("por_clase"), nb64.texto("confusiones"), *mlp["textos_n_train"])
     faltan = [p for p in PERSONAJES_F1 if p not in n_train]
@@ -1292,6 +1418,15 @@ def main():
                             f"Mapas de activación de los 8 filtros más activos de cada uno de los cuatro bloques para una "
                             f"imagen de test de {prediccion}: el primer bloque marca bordes y zonas de color, y en el "
                             f"cuarto los filtros se encienden sobre la cabeza del personaje."),
+        "recorrido_varias": figura(nb128.imagenes("recorrido_varias")[0], "jpeg",
+                                   "Mapas de activación de Homero, Marge, Bart y Lisa: la imagen de entrada y los dos "
+                                   "filtros más activos de cada uno de los cuatro bloques, con la misma escala por columna. "
+                                   "Los primeros bloques marcan zonas de color y contornos; en el cuarto quedan pocas "
+                                   "manchas, distintas para cada personaje."),
+        "gradcam_clases": figura(nb128.imagenes("gradcam_clases")[0], "jpeg",
+                                 "Grad-CAM de la clase de cada uno de los 64 personajes sobre su imagen original de test "
+                                 "acertada con mayor probabilidad: la zona cálida cae sobre la cabeza del personaje en "
+                                 "casi todos.", "lamina alta"),
         "curvas": figura(nb128.imagenes("curvas")[0], "png",
                          "Curvas de pérdida y accuracy por época del modelo base a 128 × 128: la accuracy de entrenamiento "
                          "sube hasta 0,96 y la de validación se estabiliza cerca de 0,80; la mejor época es la 53."),

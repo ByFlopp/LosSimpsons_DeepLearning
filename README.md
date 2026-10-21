@@ -16,6 +16,7 @@ Este repositorio es una **comparativa entre dos redes neuronales** que identific
 | Corridas | Seis, del 16-10-2026: CPU y GPU a 32, 64 y 128 píxeles | Tres, del 19-10-2026: GPU a 32, 64 y 128 píxeles; la de CPU, pendiente |
 | Mejor resultado en test | Accuracy 0,586 y F1 macro 0,559 (GPU 128 × 128, C1) | **Accuracy 0,847 y F1 macro 0,810** (GPU 128 × 128, modelo base) |
 | Presentación de resultados | [presentacion_resultados_PMC.html](PMC/presentacion_resultados_PMC.html) | [presentacion_resultados_CNN.html](CNN/presentacion_resultados_CNN.html) |
+| Informe técnico | [Informe de la EP1](PMC/docs/oldDataset/Informe.md), sobre el dataset anterior de 25 personajes | [Informe de la EP2](CNN/docs/newDataset/Informe.md): la CNN y su comparación con el MLP |
 
 Las presentaciones son archivos HTML de un solo archivo: descárgalos y ábrelos en el navegador (GitHub solo muestra su código). El botón **Presentar** muestra una diapositiva a la vez en pantalla completa.
 
@@ -180,9 +181,10 @@ Los pasos completos, con sus opciones y la versión en Docker, están en la [gu�
 │   ├── notebooks/newDataset/       # Notebooks de GPU y CPU (sin versión para el dataset anterior)
 │   ├── models/ y models_gpu/       # Modelos .keras regenerables, ignorados por Git
 │   ├── resultados/newDataset/GPU/  # Un JSON por corrida; CPU/ aparece al ejecutar ese notebook
-│   ├── scripts/                    # Lanzador del notebook de GPU y generador de la presentación
+│   ├── scripts/                    # Lanzador del notebook de GPU, generador de la presentación y predicción de imágenes
 │   ├── images/                     # Imágenes de los notebooks
-│   ├── presentacion_resultados_CNN.html  # Presentación de resultados de la CNN (22 diapositivas)
+│   ├── docs/                       # Encargo de la EP2 e informe técnico, con sus figuras
+│   ├── presentacion_resultados_CNN.html  # Presentación de resultados de la CNN (26 diapositivas)
 │   └── README.md
 ├── scripts/newDataset/
 │   └── generar_imagenes_alteradas.py  # Prepara el dataset nuevo: alteradas, parecidas y gemelas

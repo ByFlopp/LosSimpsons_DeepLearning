@@ -46,8 +46,21 @@ Las celdas que no dependen del modelo son copia literal de las del notebook del 
    S2, A1 y la combinación C1. Se elige por F1 macro de validación, como en el MLP. Antes de entrenar cada
    configuración se mide cuánta memoria de la GPU usa: a 128 × 128, E2 y E5 no caben en los 8 GB y quedan
    fuera de la comparación.
-4. **El análisis.** Fundamentos de la convolución con filtros aplicados a mano, mapas de activación de la red
-   entrenada, Grad-CAM y una comparación con la corrida del MLP del mismo entorno y la misma resolución.
+4. **El análisis.** Fundamentos de la convolución con filtros aplicados a mano; mapas de activación de la red
+   entrenada en una imagen y en cuatro imágenes de test (Homero, Marge, Bart y Lisa); Grad-CAM de casos
+   concretos, de una imagen por personaje, el mapa medio de cada personaje y el del test completo; las métricas
+   con el criterio de acierto del proyecto y con el estricto; y una comparación con la corrida del MLP del
+   mismo entorno y la misma resolución: desempeño, parámetros, tiempos, capacidad de generalización y
+   ventajas y desventajas de cada arquitectura.
+5. **El contexto.** Una introducción que ubica cada punto de la pauta de la EP2 en el notebook, por qué se
+   dejó el dataset de la EP1 y una sección de impacto ético: derechos de autor de las imágenes, sesgo por el
+   desbalance y revisión humana de las predicciones.
+
+Cuatro celdas del notebook de GPU se agregaron el 20-10-2026, después de la corrida a 128 × 128: las métricas
+con el criterio estricto, los mapas de activación de cuatro imágenes, el mapa de activación de cada clase y la
+capacidad de generalización. Se ejecutaron con el modelo final que guardó esa corrida (`cnn_final.keras`),
+sobre la misma partición y sin reentrenar, con los algoritmos deterministas de cuDNN: así sus predicciones son
+exactamente las de la corrida. En el notebook de CPU esas celdas están, pero todavía sin salidas.
 
 ## Cómo ejecutarlo
 

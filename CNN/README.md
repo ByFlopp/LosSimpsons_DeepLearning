@@ -15,10 +15,17 @@ bucle de entrenamiento, el mismo criterio de acierto y los mismos KPIs. Cambia e
 </p>
 
 **Presentación de resultados.** [presentacion_resultados_CNN.html](presentacion_resultados_CNN.html) resume las
-tres corridas en 22 diapositivas: modelo, experimentos, KPIs, F1 por personaje, confusiones, Grad-CAM,
-errores, costo por resolución y la comparación con el MLP, con anexos de tablas completas. Es un solo archivo:
+tres corridas en 26 diapositivas: el cambio de dataset respecto de la EP1, modelo, mapas de activación,
+experimentos, KPIs, F1 por personaje, confusiones, Grad-CAM (también uno por personaje), errores, costo por
+resolución, la comparación con el MLP y el impacto ético, con anexos de tablas completas. Es un solo archivo:
 descárgalo y ábrelo en el navegador (GitHub solo muestra su código). El botón **Presentar** muestra una
 diapositiva a la vez en pantalla completa; las flechas avanzan y `Esc` sale.
+
+**Informe técnico.** [docs/newDataset/Informe.md](docs/newDataset/Informe.md) documenta la Evaluación Parcial 2:
+el cambio de dataset respecto de la EP1, la preparación de los datos, el diseño y el entrenamiento de la CNN,
+los experimentos, las métricas con el criterio del proyecto y con el estricto, los mapas de activación, la
+comparación con el MLP, el impacto ético y las conclusiones. El encargo de la evaluación está en
+[docs/EP2_TLY1102_Instrucciones.docx](docs/EP2_TLY1102_Instrucciones.docx).
 
 ## Resultados de las corridas del 19-10-2026
 
@@ -89,7 +96,7 @@ mismos pesos a cualquier resolución, pero cada uno recorre más posiciones cuan
 | Entrada | 2.462 descriptores de color y textura (o 370 de solo color) | La imagen de 128 × 128 × 3 (también 32 y 64), sin aplanar |
 | Características | Elegidas a mano: histogramas HSV y Lab, LBP, Gabor, HOG | Aprendidas: filtros de 3 × 3 que recorren la imagen |
 | Modelo base | Dos capas densas (512, 256) | Cuatro bloques convolucionales (32, 64, 128, 256 filtros), pooling global y una capa densa de 256 |
-| Análisis de la decisión | Importancia por permutación de cada bloque de descriptores | Grad-CAM sobre la imagen |
+| Análisis de la decisión | Importancia por permutación de cada bloque de descriptores | Grad-CAM sobre la imagen, también uno por personaje |
 
 ## Experimentos
 
@@ -146,6 +153,18 @@ Los pasos completos están en [notebooks/newDataset/README.md](notebooks/newData
    la corrida a 64 × 64 se leen del commit `6db8274`). Los textos están en el script: si cambian los hechos que
    describen —qué configuración gana, qué no cabe en la GPU—, se detiene y pide revisarlos.
 
+4. Clasifica cualquier imagen con el modelo final, sin abrir el notebook:
+
+   ```powershell
+   .\.venv-gpu\Scripts\python.exe CNN\scripts\newDataset\predecir_imagen.py ruta\a\imagen.jpg
+   ```
+
+   Muestra las cinco candidatas más probables (`--top` cambia cuántas) y, si la imagen está en una carpeta con
+   el nombre de un personaje, si el modelo acertó. Acepta varias imágenes a la vez, `--json` para leer el
+   resultado desde otro programa y `--cpu` para no usar la GPU. Usa `models_gpu/newDataset/cnn_final.keras` (o
+   el de `models/newDataset/`) con el pre-procesamiento del notebook. La red siempre nombra a alguno de sus 64
+   personajes, así que bajo un 50 % de confianza avisa que conviene revisar la imagen a mano.
+
 ## Estructura de la carpeta
 
 ```text
@@ -160,9 +179,15 @@ CNN/
 │   └── GPU/                          # rendimiento_gpu_<resolucion>.json; CPU/ aparece al ejecutar ese notebook
 ├── scripts/newDataset/
 │   ├── ejecutar_notebook_gpu.ps1     # Comprueba el entorno y abre el notebook de GPU
-│   └── generar_presentacion.py       # Genera presentacion_resultados_CNN.html
+│   ├── generar_presentacion.py       # Genera presentacion_resultados_CNN.html
+│   └── predecir_imagen.py            # Clasifica una o más imágenes con el modelo final
 ├── images/                           # Ilustraciones de la portada de los notebooks
-├── presentacion_resultados_CNN.html  # Presentación de resultados (22 diapositivas)
+├── docs/
+│   ├── EP2_TLY1102_Instrucciones.docx  # Encargo de la Evaluación Parcial 2
+│   └── newDataset/
+│       ├── Informe.md                # Informe técnico de la EP2
+│       └── figuras/                  # Figuras del informe, tomadas de las salidas del notebook de GPU
+├── presentacion_resultados_CNN.html  # Presentación de resultados (26 diapositivas)
 └── README.md                         # Este documento
 ```
 
