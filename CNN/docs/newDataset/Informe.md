@@ -2,6 +2,21 @@
 
 Evaluación Parcial 2 · Técnicas Avanzadas de Machine Learning
 
+## Resumen
+
+| Tema | Lo importante | Dónde |
+|---|---|---|
+| Qué se entrega | Una CNN de cuatro bloques convolucionales (473.120 parámetros) que reconoce a 64 personajes, comparada con el MLP reentrenado sobre el mismo dataset y con el mismo proceso | §6, §10 |
+| Cambio respecto de la EP1 | El dataset pasó de 25 a 64 personajes y de 20.074 a 40.123 imágenes originales, con una partición propia 70/20/10 que filtra los casi duplicados; el trabajo de la EP1 se conserva para la trazabilidad | §2.3 |
+| Resultado | Accuracy de test 0,847 y F1 macro 0,810 (0,797 y 0,738 con el criterio estricto), frente a 0,586 y 0,559 del MLP a la misma resolución: 26 y 25 puntos más. Los cinco KPIs se cumplen con los dos criterios | §9, §10.1 |
+| Todas las métricas para los dos modelos | Precision, recall, F1 macro y ponderado, top-3 y brecha de entrenamiento de las dos redes a 64 × 64, la resolución cuyas salidas guardan los dos notebooks, y de la CNN también a 128 × 128 | §10.2 |
+| Por qué gana la CNN | Reconoce la forma: la familia Simpson pasa de un F1 de 0,35–0,67 en el MLP a 0,81–0,89. En el último bloque cada personaje activa sus propios filtros (correlación de 0,015 entre cuatro personajes), y Grad-CAM muestra que la red mira la cabeza en casi los 64 | §11 |
+| Generalización, con matices | Memoriza menos (brecha de 0,21 frente a 0,47 a 64 × 64) y depende menos de las tomas casi idénticas en las tres resoluciones; pero resiste mejor las imágenes alteradas, y comete menos errores confiados, solo a 128 × 128 | §10.2 |
+| Ventajas y desventajas | La CNN gana en representación y en velocidad de extremo a extremo; el MLP, en costo de entrenamiento (18 veces menor) y en dependencia del número de imágenes por personaje | §10.3 |
+| Mejoras | Transfer learning, aumento de datos en línea y regularizar las capas convolucionales (L2 o AdamW y `SpatialDropout2D`): más Dropout en la cabeza no corrigió el sobreajuste | §14 |
+| Uso responsable | Asistente con revisión humana: se equivoca en el 15 % del test, favorece a los personajes con más imágenes y no debe usarse con fotos de personas | §13 |
+| Reproducibilidad | El modelo guardado reproduce exactamente la evaluación con algoritmos deterministas de cuDNN; con `cudnn.benchmark` varía en unas pocas imágenes | §15.3 |
+
 ## 1. Identificación del proyecto
 
 | Elemento | Descripción verificable |

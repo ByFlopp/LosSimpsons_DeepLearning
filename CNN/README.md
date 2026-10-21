@@ -15,9 +15,11 @@ bucle de entrenamiento, el mismo criterio de acierto y los mismos KPIs. Cambia e
 </p>
 
 **Presentación de resultados.** [presentacion_resultados_CNN.html](presentacion_resultados_CNN.html) resume las
-tres corridas en 26 diapositivas: el cambio de dataset respecto de la EP1, modelo, mapas de activación,
-experimentos, KPIs, F1 por personaje, confusiones, Grad-CAM (también uno por personaje), errores, costo por
-resolución, la comparación con el MLP y el impacto ético, con anexos de tablas completas. Es un solo archivo:
+tres corridas en 29 diapositivas: el cambio de dataset respecto de la EP1, modelo, mapas de activación,
+experimentos, KPIs, el criterio estricto, F1 por personaje, confusiones, Grad-CAM (también uno por personaje),
+errores, costo por resolución, la comparación con el MLP —con su capacidad de generalización y las ventajas y
+desventajas de cada arquitectura—, las mejoras por regularización y el impacto ético, con anexos de tablas
+completas. Es un solo archivo:
 descárgalo y ábrelo en el navegador (GitHub solo muestra su código). El botón **Presentar** muestra una
 diapositiva a la vez en pantalla completa; las flechas avanzan y `Esc` sale.
 
@@ -187,7 +189,7 @@ CNN/
 │   └── newDataset/
 │       ├── Informe.md                # Informe técnico de la EP2
 │       └── figuras/                  # Figuras del informe, tomadas de las salidas del notebook de GPU
-├── presentacion_resultados_CNN.html  # Presentación de resultados (26 diapositivas)
+├── presentacion_resultados_CNN.html  # Presentación de resultados (29 diapositivas)
 └── README.md                         # Este documento
 ```
 

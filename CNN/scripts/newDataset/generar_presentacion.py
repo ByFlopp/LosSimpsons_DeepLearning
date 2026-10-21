@@ -63,6 +63,7 @@ CELDAS = {
     "diagnostico_base": "cnn-a68c2d65",
     "experimentos": "cnn-26657d5f",
     "metricas_test": "cnn-687863b3",
+    "metricas_estrictas": "cnn-metricas-estrictas",
     "por_clase": "cnn-8822db2d",
     "kpis": "cnn-42a0e188",
     "recorrido": "cnn-1385974e",
@@ -114,7 +115,16 @@ NOMBRES = {
     "rev_timothy_lovejoy": "Rev. Lovejoy",
     "selma_bouvier": "Selma",
     "sideshow_bob": "Sideshow Bob",
+    "dolph_starbeam": "Dolph",
+    "lou": "Lou",
+    "louie": "Louie",
+    "maude_flanders": "Maude Flanders",
 }
+
+
+def nombre(personaje):
+    """Nombre corto del personaje para los textos; si no está en NOMBRES, el de la carpeta."""
+    return NOMBRES.get(personaje, personaje.replace("_", " ").title())
 FAMILIA = {"homer_simpson", "marge_simpson", "bart_simpson", "lisa_simpson", "maggie_simpson"}
 # Los mismos doce personajes de la diapositiva «Por personaje» de la presentación del MLP
 PERSONAJES_F1 = (
@@ -386,12 +396,21 @@ def leer_cnn(nb, json_corrida):
         "gradcam_centro_aciertos": valor(gradcam, r"mitad central \(aciertos\)\s+([\d.]+)"),
         "gradcam_centro_errores": valor(gradcam, r"mitad central \(errores\)\s+([\d.]+)"),
     }
+    datos["macro"] = leer_macro(nb.texto("por_clase"))
     # El notebook debe ser el de la corrida de ese JSON
-    macro = valor(nb.texto("por_clase"), r"macro avg\s+[\d.]+\s+[\d.]+\s+([\d.]+)")
+    macro = datos["macro"]["f1"]
     if abs(macro - json_corrida["f1_macro_test"]) > 0.0006:
         raise SystemExit(f"{nb.nombre}: el F1 macro de sus salidas ({macro}) no es el del JSON "
                          f"{json_corrida['resolucion']} ({json_corrida['f1_macro_test']})")
     return datos
+
+
+def leer_macro(texto):
+    """Precision, recall y F1 de la fila «macro avg» del classification_report."""
+    m = re.search(r"macro avg\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)", texto)
+    if not m:
+        raise ValueError("no se encontró la fila macro avg")
+    return {"precision": float(m[1]), "recall": float(m[2]), "f1": float(m[3])}
 
 
 def texto_linea(texto, patron):
@@ -425,7 +444,18 @@ def leer_detalle_128(nb):
     pesos = re.search(r"^\s*\d+\s+128x128\s+(\d+)\s+(\d+)\s+(\d+)\s", nb.texto("pesos_primera_capa"), re.M)
     varias = nb.texto("recorrido_varias")
     clases_gradcam = nb.texto("gradcam_clases")
+    estrictas = nb.texto("metricas_estrictas")
+    criterios = {m[1]: (float(m[2]), float(m[3])) for m in re.finditer(
+        r"^(Accuracy|Precision macro|Recall macro|F1 macro|Precision ponderada|Recall ponderado|F1 ponderado)\s+([\d.]+)\s+([\d.]+)",
+        estrictas, re.M)}
+    if len(criterios) != 7:
+        raise ValueError(f"la tabla de criterios tiene {len(criterios)} filas")
     return {
+        "estricto_criterios": criterios,
+        "estricto_reporte": leer_reporte(estrictas),
+        "estricto_f1_060": valor(estrictas, r"F1 estricto >= 0\.60: (\d+) de 64", int),
+        "estricto_f1_030": valor(estrictas, r"con F1 estricto < 0\.30: (\d+)", int),
+        "estricto_top3": valor(nb.texto("metricas_test"), r"Top-3 accuracy\s+:\s+[\d.]+\s+\(estricta: ([\d.]+)\)"),
         "varias_correlacion": por_bloque(varias, "Correlacion entre las cuatro imagenes"),
         "varias_activos": por_bloque(varias, "Valores activos (%)"),
         "varias_confianza": [float(v) for v in re.findall(r"-> prediccion \w+ con ([\d.]+) % de confianza", varias)],
@@ -464,6 +494,7 @@ def leer_mlp(jsons):
     return {
         "json": jsons,
         "reporte_64": leer_reporte(texto_clase),
+        "macro_64": leer_macro(texto_clase),
         "correlacion_64": valor(gpu.buscar(r"Correlacion entre imagenes"), r"por clase: ([\d.]+)"),
         "confusiones_64": leer_confusiones(gpu.buscar(r"% de la clase real")),
         "brecha_64": valor(gpu.buscar(r"Brecha train - val \(accuracy\)"), r"Brecha train - val \(accuracy\)\s+([\d.]+)"),
@@ -491,6 +522,48 @@ def comprobar_lecturas(cnn, mlp):
     finales_mlp = {r: mlp["json"][r]["configuracion_final"].split(" - ")[0] for r in RESOLUCIONES}
     if finales_mlp != {"32x32": "R2", "64x64": "R2", "128x128": "C1"}:
         problemas.append(f"configuraciones finales del MLP: {finales_mlp}")
+    if problemas:
+        raise SystemExit("Las lecturas de la presentación ya no describen los datos; revisa los textos del "
+                         "script antes de generarla:\n- " + "\n- ".join(problemas))
+
+
+def caida_alteradas(datos):
+    return datos["accuracy_originales_test"] - datos["accuracy_alteradas_test"]
+
+
+def ventaja_parecidas(datos):
+    return datos["accuracy_parecidas_test"] - datos["accuracy_originales_test"]
+
+
+def confiados_por_mil(datos):
+    return datos["errores_confiados_test"] / datos["imagenes_test"] * 1000
+
+
+def comprobar_comparacion(cnn, mlp, d128):
+    """Hechos de las diapositivas del criterio estricto, la generalización y las ventajas y desventajas."""
+    problemas = []
+    j128, m = cnn["128x128"]["json"], mlp["json"]
+    criterios = d128["estricto_criterios"]
+    umbrales = (("Accuracy", 0.50), ("F1 macro", 0.45))
+    if any(criterios[metrica][1] < umbral for metrica, umbral in umbrales) or d128["estricto_top3"] < 0.70 \
+            or criterios["Accuracy"][1] / cnn["128x128"]["mayoritaria"] < 4:
+        problemas.append("con el criterio estricto ya no se cumplen todos los KPIs")
+    if any(abs(criterios[n][0] - j128[c]) > 0.00006 for n, c in (("Accuracy", "accuracy_test"), ("F1 macro", "f1_macro_test"))):
+        problemas.append("la celda del criterio estricto no es de la misma corrida que el JSON a 128 x 128")
+    if any(ventaja_parecidas(cnn[r]["json"]) >= ventaja_parecidas(m[r]) for r in RESOLUCIONES):
+        problemas.append("la CNN ya no depende menos de las parecidas en las tres resoluciones")
+    if any(abs(caida_alteradas(cnn[r]["json"]) - caida_alteradas(m[r])) > 0.005 for r in ("32x32", "64x64")) \
+            or caida_alteradas(j128) >= caida_alteradas(m["128x128"]):
+        problemas.append("cambió la comparación de las alteradas: solo a 128 x 128 la CNN pierde menos")
+    if any(confiados_por_mil(cnn[r]["json"]) <= confiados_por_mil(m[r]) for r in ("32x32", "64x64")) \
+            or confiados_por_mil(j128) >= confiados_por_mil(m["128x128"]):
+        problemas.append("cambió la comparación de los errores confiados entre resoluciones")
+    if cnn["64x64"]["diagnostico"]["brecha"] >= mlp["brecha_64"]:
+        problemas.append("la CNN ya no memoriza menos que el MLP a 64 x 64")
+    if j128["parametros_modelo_final"] >= 0.5 * m["128x128"]["parametros_modelo_final"]:
+        problemas.append("la CNN ya no tiene menos de la mitad de los parámetros del MLP a 128 x 128")
+    if cnn["128x128"]["correlacion"] <= mlp["correlacion_64"]:
+        problemas.append("la CNN ya no depende más que el MLP del número de imágenes por personaje")
     if problemas:
         raise SystemExit("Las lecturas de la presentación ya no describen los datos; revisa los textos del "
                          "script antes de generarla:\n- " + "\n- ".join(problemas))
@@ -1059,6 +1132,33 @@ def construir_diapositivas(cnn, mlp, d128, n_train):
       </div>
       <p class="leyenda-figura">Con el criterio estricto la accuracy va de {num(min(j[r]['accuracy_estricta_test'] for r in RESOLUCIONES))} a {num(max(j[r]['accuracy_estricta_test'] for r in RESOLUCIONES))}: las tres corridas superan el umbral también con esa vara.</p>"""))
 
+    criterios = d128["estricto_criterios"]
+    reporte_estricto = d128["estricto_reporte"]
+    metricas_tabla = ("Accuracy", "Precision macro", "Recall macro", "F1 macro", "F1 ponderado")
+    filas_estrictas = [[td(metrica), td(num(criterios[metrica][0]), True), td(num(criterios[metrica][1]), True),
+                        td(puntos(criterios[metrica][0] - criterios[metrica][1]), True)]
+                       for metrica in metricas_tabla]
+    filas_estrictas.append([td("Top-3 accuracy"), td(num(j["128x128"]["top3_test"]), True), td(num(d128["estricto_top3"]), True),
+                            td(puntos(j["128x128"]["top3_test"] - d128["estricto_top3"]), True)])
+    diferencias_estrictas = [criterios[metrica][0] - criterios[metrica][1] for metrica in metricas_tabla]
+    mas_pierden = sorted(por_clase, key=lambda p: reporte_estricto[p]["f1"] - por_clase[p]["f1"])[:3]
+    familia_estricta = [reporte_estricto[p]["f1"] for p in familia]
+    bajo_030 = [nombre(p) for p in sorted(reporte_estricto) if reporte_estricto[p]["f1"] < 0.30]
+    d.append(("Evaluación · Criterio estricto", "Solo la carpeta como respuesta: bajan las cifras, no las conclusiones", "dos mitad", "", f"""<div class="columna">
+        <div class="desliza">
+          {tabla([th("Métrica en test"), th("Criterio del proyecto", True), th("Estricto", True), th("Puntos", True)], filas_estrictas)}
+        </div>
+        <p class="leyenda-figura">Estricto: la única respuesta correcta es el personaje de la carpeta; nombrar a otro personaje presente cuenta como error. Corrida de GPU a 128 × 128.</p>
+      </div>
+      <div class="columna">
+        {lista([
+            f"Accuracy, precision, recall y F1 bajan de {entero(min(diferencias_estrictas) * 100)} a {entero(max(diferencias_estrictas) * 100)} puntos; el top-3, {puntos(j['128x128']['top3_test'] - d128['estricto_top3'])}. <strong>Los cinco KPIs se siguen cumpliendo.</strong>",
+            "Pierden más los que casi siempre salen acompañados: " + ", ".join(f"{nombre(p)} ({num(por_clase[p]['f1'], 2)} → {num(reporte_estricto[p]['f1'], 2)})" for p in mas_pierden) + " de F1.",
+            f"{d128['estricto_f1_060']} de 64 personajes conservan un F1 de 0,60 o más; bajo 0,30 queda solo {', '.join(bajo_030)}.",
+            f"La familia Simpson sigue arriba: F1 estricto de {num(min(familia_estricta), 2)} a {num(max(familia_estricta), 2)}.",
+        ])}
+      </div>"""))
+
     d.append(("Evaluación · Tres corridas", "Más resolución sí ayuda a la CNN, cada vez menos", "dos", "", f"""<figure class="grafico">
         {leyenda(muestra("c-r128", "CNN"), muestra("c-mlp", "MLP, misma resolución"), muestra("c-entreno", "Accuracy con el criterio del proyecto"), muestra("vacia", "Accuracy estricta"))}
         {grafico_corridas(cnn, mlp)}
@@ -1224,12 +1324,67 @@ def construir_diapositivas(cnn, mlp, d128, n_train):
         ])}
       </div>"""))
 
+    columnas_generalizacion = (("MLP · 64", m["64x64"]), ("CNN · 64", j["64x64"]), ("MLP · 128", m["128x128"]), ("CNN · 128", j["128x128"]))
+    filas_generalizacion = [
+        [td("Brecha entrenamiento − validación del modelo base"), td(num(mlp["brecha_64"]), True),
+         td(num(c64["diagnostico"]["brecha"]), True), td("—", True), td(num(c128["diagnostico"]["brecha"]), True)],
+        [td("Precision macro"), td(num(mlp["macro_64"]["precision"]), True), td(num(c64["macro"]["precision"]), True),
+         td("—", True), td(num(c128["macro"]["precision"]), True)],
+        [td("Recall macro"), td(num(mlp["macro_64"]["recall"]), True), td(num(c64["macro"]["recall"]), True),
+         td("—", True), td(num(c128["macro"]["recall"]), True)],
+        [td("Caída en las alteradas (puntos)")] + [td(puntos(caida_alteradas(datos)), True) for _, datos in columnas_generalizacion],
+        [td("Ventaja de las parecidas (puntos)")] + [td(puntos(ventaja_parecidas(datos)), True) for _, datos in columnas_generalizacion],
+        [td("Errores con confianza > 0,80 por cada 1.000 imágenes")] + [td(num(confiados_por_mil(datos), 1), True) for _, datos in columnas_generalizacion],
+    ]
+    parecidas_cnn = [ventaja_parecidas(j[r]) for r in RESOLUCIONES]
+    parecidas_mlp = [ventaja_parecidas(m[r]) for r in RESOLUCIONES]
+    d.append(("Comparación · Generalización", "La CNN memoriza menos, pero no gana en todas las medidas", "dos mitad", "", f"""<div class="columna">
+        <div class="desliza">
+          {tabla([th("")] + [th(columna, True) for columna, _ in columnas_generalizacion], filas_generalizacion, "tabla densa")}
+        </div>
+        <p class="leyenda-figura">Corridas de GPU, criterio del proyecto. «—»: el resumen del MLP a 128 × 128 no guarda la brecha, la precision ni el recall; las salidas de su notebook son las de 64 × 64.</p>
+      </div>
+      <div class="columna">
+        {lista([
+            f"<strong>Memoriza menos:</strong> brecha de {num(c64['diagnostico']['brecha'], 2)} frente a {num(mlp['brecha_64'], 2)} del MLP a 64 × 64, y de {num(c128['diagnostico']['brecha'], 2)} a 128 × 128.",
+            f"<strong>Depende menos de las tomas casi idénticas</strong> en las tres resoluciones: las parecidas le suman de {puntos(min(parecidas_cnn))} a {puntos(max(parecidas_cnn))} puntos, frente a {puntos(min(parecidas_mlp))}–{puntos(max(parecidas_mlp))} al MLP.",
+            f"<strong>Alteradas:</strong> solo a 128 × 128 pierde menos ({puntos(caida_alteradas(j['128x128']))} frente a {puntos(caida_alteradas(m['128x128']))} puntos); a 32 y 64 px las dos pierden lo mismo.",
+            "<strong>Errores confiados:</strong> menos que el MLP solo a 128 × 128; a 32 y 64 px comete más, aunque casi todos nombran a un personaje presente.",
+        ])}
+      </div>"""))
+
+    d.append(("Comparación · Ventajas y desventajas", "La CNN gana en representación; el MLP, en costo", "dos mitad", "", f"""<div class="columna">
+        <p class="seccion">MLP · Ventajas</p>
+        {lista([
+            f"Entrena {veces(razon_entreno['128x128'])} más rápido y corre en CPU: su corrida completa a 128 × 128 tomó {duracion(mlp['json_cpu_128']['duracion_corrida_segundos'])}.",
+            f"Depende menos del número de imágenes por personaje: correlación de {num(mlp['correlacion_64'], 2)} con el F1.",
+        ])}
+        <p class="seccion">MLP · Desventajas</p>
+        {lista([
+            f"No aprende de la imagen: combina histogramas de color y confunde a la familia Simpson (F1 de {num(min(fam_mlp), 2)} a {num(max(fam_mlp), 2)}).",
+            f"Memoriza más (brecha de {num(mlp['brecha_64'], 2)}) y calcula sus descriptores en la CPU antes de usar la red.",
+        ])}
+      </div>
+      <div class="columna">
+        <p class="seccion">CNN · Ventajas</p>
+        {lista([
+            f"Aprende la forma: la familia sube a {num(min(fam_cnn), 2)}–{num(max(fam_cnn), 2)}, con {puntos(delta_acc['128x128'], 0)} puntos más de accuracy y menos de la mitad de los parámetros.",
+            f"Cataloga más rápido de extremo a extremo ({entero(costo_cnn['128x128'])} imágenes/s) y Grad-CAM explica cada decisión sobre la imagen.",
+        ])}
+        <p class="seccion">CNN · Desventajas</p>
+        {lista([
+            f"Entrenar cuesta {veces(razon_entreno['128x128'])} más y exige GPU; a 128 × 128, E2 y E5 no caben en los 8 GB.",
+            f"Depende más de las imágenes por personaje ({num(c128['correlacion'], 2)}) y sigue sobreajustando (brecha de {num(c128['diagnostico']['brecha'], 2)}).",
+        ])}
+      </div>"""))
+
     d.append(("Cierre · Limitaciones y mejoras", "Lo que queda es de datos y de costo", "dos mitad", "", f"""<div class="columna">
         <p class="seccion">Limitaciones</p>
         {lista([
             "<strong>Resolución:</strong> incluso a 128 × 128 un personaje en un plano general ocupa pocas decenas de píxeles, y doblar el lado cuesta cuatro veces más.",
             "<strong>Memoria:</strong> a 128 × 128 E2 y E5 no caben en los 8 GB de la GPU, así que no se pudo medir la configuración que ganó a 32 y 64.",
             "<strong>Entrenada desde cero</strong> con unas 35.000 imágenes; algunos personajes tienen alrededor de cien.",
+            f"<strong>Sobreajuste:</strong> brecha de {num(c128['diagnostico']['brecha'], 2)}; más Dropout en la cabeza (E6) no la corrige y baja el F1 {puntos(base128 - e128['E6']['f1'])} puntos.",
             "<strong>Nada la obliga a mirar al personaje:</strong> el fondo también puede separar clases. Grad-CAM lo muestra, pero no lo corrige.",
             "<strong>Una sola etiqueta por imagen:</strong> el criterio de acierto lo compensa en la evaluación, no en el modelo.",
         ])}
@@ -1238,6 +1393,7 @@ def construir_diapositivas(cnn, mlp, d128, n_train):
         <p class="seccion">Propuestas</p>
         {lista([
             "<strong>Transfer learning</strong> (MobileNet, ResNet, EfficientNet): filtros aprendidos sobre millones de imágenes.",
+            "<strong>Regularizar las convoluciones:</strong> L2 o <em>weight decay</em> (AdamW) y SpatialDropout2D tras cada bloque.",
             "<strong>Aumento de datos en línea:</strong> un espejo, un recorte o un cambio de color distinto en cada época.",
             "<strong>Medir lo que no cupo:</strong> acumular gradientes o entrenar en bfloat16 para probar E2 y E5 a 128 × 128.",
             "<strong>Recortar al personaje</strong> con un detector antes de clasificar, para sacar el fondo.",
@@ -1381,7 +1537,12 @@ def ensamblar(diapositivas, fecha):
     final = ('<p class="final">Cifras de <span class="dato">resultados/newDataset/</span> y de las salidas de '
              '<span class="dato">notebooks/newDataset/LosSimpsons_GPU_4060M.ipynb</span>: las figuras son de la '
              'corrida de GPU a 128 × 128, y las cifras de la corrida a 64 × 64 que no están en su JSON se leen del '
-             f'commit {REVISION_64}. Generada con <span class="dato">scripts/newDataset/generar_presentacion.py</span>.</p>')
+             f'commit {REVISION_64}. Las cuatro celdas que se agregaron al notebook después de esa corrida —criterio '
+             'estricto, mapas de cuatro imágenes, Grad-CAM por personaje y generalización— se ejecutaron con el modelo '
+             'final guardado y con algoritmos deterministas de cuDNN, que reproducen exactamente su evaluación; con '
+             '<span class="dato">cudnn.benchmark</span>, como en la corrida, la elección del algoritmo de convolución varía '
+             'entre ejecuciones y mueve unas pocas predicciones casi empatadas. Generada con '
+             '<span class="dato">scripts/newDataset/generar_presentacion.py</span>.</p>')
     return (cabecera + estilos + "\n\n" + barra + '\n\n<main class="mazo" id="mazo">\n\n'
             + "\n".join(secciones) + "\n</main>\n\n" + final + "\n\n" + cola)
 
@@ -1404,8 +1565,10 @@ def main():
            "32x32": {"json": jsons_cnn["32x32"]}}
     mlp = leer_mlp(jsons_mlp)
     comprobar_lecturas(cnn, mlp)
+    mlp["json_cpu_128"] = leer_json("PMC/resultados/newDataset/CPU/rendimiento_cpu_128x128.json")
     d128 = leer_detalle_128(nb128)
     comprobar_detalle(d128)
+    comprobar_comparacion(cnn, mlp, d128)
     n_train = imagenes_entrenamiento(nb128.texto("por_clase"), nb128.texto("confusiones"),
                                      nb64.texto("por_clase"), nb64.texto("confusiones"), *mlp["textos_n_train"])
     faltan = [p for p in PERSONAJES_F1 if p not in n_train]

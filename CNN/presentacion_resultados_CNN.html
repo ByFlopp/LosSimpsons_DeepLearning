@@ -471,7 +471,7 @@ body.presentando .mando:hover, body.presentando .mando:focus-within { opacity: 1
         <p class="leyenda-figura">Umbrales fijados antes de entrenar, los mismos del MLP. Referencias: azar 1,6 % y clase mayoritaria (Homero) 7,8 %.</p>
       </div>
     </div>
-    <footer class="pie"><span>¿Quién sale en la imagen? · CNN sobre Los Simpson</span><span>02 / 26</span></footer>
+    <footer class="pie"><span>¿Quién sale en la imagen? · CNN sobre Los Simpson</span><span>02 / 29</span></footer>
   </div>
 </section>
 
@@ -502,7 +502,7 @@ body.presentando .mando:hover, body.presentando .mando:focus-within { opacity: 1
         <ul class="puntos chicos"><li>El desbalance se compensa con <strong>pesos por clase</strong>: la raíz cuadrada de los balanceados, de 0,49 para Homero a 2,78 para Louie.</li><li>Validación y test conservan la distribución real del dataset. Son exactamente las mismas imágenes que vio el MLP.</li></ul>
       </div>
     </div>
-    <footer class="pie"><span>¿Quién sale en la imagen? · CNN sobre Los Simpson</span><span>03 / 26</span></footer>
+    <footer class="pie"><span>¿Quién sale en la imagen? · CNN sobre Los Simpson</span><span>03 / 29</span></footer>
   </div>
 </section>
 
@@ -524,7 +524,7 @@ body.presentando .mando:hover, body.presentando .mando:focus-within { opacity: 1
         <ul class="puntos chicos"><li><strong>Más cerca del negocio:</strong> un archivo audiovisual también tiene a los secundarios, no solo a los 25 personajes más conocidos.</li><li><strong>El doble de datos:</strong> una CNN aprende sus filtros de los píxeles y necesita más ejemplos que un MLP sobre descriptores.</li><li><strong>Partición bajo control:</strong> cada alterada en el conjunto de su original y las casi idénticas filtradas, para no acertar en test por haber visto la misma imagen.</li><li><strong>Comparación justa:</strong> las dos redes ven las mismas imágenes; la diferencia la pone el modelo.</li><li><strong>El costo:</strong> un desbalance de 33:1 y escenas con varios personajes, que se tratan con pesos por clase y con el criterio de acierto por escena.</li></ul>
       </div>
     </div>
-    <footer class="pie"><span>¿Quién sale en la imagen? · CNN sobre Los Simpson</span><span>04 / 26</span></footer>
+    <footer class="pie"><span>¿Quién sale en la imagen? · CNN sobre Los Simpson</span><span>04 / 29</span></footer>
   </div>
 </section>
 
@@ -546,7 +546,7 @@ body.presentando .mando:hover, body.presentando .mando:focus-within { opacity: 1
         <p class="leyenda-figura">Los 8 filtros más activos de cada bloque para una imagen de test, predicha con 99,7 % de confianza.</p>
       </div>
     </div>
-    <footer class="pie"><span>¿Quién sale en la imagen? · CNN sobre Los Simpson</span><span>05 / 26</span></footer>
+    <footer class="pie"><span>¿Quién sale en la imagen? · CNN sobre Los Simpson</span><span>05 / 29</span></footer>
   </div>
 </section>
 
@@ -568,7 +568,7 @@ body.presentando .mando:hover, body.presentando .mando:focus-within { opacity: 1
         <p class="leyenda-figura">Homero, Marge, Bart y Lisa, acertados con 99,2 a 99,6 % de confianza. Cada columna es el mismo filtro con la misma escala.</p>
       </div>
     </div>
-    <footer class="pie"><span>¿Quién sale en la imagen? · CNN sobre Los Simpson</span><span>06 / 26</span></footer>
+    <footer class="pie"><span>¿Quién sale en la imagen? · CNN sobre Los Simpson</span><span>06 / 29</span></footer>
   </div>
 </section>
 
@@ -606,7 +606,7 @@ body.presentando .mando:hover, body.presentando .mando:focus-within { opacity: 1
         </div>
       </div>
     </div>
-    <footer class="pie"><span>¿Quién sale en la imagen? · CNN sobre Los Simpson</span><span>07 / 26</span></footer>
+    <footer class="pie"><span>¿Quién sale en la imagen? · CNN sobre Los Simpson</span><span>07 / 29</span></footer>
   </div>
 </section>
 
@@ -627,7 +627,7 @@ body.presentando .mando:hover, body.presentando .mando:focus-within { opacity: 1
         <p class="leyenda-figura">Tabla completa en el anexo A.</p>
       </div>
     </div>
-    <footer class="pie"><span>¿Quién sale en la imagen? · CNN sobre Los Simpson</span><span>08 / 26</span></footer>
+    <footer class="pie"><span>¿Quién sale en la imagen? · CNN sobre Los Simpson</span><span>08 / 29</span></footer>
   </div>
 </section>
 
@@ -645,7 +645,7 @@ body.presentando .mando:hover, body.presentando .mando:focus-within { opacity: 1
         <p class="leyenda-figura">Curvas del modelo base, corrida de GPU a 128 × 128.</p>
       </div>
     </div>
-    <footer class="pie"><span>¿Quién sale en la imagen? · CNN sobre Los Simpson</span><span>09 / 26</span></footer>
+    <footer class="pie"><span>¿Quién sale en la imagen? · CNN sobre Los Simpson</span><span>09 / 29</span></footer>
   </div>
 </section>
 
@@ -669,12 +669,34 @@ body.presentando .mando:hover, body.presentando .mando:focus-within { opacity: 1
       </div>
       <p class="leyenda-figura">Con el criterio estricto la accuracy va de 0,732 a 0,797: las tres corridas superan el umbral también con esa vara.</p>
     </div>
-    <footer class="pie"><span>¿Quién sale en la imagen? · CNN sobre Los Simpson</span><span>10 / 26</span></footer>
+    <footer class="pie"><span>¿Quién sale en la imagen? · CNN sobre Los Simpson</span><span>10 / 29</span></footer>
   </div>
 </section>
 
 <!-- 11 -->
 <section class="diapo" id="d11" aria-label="Diapositiva 11">
+  <div class="lienzo">
+    <header class="cabeza">
+      <p class="seccion">Evaluación · Criterio estricto</p>
+      <h2>Solo la carpeta como respuesta: bajan las cifras, no las conclusiones</h2>
+    </header>
+    <div class="cuerpo dos mitad">
+      <div class="columna">
+        <div class="desliza">
+          <table class="tabla"><thead><tr><th>Métrica en test</th><th class="num">Criterio del proyecto</th><th class="num">Estricto</th><th class="num">Puntos</th></tr></thead><tbody><tr><td>Accuracy</td><td class="num">0,847</td><td class="num">0,797</td><td class="num">5,0</td></tr><tr><td>Precision macro</td><td class="num">0,838</td><td class="num">0,765</td><td class="num">7,3</td></tr><tr><td>Recall macro</td><td class="num">0,795</td><td class="num">0,727</td><td class="num">6,8</td></tr><tr><td>F1 macro</td><td class="num">0,810</td><td class="num">0,738</td><td class="num">7,2</td></tr><tr><td>F1 ponderado</td><td class="num">0,846</td><td class="num">0,796</td><td class="num">5,0</td></tr><tr><td>Top-3 accuracy</td><td class="num">0,937</td><td class="num">0,924</td><td class="num">1,3</td></tr></tbody></table>
+        </div>
+        <p class="leyenda-figura">Estricto: la única respuesta correcta es el personaje de la carpeta; nombrar a otro personaje presente cuenta como error. Corrida de GPU a 128 × 128.</p>
+      </div>
+      <div class="columna">
+        <ul class="puntos chicos"><li>Accuracy, precision, recall y F1 bajan de 5 a 7 puntos; el top-3, 1,3. <strong>Los cinco KPIs se siguen cumpliendo.</strong></li><li>Pierden más los que casi siempre salen acompañados: Louie (0,92 → 0,63), Maude Flanders (0,81 → 0,51), Lou (0,85 → 0,58) de F1.</li><li>55 de 64 personajes conservan un F1 de 0,60 o más; bajo 0,30 queda solo Helen Lovejoy.</li><li>La familia Simpson sigue arriba: F1 estricto de 0,79 a 0,84.</li></ul>
+      </div>
+    </div>
+    <footer class="pie"><span>¿Quién sale en la imagen? · CNN sobre Los Simpson</span><span>11 / 29</span></footer>
+  </div>
+</section>
+
+<!-- 12 -->
+<section class="diapo" id="d12" aria-label="Diapositiva 12">
   <div class="lienzo">
     <header class="cabeza">
       <p class="seccion">Evaluación · Tres corridas</p>
@@ -689,12 +711,12 @@ body.presentando .mando:hover, body.presentando .mando:focus-within { opacity: 1
         <ul class="puntos chicos"><li>De 32 a 64 px la CNN gana <strong>4,5 puntos</strong> de accuracy; de 64 a 128, 1,7 más, con el triple de duración.</li><li>El MLP se mueve menos: de 0,541 a 0,586, y con R2 la resolución suma solo 2 a 3 puntos. Sus histogramas resumen el color, no la forma.</li><li>A cada resolución gana una configuración distinta: E2 a 32 y 64 px, la base a 128 (E2 no cabe en la GPU).</li><li>A la misma resolución, la CNN supera al MLP por <mark>24,5 a 28,0 puntos</mark>. La estricta queda unos 5 puntos bajo la oficial en las tres.</li></ul>
       </div>
     </div>
-    <footer class="pie"><span>¿Quién sale en la imagen? · CNN sobre Los Simpson</span><span>11 / 26</span></footer>
+    <footer class="pie"><span>¿Quién sale en la imagen? · CNN sobre Los Simpson</span><span>12 / 29</span></footer>
   </div>
 </section>
 
-<!-- 12 -->
-<section class="diapo" id="d12" aria-label="Diapositiva 12">
+<!-- 13 -->
+<section class="diapo" id="d13" aria-label="Diapositiva 13">
   <div class="lienzo">
     <header class="cabeza">
       <p class="seccion">Evaluación · Por personaje</p>
@@ -709,12 +731,12 @@ body.presentando .mando:hover, body.presentando .mando:focus-within { opacity: 1
         <ul class="puntos chicos"><li><strong>62 de 64</strong> personajes con F1 de 0,60 o más y ninguno bajo 0,30; el MLP tenía cuatro bajo 0,30.</li><li>Homero, Marge, Bart y Lisa pasan de 0,35–0,67 en el MLP a 0,81–0,89: <mark>lo que separa a Bart de Lisa es el peinado</mark>, no el color.</li><li>Ahora sí pesa el tamaño: la correlación entre imágenes de entrenamiento y F1 es 0,39 (0,19 en el MLP).</li><li>Abajo quedan personajes con alrededor de cien imágenes de entrenamiento: Disco Stu, Maggie, Rod Flanders y Helen Lovejoy.</li></ul>
       </div>
     </div>
-    <footer class="pie"><span>¿Quién sale en la imagen? · CNN sobre Los Simpson</span><span>12 / 26</span></footer>
+    <footer class="pie"><span>¿Quién sale en la imagen? · CNN sobre Los Simpson</span><span>13 / 29</span></footer>
   </div>
 </section>
 
-<!-- 13 -->
-<section class="diapo" id="d13" aria-label="Diapositiva 13">
+<!-- 14 -->
+<section class="diapo" id="d14" aria-label="Diapositiva 14">
   <div class="lienzo">
     <header class="cabeza">
       <p class="seccion">Análisis de errores</p>
@@ -731,12 +753,12 @@ body.presentando .mando:hover, body.presentando .mando:focus-within { opacity: 1
         <ul class="puntos chicos"><li><strong>Gemelas y dibujos casi iguales:</strong> Patty y Selma, Carl y Lenny, el abuelo y Homero.</li><li><strong>Escenas compartidas:</strong> Helen sale casi siempre con el reverendo Lovejoy. Cuando la escena lo confirma, la predicción cuenta como acierto; las de la tabla son las que la escena no detectó.</li><li><strong>La familia ya no:</strong> Lisa y Bart se confunden un 2,9 a 4,0 %, frente al 16 a 19 % del MLP.</li><li>Homero sigue siendo el destino más frecuente de los errores: 42 imágenes entre los 15 pares más frecuentes.</li></ul>
       </div>
     </div>
-    <footer class="pie"><span>¿Quién sale en la imagen? · CNN sobre Los Simpson</span><span>13 / 26</span></footer>
+    <footer class="pie"><span>¿Quién sale en la imagen? · CNN sobre Los Simpson</span><span>14 / 29</span></footer>
   </div>
 </section>
 
-<!-- 14 -->
-<section class="diapo" id="d14" aria-label="Diapositiva 14">
+<!-- 15 -->
+<section class="diapo" id="d15" aria-label="Diapositiva 15">
   <div class="lienzo">
     <header class="cabeza">
       <p class="seccion">Análisis · Grad-CAM</p>
@@ -753,12 +775,12 @@ body.presentando .mando:hover, body.presentando .mando:focus-within { opacity: 1
         <p class="leyenda-figura">Tres aciertos y tres errores con la mayor confianza, corrida de GPU a 128 × 128.</p>
       </div>
     </div>
-    <footer class="pie"><span>¿Quién sale en la imagen? · CNN sobre Los Simpson</span><span>14 / 26</span></footer>
+    <footer class="pie"><span>¿Quién sale en la imagen? · CNN sobre Los Simpson</span><span>15 / 29</span></footer>
   </div>
 </section>
 
-<!-- 15 -->
-<section class="diapo" id="d15" aria-label="Diapositiva 15">
+<!-- 16 -->
+<section class="diapo" id="d16" aria-label="Diapositiva 16">
   <div class="lienzo">
     <header class="cabeza">
       <p class="seccion">Análisis · Grad-CAM por personaje</p>
@@ -775,12 +797,12 @@ body.presentando .mando:hover, body.presentando .mando:focus-within { opacity: 1
         <p class="leyenda-figura">Grad-CAM de la clase de la carpeta sobre su imagen original de test más probable.</p>
       </div>
     </div>
-    <footer class="pie"><span>¿Quién sale en la imagen? · CNN sobre Los Simpson</span><span>15 / 26</span></footer>
+    <footer class="pie"><span>¿Quién sale en la imagen? · CNN sobre Los Simpson</span><span>16 / 29</span></footer>
   </div>
 </section>
 
-<!-- 16 -->
-<section class="diapo" id="d16" aria-label="Diapositiva 16">
+<!-- 17 -->
+<section class="diapo" id="d17" aria-label="Diapositiva 17">
   <div class="lienzo">
     <header class="cabeza">
       <p class="seccion">Análisis de errores · Aciertos</p>
@@ -793,12 +815,12 @@ body.presentando .mando:hover, body.presentando .mando:focus-within { opacity: 1
         <p class="leyenda-figura">Un acierto por personaje, corrida de GPU a 128 × 128.</p>
       </div>
     </div>
-    <footer class="pie"><span>¿Quién sale en la imagen? · CNN sobre Los Simpson</span><span>16 / 26</span></footer>
+    <footer class="pie"><span>¿Quién sale en la imagen? · CNN sobre Los Simpson</span><span>17 / 29</span></footer>
   </div>
 </section>
 
-<!-- 17 -->
-<section class="diapo" id="d17" aria-label="Diapositiva 17">
+<!-- 18 -->
+<section class="diapo" id="d18" aria-label="Diapositiva 18">
   <div class="lienzo">
     <header class="cabeza">
       <p class="seccion">Análisis de errores · Errores confiados</p>
@@ -811,12 +833,12 @@ body.presentando .mando:hover, body.presentando .mando:focus-within { opacity: 1
         <p class="leyenda-figura">Corrida de GPU a 128 × 128. La accuracy oficial es una cota inferior: ni la escena ni las gemelas detectaron a esos acompañantes.</p>
       </div>
     </div>
-    <footer class="pie"><span>¿Quién sale en la imagen? · CNN sobre Los Simpson</span><span>17 / 26</span></footer>
+    <footer class="pie"><span>¿Quién sale en la imagen? · CNN sobre Los Simpson</span><span>18 / 29</span></footer>
   </div>
 </section>
 
-<!-- 18 -->
-<section class="diapo" id="d18" aria-label="Diapositiva 18">
+<!-- 19 -->
+<section class="diapo" id="d19" aria-label="Diapositiva 19">
   <div class="lienzo">
     <header class="cabeza">
       <p class="seccion">Análisis de errores · Escenas</p>
@@ -832,12 +854,12 @@ body.presentando .mando:hover, body.presentando .mando:focus-within { opacity: 1
         <ul class="puntos chicos"><li>251 aciertos por escena: suben la accuracy 5,0 puntos.</li><li>Los pares son los que la serie pone juntos: Wiggum y Lou, Patty y Selma, Smithers y Burns, Skinner y Chalmers.</li></ul>
       </div>
     </div>
-    <footer class="pie"><span>¿Quién sale en la imagen? · CNN sobre Los Simpson</span><span>18 / 26</span></footer>
+    <footer class="pie"><span>¿Quién sale en la imagen? · CNN sobre Los Simpson</span><span>19 / 29</span></footer>
   </div>
 </section>
 
-<!-- 19 -->
-<section class="diapo" id="d19" aria-label="Diapositiva 19">
+<!-- 20 -->
+<section class="diapo" id="d20" aria-label="Diapositiva 20">
   <div class="lienzo">
     <header class="cabeza">
       <p class="seccion">Análisis de errores · Tipo de imagen</p>
@@ -858,12 +880,12 @@ body.presentando .mando:hover, body.presentando .mando:focus-within { opacity: 1
         <ul class="puntos chicos"><li>Las alteradas —giro, cambio de color y filtro de textura— cuestan menos de un punto a 128 × 128: el cambio de color desordena los histogramas del MLP, pero no la forma.</li><li>Las parecidas se aciertan 7 puntos más que las originales: el filtro reduce la ventaja de las tomas casi idénticas y la CNN depende menos de ella.</li><li>Las originales son la medida más limpia: 0,836 a 128 × 128, 1,1 puntos bajo la global.</li><li>La CNN gana en los tres tipos y en las tres resoluciones: el MLP no pasa de 0,71 ni en las parecidas.</li></ul>
       </div>
     </div>
-    <footer class="pie"><span>¿Quién sale en la imagen? · CNN sobre Los Simpson</span><span>19 / 26</span></footer>
+    <footer class="pie"><span>¿Quién sale en la imagen? · CNN sobre Los Simpson</span><span>20 / 29</span></footer>
   </div>
 </section>
 
-<!-- 20 -->
-<section class="diapo" id="d20" aria-label="Diapositiva 20">
+<!-- 21 -->
+<section class="diapo" id="d21" aria-label="Diapositiva 21">
   <div class="lienzo">
     <header class="cabeza">
       <p class="seccion">Costo por resolución</p>
@@ -878,12 +900,12 @@ body.presentando .mando:hover, body.presentando .mando:focus-within { opacity: 1
         <ul class="puntos chicos"><li>Entrenar es entre el 91 % y el 94 % de cada corrida. La CNN no calcula descriptores: cargar las imágenes toma de 2,6 a 10,5 minutos.</li><li>La GPU trabaja el 36,5 % del tiempo a 32 × 32, el 90,7 % a 64 y el <strong>98,8 %</strong> a 128, a 76 W. El MLP, entre el 22,5 y el 33,7 %.</li><li>Batch: a 32 × 32, pasar de 128 a 1.024 multiplica el rendimiento por 2,1; a 64 × 64 batch 512 suma un 7 %; a 128 × 128 solo cabe batch 128.</li><li>De extremo a extremo la CNN clasifica 5.326 imágenes por segundo a 64 × 64 y 3.085 a 128 × 128, sobre el umbral de 1.000.</li></ul>
       </div>
     </div>
-    <footer class="pie"><span>¿Quién sale en la imagen? · CNN sobre Los Simpson</span><span>20 / 26</span></footer>
+    <footer class="pie"><span>¿Quién sale en la imagen? · CNN sobre Los Simpson</span><span>21 / 29</span></footer>
   </div>
 </section>
 
-<!-- 21 -->
-<section class="diapo" id="d21" aria-label="Diapositiva 21">
+<!-- 22 -->
+<section class="diapo" id="d22" aria-label="Diapositiva 22">
   <div class="lienzo">
     <header class="cabeza">
       <p class="seccion">Comparación</p>
@@ -897,12 +919,59 @@ body.presentando .mando:hover, body.presentando .mando:focus-within { opacity: 1
         <ul class="puntos chicos"><li>A la misma resolución, la CNN gana entre <strong>24,5 y 28,0 puntos</strong> de accuracy y entre 22,7 y 26,6 de F1 macro.</li><li>Entrenar cuesta de 3,4× a 18,3× el tiempo del MLP; la corrida completa, de 3,0× a 10,9×.</li><li>Pero clasifica más rápido de extremo a extremo: el MLP debe calcular sus descriptores en la CPU antes de usar la red.</li><li>Los dos cumplen los cinco KPIs en todas sus corridas; la CNN, con margen en todos.</li></ul>
       </div>
     </div>
-    <footer class="pie"><span>¿Quién sale en la imagen? · CNN sobre Los Simpson</span><span>21 / 26</span></footer>
+    <footer class="pie"><span>¿Quién sale en la imagen? · CNN sobre Los Simpson</span><span>22 / 29</span></footer>
   </div>
 </section>
 
-<!-- 22 -->
-<section class="diapo" id="d22" aria-label="Diapositiva 22">
+<!-- 23 -->
+<section class="diapo" id="d23" aria-label="Diapositiva 23">
+  <div class="lienzo">
+    <header class="cabeza">
+      <p class="seccion">Comparación · Generalización</p>
+      <h2>La CNN memoriza menos, pero no gana en todas las medidas</h2>
+    </header>
+    <div class="cuerpo dos mitad">
+      <div class="columna">
+        <div class="desliza">
+          <table class="tabla densa"><thead><tr><th></th><th class="num">MLP · 64</th><th class="num">CNN · 64</th><th class="num">MLP · 128</th><th class="num">CNN · 128</th></tr></thead><tbody><tr><td>Brecha entrenamiento − validación del modelo base</td><td class="num">0,465</td><td class="num">0,211</td><td class="num">—</td><td class="num">0,162</td></tr><tr><td>Precision macro</td><td class="num">0,543</td><td class="num">0,817</td><td class="num">—</td><td class="num">0,838</td></tr><tr><td>Recall macro</td><td class="num">0,516</td><td class="num">0,774</td><td class="num">—</td><td class="num">0,795</td></tr><tr><td>Caída en las alteradas (puntos)</td><td class="num">3,4</td><td class="num">3,4</td><td class="num">3,3</td><td class="num">0,7</td></tr><tr><td>Ventaja de las parecidas (puntos)</td><td class="num">9,3</td><td class="num">6,0</td><td class="num">14,2</td><td class="num">7,1</td></tr><tr><td>Errores con confianza > 0,80 por cada 1.000 imágenes</td><td class="num">6,9</td><td class="num">12,6</td><td class="num">17,4</td><td class="num">8,1</td></tr></tbody></table>
+        </div>
+        <p class="leyenda-figura">Corridas de GPU, criterio del proyecto. «—»: el resumen del MLP a 128 × 128 no guarda la brecha, la precision ni el recall; las salidas de su notebook son las de 64 × 64.</p>
+      </div>
+      <div class="columna">
+        <ul class="puntos chicos"><li><strong>Memoriza menos:</strong> brecha de 0,21 frente a 0,47 del MLP a 64 × 64, y de 0,16 a 128 × 128.</li><li><strong>Depende menos de las tomas casi idénticas</strong> en las tres resoluciones: las parecidas le suman de 6,0 a 8,7 puntos, frente a 9,3–14,2 al MLP.</li><li><strong>Alteradas:</strong> solo a 128 × 128 pierde menos (0,7 frente a 3,3 puntos); a 32 y 64 px las dos pierden lo mismo.</li><li><strong>Errores confiados:</strong> menos que el MLP solo a 128 × 128; a 32 y 64 px comete más, aunque casi todos nombran a un personaje presente.</li></ul>
+      </div>
+    </div>
+    <footer class="pie"><span>¿Quién sale en la imagen? · CNN sobre Los Simpson</span><span>23 / 29</span></footer>
+  </div>
+</section>
+
+<!-- 24 -->
+<section class="diapo" id="d24" aria-label="Diapositiva 24">
+  <div class="lienzo">
+    <header class="cabeza">
+      <p class="seccion">Comparación · Ventajas y desventajas</p>
+      <h2>La CNN gana en representación; el MLP, en costo</h2>
+    </header>
+    <div class="cuerpo dos mitad">
+      <div class="columna">
+        <p class="seccion">MLP · Ventajas</p>
+        <ul class="puntos chicos"><li>Entrena 18,3× más rápido y corre en CPU: su corrida completa a 128 × 128 tomó 52 min 44 s.</li><li>Depende menos del número de imágenes por personaje: correlación de 0,19 con el F1.</li></ul>
+        <p class="seccion">MLP · Desventajas</p>
+        <ul class="puntos chicos"><li>No aprende de la imagen: combina histogramas de color y confunde a la familia Simpson (F1 de 0,35 a 0,67).</li><li>Memoriza más (brecha de 0,47) y calcula sus descriptores en la CPU antes de usar la red.</li></ul>
+      </div>
+      <div class="columna">
+        <p class="seccion">CNN · Ventajas</p>
+        <ul class="puntos chicos"><li>Aprende la forma: la familia sube a 0,81–0,89, con 26 puntos más de accuracy y menos de la mitad de los parámetros.</li><li>Cataloga más rápido de extremo a extremo (3.085 imágenes/s) y Grad-CAM explica cada decisión sobre la imagen.</li></ul>
+        <p class="seccion">CNN · Desventajas</p>
+        <ul class="puntos chicos"><li>Entrenar cuesta 18,3× más y exige GPU; a 128 × 128, E2 y E5 no caben en los 8 GB.</li><li>Depende más de las imágenes por personaje (0,39) y sigue sobreajustando (brecha de 0,16).</li></ul>
+      </div>
+    </div>
+    <footer class="pie"><span>¿Quién sale en la imagen? · CNN sobre Los Simpson</span><span>24 / 29</span></footer>
+  </div>
+</section>
+
+<!-- 25 -->
+<section class="diapo" id="d25" aria-label="Diapositiva 25">
   <div class="lienzo">
     <header class="cabeza">
       <p class="seccion">Cierre · Limitaciones y mejoras</p>
@@ -911,19 +980,19 @@ body.presentando .mando:hover, body.presentando .mando:focus-within { opacity: 1
     <div class="cuerpo dos mitad">
       <div class="columna">
         <p class="seccion">Limitaciones</p>
-        <ul class="puntos chicos"><li><strong>Resolución:</strong> incluso a 128 × 128 un personaje en un plano general ocupa pocas decenas de píxeles, y doblar el lado cuesta cuatro veces más.</li><li><strong>Memoria:</strong> a 128 × 128 E2 y E5 no caben en los 8 GB de la GPU, así que no se pudo medir la configuración que ganó a 32 y 64.</li><li><strong>Entrenada desde cero</strong> con unas 35.000 imágenes; algunos personajes tienen alrededor de cien.</li><li><strong>Nada la obliga a mirar al personaje:</strong> el fondo también puede separar clases. Grad-CAM lo muestra, pero no lo corrige.</li><li><strong>Una sola etiqueta por imagen:</strong> el criterio de acierto lo compensa en la evaluación, no en el modelo.</li></ul>
+        <ul class="puntos chicos"><li><strong>Resolución:</strong> incluso a 128 × 128 un personaje en un plano general ocupa pocas decenas de píxeles, y doblar el lado cuesta cuatro veces más.</li><li><strong>Memoria:</strong> a 128 × 128 E2 y E5 no caben en los 8 GB de la GPU, así que no se pudo medir la configuración que ganó a 32 y 64.</li><li><strong>Entrenada desde cero</strong> con unas 35.000 imágenes; algunos personajes tienen alrededor de cien.</li><li><strong>Sobreajuste:</strong> brecha de 0,16; más Dropout en la cabeza (E6) no la corrige y baja el F1 2,9 puntos.</li><li><strong>Nada la obliga a mirar al personaje:</strong> el fondo también puede separar clases. Grad-CAM lo muestra, pero no lo corrige.</li><li><strong>Una sola etiqueta por imagen:</strong> el criterio de acierto lo compensa en la evaluación, no en el modelo.</li></ul>
       </div>
       <div class="columna">
         <p class="seccion">Propuestas</p>
-        <ul class="puntos chicos"><li><strong>Transfer learning</strong> (MobileNet, ResNet, EfficientNet): filtros aprendidos sobre millones de imágenes.</li><li><strong>Aumento de datos en línea:</strong> un espejo, un recorte o un cambio de color distinto en cada época.</li><li><strong>Medir lo que no cupo:</strong> acumular gradientes o entrenar en bfloat16 para probar E2 y E5 a 128 × 128.</li><li><strong>Recortar al personaje</strong> con un detector antes de clasificar, para sacar el fondo.</li><li><strong>Salida multietiqueta</strong> para nombrar a todos los personajes de la escena.</li><li><strong>Varias semillas o validación cruzada</strong> para decidir entre configuraciones a menos de un punto.</li></ul>
+        <ul class="puntos chicos"><li><strong>Transfer learning</strong> (MobileNet, ResNet, EfficientNet): filtros aprendidos sobre millones de imágenes.</li><li><strong>Regularizar las convoluciones:</strong> L2 o <em>weight decay</em> (AdamW) y SpatialDropout2D tras cada bloque.</li><li><strong>Aumento de datos en línea:</strong> un espejo, un recorte o un cambio de color distinto en cada época.</li><li><strong>Medir lo que no cupo:</strong> acumular gradientes o entrenar en bfloat16 para probar E2 y E5 a 128 × 128.</li><li><strong>Recortar al personaje</strong> con un detector antes de clasificar, para sacar el fondo.</li><li><strong>Salida multietiqueta</strong> para nombrar a todos los personajes de la escena.</li><li><strong>Varias semillas o validación cruzada</strong> para decidir entre configuraciones a menos de un punto.</li></ul>
       </div>
     </div>
-    <footer class="pie"><span>¿Quién sale en la imagen? · CNN sobre Los Simpson</span><span>22 / 26</span></footer>
+    <footer class="pie"><span>¿Quién sale en la imagen? · CNN sobre Los Simpson</span><span>25 / 29</span></footer>
   </div>
 </section>
 
-<!-- 23 -->
-<section class="diapo" id="d23" aria-label="Diapositiva 23">
+<!-- 26 -->
+<section class="diapo" id="d26" aria-label="Diapositiva 26">
   <div class="lienzo">
     <header class="cabeza">
       <p class="seccion">Cierre · Impacto ético</p>
@@ -943,12 +1012,12 @@ body.presentando .mando:hover, body.presentando .mando:focus-within { opacity: 1
         <ul class="puntos chicos"><li>Con fotos de personas reales sería reconocimiento facial, con problemas de privacidad y consentimiento que este proyecto no aborda: el modelo no debe usarse así.</li></ul>
       </div>
     </div>
-    <footer class="pie"><span>¿Quién sale en la imagen? · CNN sobre Los Simpson</span><span>23 / 26</span></footer>
+    <footer class="pie"><span>¿Quién sale en la imagen? · CNN sobre Los Simpson</span><span>26 / 29</span></footer>
   </div>
 </section>
 
-<!-- 24 -->
-<section class="diapo" id="d24" aria-label="Diapositiva 24">
+<!-- 27 -->
+<section class="diapo" id="d27" aria-label="Diapositiva 27">
   <div class="lienzo">
     <header class="cabeza">
       <p class="seccion">Cierre · Conclusiones</p>
@@ -958,12 +1027,12 @@ body.presentando .mando:hover, body.presentando .mando:focus-within { opacity: 1
       <ul class="puntos"><li><strong>La forma es lo que le faltaba al MLP.</strong> Con el mismo proceso, a 128 × 128 la accuracy pasa de 0,586 a 0,847 y el F1 macro de 0,559 a 0,810.</li><li><strong>La representación decide más que el ajuste fino.</strong> Ninguna variante de hiperparámetros, en el MLP o en la CNN, ganó más de 3 puntos.</li><li><strong>Más resolución ayuda, cada vez menos.</strong> +4,5 puntos de 32 a 64 px y +1,7 de 64 a 128, con el triple de tiempo.</li></ul>
       <ul class="puntos"><li><strong>El color pesa menos que en el MLP.</strong> Sin él la CNN pierde 11 puntos de F1 (20 a 64 × 64), y aun así supera al color solo del MLP.</li><li><strong>La accuracy es una cota inferior.</strong> Casi todos los errores confiados nombran a un personaje presente en la imagen.</li><li><strong>El costo se mueve al entrenamiento.</strong> 18 veces el del MLP a 128 × 128, pero de extremo a extremo la CNN cataloga más rápido.</li></ul>
     </div>
-    <footer class="pie"><span>¿Quién sale en la imagen? · CNN sobre Los Simpson</span><span>24 / 26</span></footer>
+    <footer class="pie"><span>¿Quién sale en la imagen? · CNN sobre Los Simpson</span><span>27 / 29</span></footer>
   </div>
 </section>
 
-<!-- 25 -->
-<section class="diapo" id="d25" aria-label="Diapositiva 25">
+<!-- 28 -->
+<section class="diapo" id="d28" aria-label="Diapositiva 28">
   <div class="lienzo">
     <header class="cabeza">
       <p class="seccion">Anexo A · Experimentos</p>
@@ -972,12 +1041,12 @@ body.presentando .mando:hover, body.presentando .mando:focus-within { opacity: 1
     <div class="cuerpo desliza">
       <table class="tabla densa"><thead><tr><th></th><th>Configuración</th><th class="num">F1 macro · 128</th><th class="num">Accuracy · 128</th><th class="num">F1 macro · 64</th><th class="num">Accuracy · 64</th><th class="num">Parámetros · 128</th><th class="num">s/época · 128</th></tr></thead><tbody><tr class="destacada"><td class="codigo">Base</td><td>RGB, 4 bloques</td><td class="num">0,734</td><td class="num">0,797</td><td class="num">0,692</td><td class="num">0,764</td><td class="num">473.120</td><td class="num">39,9</td></tr><tr><td class="codigo">R1</td><td>Escala de grises</td><td class="num">0,620</td><td class="num">0,702</td><td class="num">0,494</td><td class="num">0,600</td><td class="num">472.547</td><td class="num">40,2</td></tr><tr><td class="codigo">E1</td><td>3 bloques (32, 64, 128)</td><td class="num">0,647</td><td class="num">0,713</td><td class="num">0,664</td><td class="num">0,730</td><td class="num">144.416</td><td class="num">36,4</td></tr><tr><td class="codigo">E2</td><td>2 conv. por bloque</td><td class="num">no cabe</td><td class="num">no cabe</td><td class="num">0,717</td><td class="num">0,786</td><td class="num">—</td><td class="num">—</td></tr><tr><td class="codigo">E3</td><td>Activación tanh</td><td class="num">0,524</td><td class="num">0,605</td><td class="num">0,547</td><td class="num">0,645</td><td class="num">473.120</td><td class="num">41,1</td></tr><tr><td class="codigo">E4</td><td>Learning rate 1e-4</td><td class="num">0,493</td><td class="num">0,585</td><td class="num">0,513</td><td class="num">0,604</td><td class="num">473.120</td><td class="num">39,9</td></tr><tr><td class="codigo">E5</td><td>Batch 512</td><td class="num">no cabe</td><td class="num">no cabe</td><td class="num">0,662</td><td class="num">0,734</td><td class="num">—</td><td class="num">—</td></tr><tr><td class="codigo">E6</td><td>Dropout 0,5</td><td class="num">0,705</td><td class="num">0,764</td><td class="num">0,670</td><td class="num">0,745</td><td class="num">473.120</td><td class="num">39,9</td></tr><tr><td class="codigo">E7</td><td>Cabeza con aplanado</td><td class="num">0,640</td><td class="num">0,729</td><td class="num">0,641</td><td class="num">0,728</td><td class="num">4.601.888</td><td class="num">40,1</td></tr><tr><td class="codigo">P1</td><td>Sin pesos por clase</td><td class="num">0,718</td><td class="num">0,789</td><td class="num">0,669</td><td class="num">0,756</td><td class="num">473.120</td><td class="num">39,9</td></tr><tr><td class="codigo">P2</td><td>Pesos balanceados</td><td class="num">0,687</td><td class="num">0,726</td><td class="num">0,640</td><td class="num">0,704</td><td class="num">473.120</td><td class="num">39,9</td></tr><tr><td class="codigo">S1</td><td>Sin suavizado</td><td class="num">0,726</td><td class="num">0,782</td><td class="num">0,684</td><td class="num">0,754</td><td class="num">473.120</td><td class="num">39,9</td></tr><tr><td class="codigo">S2</td><td>Sin etiquetas de escena</td><td class="num">0,728</td><td class="num">0,783</td><td class="num">0,683</td><td class="num">0,758</td><td class="num">473.120</td><td class="num">39,9</td></tr><tr><td class="codigo">A1</td><td>Sin alteradas</td><td class="num">0,720</td><td class="num">0,776</td><td class="num">0,681</td><td class="num">0,752</td><td class="num">473.120</td><td class="num">32,7</td></tr><tr><td class="codigo">C1</td><td>Combinación de mejoras</td><td class="num">no se entrenó</td><td class="num">no se entrenó</td><td class="num">no se entrenó</td><td class="num">no se entrenó</td><td class="num">—</td><td class="num">—</td></tr></tbody></table>
     </div>
-    <footer class="pie"><span>¿Quién sale en la imagen? · CNN sobre Los Simpson</span><span>25 / 26</span></footer>
+    <footer class="pie"><span>¿Quién sale en la imagen? · CNN sobre Los Simpson</span><span>28 / 29</span></footer>
   </div>
 </section>
 
-<!-- 26 -->
-<section class="diapo" id="d26" aria-label="Diapositiva 26">
+<!-- 29 -->
+<section class="diapo" id="d29" aria-label="Diapositiva 29">
   <div class="lienzo">
     <header class="cabeza">
       <p class="seccion">Anexo B · Tres corridas</p>
@@ -986,17 +1055,17 @@ body.presentando .mando:hover, body.presentando .mando:focus-within { opacity: 1
     <div class="cuerpo desliza">
       <table class="tabla densa"><thead><tr><th></th><th class="num">GPU 32 × 32</th><th class="num">GPU 64 × 64</th><th class="num">GPU 128 × 128</th></tr></thead><tbody><tr><td>Configuración final</td><td class="num">E2</td><td class="num">E2</td><td class="num">Base</td></tr><tr><td>Parámetros del modelo final</td><td class="num">1.258.400</td><td class="num">1.258.400</td><td class="num">473.120</td></tr><tr class="destacada"><td>Accuracy</td><td class="num">0,786</td><td class="num">0,830</td><td class="num">0,847</td></tr><tr><td>Accuracy estricta</td><td class="num">0,732</td><td class="num">0,777</td><td class="num">0,797</td></tr><tr><td>Top-3</td><td class="num">0,887</td><td class="num">0,932</td><td class="num">0,937</td></tr><tr><td>F1 macro</td><td class="num">0,741</td><td class="num">0,788</td><td class="num">0,810</td></tr><tr><td>F1 macro estricto</td><td class="num">0,661</td><td class="num">0,714</td><td class="num">0,738</td></tr><tr><td>Originales / parecidas / alteradas</td><td class="num">0,77 / 0,86 / 0,76</td><td class="num">0,83 / 0,89 / 0,79</td><td class="num">0,84 / 0,91 / 0,83</td></tr><tr><td>Errores con confianza > 0,80 (verificados)</td><td class="num">51 (2)</td><td class="num">64 (1)</td><td class="num">41 (0)</td></tr><tr><td>Carga de imágenes (min)</td><td class="num">2,6</td><td class="num">4,7</td><td class="num">10,5</td></tr><tr><td>Entrenamiento (min)</td><td class="num">53,7</td><td class="num">95,6</td><td class="num">290,5</td></tr><tr><td>Segundos por época (benchmark)</td><td class="num">5,29</td><td class="num">9,84</td><td class="num">37,06</td></tr><tr><td>Utilización media de la GPU</td><td class="num">36,5 %</td><td class="num">90,7 %</td><td class="num">98,8 %</td></tr><tr><td>Inferencia de la red (imágenes/s)</td><td class="num">18.843</td><td class="num">6.373</td><td class="num">3.540</td></tr><tr class="destacada"><td>Duración de la corrida</td><td class="num">59 min 03 s</td><td class="num">1 h 44 min 33 s</td><td class="num">5 h 08 min 56 s</td></tr></tbody></table>
     </div>
-    <footer class="pie"><span>¿Quién sale en la imagen? · CNN sobre Los Simpson</span><span>26 / 26</span></footer>
+    <footer class="pie"><span>¿Quién sale en la imagen? · CNN sobre Los Simpson</span><span>29 / 29</span></footer>
   </div>
 </section>
 
 </main>
 
-<p class="final">Cifras de <span class="dato">resultados/newDataset/</span> y de las salidas de <span class="dato">notebooks/newDataset/LosSimpsons_GPU_4060M.ipynb</span>: las figuras son de la corrida de GPU a 128 × 128, y las cifras de la corrida a 64 × 64 que no están en su JSON se leen del commit 6db8274. Generada con <span class="dato">scripts/newDataset/generar_presentacion.py</span>.</p>
+<p class="final">Cifras de <span class="dato">resultados/newDataset/</span> y de las salidas de <span class="dato">notebooks/newDataset/LosSimpsons_GPU_4060M.ipynb</span>: las figuras son de la corrida de GPU a 128 × 128, y las cifras de la corrida a 64 × 64 que no están en su JSON se leen del commit 6db8274. Las cuatro celdas que se agregaron al notebook después de esa corrida —criterio estricto, mapas de cuatro imágenes, Grad-CAM por personaje y generalización— se ejecutaron con el modelo final guardado y con algoritmos deterministas de cuDNN, que reproducen exactamente su evaluación; con <span class="dato">cudnn.benchmark</span>, como en la corrida, la elección del algoritmo de convolución varía entre ejecuciones y mueve unas pocas predicciones casi empatadas. Generada con <span class="dato">scripts/newDataset/generar_presentacion.py</span>.</p>
 
 <div class="mando" role="toolbar" aria-label="Navegación de la presentación">
   <button type="button" id="anterior" aria-label="Diapositiva anterior">‹</button>
-  <span class="contador" id="contador">1 / 26</span>
+  <span class="contador" id="contador">1 / 29</span>
   <button type="button" id="siguiente" aria-label="Diapositiva siguiente">›</button>
   <button type="button" id="salir">Salir</button>
 </div>

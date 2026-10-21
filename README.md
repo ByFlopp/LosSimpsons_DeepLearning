@@ -184,7 +184,7 @@ Los pasos completos, con sus opciones y la versión en Docker, están en la [gu�
 │   ├── scripts/                    # Lanzador del notebook de GPU, generador de la presentación y predicción de imágenes
 │   ├── images/                     # Imágenes de los notebooks
 │   ├── docs/                       # Encargo de la EP2 e informe técnico, con sus figuras
-│   ├── presentacion_resultados_CNN.html  # Presentación de resultados de la CNN (26 diapositivas)
+│   ├── presentacion_resultados_CNN.html  # Presentación de resultados de la CNN (29 diapositivas)
 │   └── README.md
 ├── scripts/newDataset/
 │   └── generar_imagenes_alteradas.py  # Prepara el dataset nuevo: alteradas, parecidas y gemelas
