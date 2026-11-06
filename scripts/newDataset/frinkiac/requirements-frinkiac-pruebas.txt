@@ -1,0 +1,5 @@
+-r requirements-frinkiac.txt
+# moto >= 5.0.16 simula las escrituras condicionales de S3
+moto[s3,ssm]>=5.0.16
+responses>=0.25
+pytest>=8.0

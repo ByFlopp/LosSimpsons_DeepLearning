@@ -68,3 +68,11 @@ venv/
 # Entorno GPU de Windows nativo: PyTorch ocupa varios GB
 .venv-gpu/
 
+
+# Ampliación con Frinkiac: datos locales del servicio, revisiones descargadas e inventario
+.frinkiac/
+por_revisar/
+inventario.npz
+__pycache__/
+# Entorno de la ampliación con Frinkiac (lo crea pnpm frinkiac)
+.venv-frinkiac/

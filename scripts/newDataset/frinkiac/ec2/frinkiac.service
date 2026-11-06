@@ -1,0 +1,31 @@
+[Unit]
+Description=Ampliación del dataset de Los Simpson con fotogramas de Frinkiac
+After=network-online.target
+Wants=network-online.target
+# Sin límite de reinicios: cada arranque retoma desde donde quedó
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+User=frinkiac
+Group=frinkiac
+EnvironmentFile=/etc/frinkiac.env
+Environment=PYTHONUNBUFFERED=1
+WorkingDirectory=/opt/frinkiac/repo
+ExecStart=/opt/frinkiac/venv/bin/python scripts/newDataset/frinkiac/ampliar_con_frinkiac.py recolectar
+# Salida 0 = terminó y el issue está publicado: no se reinicia. Cualquier otra salida o una caída sí.
+Restart=on-failure
+RestartSec=30
+# SIGTERM: termina el ítem en curso, respalda la base y libera el candado
+KillSignal=SIGTERM
+TimeoutStopSec=120
+# /var/lib/frinkiac: base SQLite, caché y entradas descargadas
+StateDirectory=frinkiac
+StateDirectoryMode=0750
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

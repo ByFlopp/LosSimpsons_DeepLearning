@@ -60,6 +60,8 @@ La etiqueta de cada imagen es siempre el nombre de su carpeta. Algunas carpetas 
 nombre de archivo es el de otro personaje: los añadió el equipo a propósito, porque en ellos el
 protagonista es el personaje de la carpeta.
 
+Si se amplió el dataset con Frinkiac ([scripts/newDataset/frinkiac/](../../../scripts/newDataset/frinkiac/README.md)), copia primero las aprobadas de `final/` a cada carpeta de personaje. Son originales y deben estar en su carpeta antes del paso 2, que genera las sintéticas a partir de ellas.
+
 ## Paso 2: generar las imágenes alteradas y parecidas
 
 Desde la raíz del repositorio:

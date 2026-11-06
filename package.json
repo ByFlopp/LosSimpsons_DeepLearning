@@ -1,0 +1,13 @@
+{
+  "name": "los-simpsons-deeplearning",
+  "private": true,
+  "description": "Atajos del proyecto. 'pnpm frinkiac' amplía el dataset con fotogramas de Frinkiac (scripts/newDataset/frinkiac).",
+  "scripts": {
+    "frinkiac": "node scripts/newDataset/frinkiac/frinkiac.mjs",
+    "frinkiac:estado": "node scripts/newDataset/frinkiac/frinkiac.mjs estado",
+    "frinkiac:pruebas": "node scripts/newDataset/frinkiac/frinkiac.mjs pruebas"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

@@ -1,0 +1,165 @@
+{
+  "_comentario": "Carpeta del dataset -> nombres exactos de raw_character_text en simpsons_script_lines.csv (Kaggle, The Simpsons by the Data). Todos verificados contra el CSV; para revisarlos: pnpm frinkiac mapear --guiones <ruta a simpsons_script_lines.csv>",
+  "agnes_skinner": [
+    "Agnes Skinner"
+  ],
+  "apu_nahasapeemapetilon": [
+    "Apu Nahasapeemapetilon"
+  ],
+  "barney_gumble": [
+    "Barney Gumble"
+  ],
+  "captain_horatio_mccallister": [
+    "Captain Horatio McCallister"
+  ],
+  "carl_carlson": [
+    "Carl Carlson",
+    "Carl"
+  ],
+  "cletus_spuckler": [
+    "Cletus Spuckler"
+  ],
+  "comic_book_guy": [
+    "Comic Book Guy"
+  ],
+  "disco_stu": [
+    "Disco Stu"
+  ],
+  "dolph_starbeam": [
+    "DOLPH"
+  ],
+  "dr_julius_hibbert": [
+    "Dr. Julius Hibbert"
+  ],
+  "dr_nick_riviera": [
+    "Dr. Nick Riviera",
+    "NICK RIVIERA"
+  ],
+  "edna_krabappel": [
+    "Edna Krabappel-Flanders"
+  ],
+  "fat_tony": [
+    "Fat Tony"
+  ],
+  "gary_chalmers": [
+    "Gary Chalmers"
+  ],
+  "gil": [
+    "Gil Gunderson"
+  ],
+  "groundskeeper_willie": [
+    "Groundskeeper Willie"
+  ],
+  "helen_lovejoy": [
+    "Helen Lovejoy"
+  ],
+  "herb_powell": [
+    "Herb Powell",
+    "HERB"
+  ],
+  "jasper_beardly": [
+    "Jasper Beardly"
+  ],
+  "jimbo_jones": [
+    "Jimbo Jones"
+  ],
+  "judge_snyder": [
+    "Judge Snyder"
+  ],
+  "kang_kodos": [
+    "Kang",
+    "Kodos"
+  ],
+  "kearney_zzyzwicz": [
+    "Kearney Zzyzwicz"
+  ],
+  "kent_brockman": [
+    "Kent Brockman"
+  ],
+  "kirk_van_houten": [
+    "Kirk Van Houten"
+  ],
+  "lenny_leonard": [
+    "Lenny Leonard",
+    "Lenny"
+  ],
+  "lionel_hutz": [
+    "Lionel Hutz"
+  ],
+  "lou": [
+    "Lou"
+  ],
+  "louie": [
+    "Louie"
+  ],
+  "maggie_simpson": [
+    "Maggie Simpson"
+  ],
+  "manjula_nahasapeemapetilon": [
+    "Manjula Nahasapeemapetilon"
+  ],
+  "martin_prince": [
+    "Martin Prince"
+  ],
+  "maude_flanders": [
+    "Maude Flanders"
+  ],
+  "mayor_quimby": [
+    "Mayor Joe Quimby"
+  ],
+  "miss_hoover": [
+    "Miss Hoover"
+  ],
+  "mona_simpson": [
+    "Mona Simpson"
+  ],
+  "nelson_muntz": [
+    "Nelson Muntz"
+  ],
+  "otto_mann": [
+    "Otto Mann"
+  ],
+  "patty_bouvier": [
+    "Patty Bouvier"
+  ],
+  "professor_john_frink": [
+    "Professor Jonathan Frink"
+  ],
+  "rainier_wolfcastle": [
+    "Rainier Wolfcastle",
+    "McBain"
+  ],
+  "ralph_wiggum": [
+    "Ralph Wiggum"
+  ],
+  "rev_timothy_lovejoy": [
+    "Rev. Timothy Lovejoy"
+  ],
+  "rich_texan": [
+    "The Rich Texan"
+  ],
+  "rod_flanders": [
+    "Rod Flanders"
+  ],
+  "selma_bouvier": [
+    "Selma Bouvier"
+  ],
+  "sideshow_bob": [
+    "Sideshow Bob"
+  ],
+  "sideshow_mel": [
+    "Sideshow Mel"
+  ],
+  "snake_jailbird": [
+    "Snake Jailbird"
+  ],
+  "todd_flanders": [
+    "Todd Flanders"
+  ],
+  "troy_mcclure": [
+    "Troy McClure"
+  ],
+  "waylon_smithers": [
+    "Waylon Smithers"
+  ]
+}

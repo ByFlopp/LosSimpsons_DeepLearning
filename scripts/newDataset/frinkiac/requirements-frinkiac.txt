@@ -1,0 +1,8 @@
+# Ampliación del dataset con Frinkiac (EC2 y PC local). Python 3.11 o superior.
+# boto3 >= 1.36: escrituras condicionales de S3 (IfNoneMatch / IfMatch en put_object)
+boto3>=1.36
+requests>=2.31
+tenacity>=8.2
+numpy>=1.26
+pillow>=10.0
+rapidfuzz>=3.0

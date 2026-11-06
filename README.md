@@ -155,6 +155,13 @@ Las lecturas completas están en el [README del MLP](PMC/README.md), el [README 
 
 Los pasos completos, con sus opciones y la versión en Docker, están en la [guía del dataset nuevo](PMC/notebooks/newDataset/README.md).
 
+**Ampliación con Frinkiac.** 52 personajes tienen menos de 1000 imágenes originales. `pnpm frinkiac` los completa hasta 1000 con fotogramas de Frinkiac, ubicados con los guiones de Kaggle:
+- guarda todo en `simpsons_dataset/frinkiac_ampliacion/`, junto al dataset;
+- deja cada personaje en `por_revisar/` para la revisión manual;
+- al terminar abre un issue en este repositorio.
+
+También puede correr en una EC2 con S3. Solo agrega originales: las variantes sintéticas se generan después, con el script anterior. Los detalles están en [scripts/newDataset/frinkiac/](scripts/newDataset/frinkiac/README.md).
+
 **Entorno.** Keras 3 sobre PyTorch, en Windows nativo (`.venv-gpu`) o en Docker:
 
 | Archivo | Para qué |
@@ -187,7 +194,8 @@ Los pasos completos, con sus opciones y la versión en Docker, están en la [gu�
 │   ├── presentacion_resultados_CNN.html  # Presentación de resultados de la CNN (29 diapositivas)
 │   └── README.md
 ├── scripts/newDataset/
-│   └── generar_imagenes_alteradas.py  # Prepara el dataset nuevo: alteradas, parecidas y gemelas
+│   ├── generar_imagenes_alteradas.py  # Prepara el dataset nuevo: alteradas, parecidas y gemelas
+│   └── frinkiac/                   # pnpm frinkiac: amplía con Frinkiac a 1000 originales por personaje
 ├── images/logoLosSimpsons.png
 ├── Dockerfile
 ├── docker-compose.yml
@@ -195,6 +203,7 @@ Los pasos completos, con sus opciones y la versión en Docker, están en la [gu�
 ├── requirements.txt
 ├── requirements-gpu-windows.txt
 ├── requirements-newDataset.txt
+├── package.json                    # Atajos de pnpm (pnpm frinkiac)
 └── README.md                       # Este documento
 ```
 
