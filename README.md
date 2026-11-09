@@ -1,6 +1,6 @@
 # Clasificador de personajes de Los Simpson: MLP frente a CNN
 
-Este repositorio es una **comparativa entre dos redes neuronales** que identifican qué personaje de Los Simpson aparece en una imagen RGB: un **perceptrón multicapa (MLP)** y una **red neuronal convolucional (CNN)**. Las dos se entrenan y se evalúan con exactamente el mismo proceso, a 128 × 128 en la misma GPU (NVIDIA GeForce RTX 4060 Laptop): el mismo dataset de 64 personajes, la misma partición, las mismas imágenes alteradas y parecidas, la misma caja alrededor de cada personaje, el mismo bucle de entrenamiento, los mismos experimentos, el mismo criterio de acierto y los mismos KPIs. Así, la diferencia entre sus resultados se debe al modelo: el MLP recibe descriptores de color y textura elegidos a mano, calculados sobre el recorte del personaje; la CNN recibe ese recorte y aprende sus propios filtros.
+Este repositorio es una **comparativa entre dos redes neuronales** que identifican qué personaje de Los Simpson aparece en una imagen RGB: un **perceptrón multicapa (MLP)** y una **red neuronal convolucional (CNN)**. Las dos se entrenan y se evalúan con exactamente el mismo proceso, a 128 × 128 en la misma GPU (NVIDIA GeForce RTX 4060 Laptop): el mismo dataset de 64 personajes, la misma partición, las mismas imágenes alteradas y parecidas, la misma imagen completa como entrada, el mismo bucle de entrenamiento, los mismos experimentos, el mismo criterio de acierto y los mismos KPIs. Así, la diferencia entre sus resultados se debe al modelo: el MLP recibe descriptores de color y textura elegidos a mano, calculados sobre la imagen; la CNN recibe la imagen y aprende sus propios filtros. Las cajas alrededor de cada personaje se ponen después, con el modelo ya entrenado.
 
 <p align="center">
   <img src="images/logoLosSimpsons.png" alt="Logo de Los Simpson" width="480">
@@ -11,52 +11,67 @@ Este repositorio es una **comparativa entre dos redes neuronales** que identific
 | | MLP | CNN |
 |---|---|---|
 | Carpeta | [PMC/](PMC/) | [CNN/](CNN/) |
-| Qué recibe | 2.462 descriptores de color y textura del recorte de cada personaje, calculados en la CPU; con la imagen completa, el modelo final usaba los 370 de color | El recorte del personaje, de 128 × 128 × 3, sin aplanar |
-| Cómo obtiene sus características | Elegidas a mano: histogramas HSV y Lab, LBP, Gabor y HOG | Aprendidas: filtros de 3 × 3 que recorren el recorte |
+| Qué recibe | 2.462 descriptores de color y textura de la imagen completa, calculados en la CPU; el modelo final de octubre usaba los 370 de color | La imagen completa, de 128 × 128 × 3, sin aplanar |
+| Cómo obtiene sus características | Elegidas a mano: histogramas HSV y Lab, LBP, Gabor y HOG | Aprendidas: filtros de 3 × 3 que recorren la imagen |
 | Corrida con la imagen completa | GPU a 128 × 128, del 16-10-2026 | GPU a 128 × 128, del 19-10-2026 |
 | Resultado en test, con la imagen completa | Accuracy 0,586 y F1 macro 0,559 (C1) | **Accuracy 0,847 y F1 macro 0,810** (modelo base) |
-| Corrida con cajas | Pendiente: notebook de GPU a 128 × 128, resultados en `PMC/resultados/newDataset/cajas/GPU/` | Pendiente: notebook de GPU a 128 × 128, resultados en `CNN/resultados/newDataset/cajas/GPU/` |
+| Cajas alrededor de cada personaje | Después de entrenar: `detectar_cajas.py --modelo mlp` | Después de entrenar: `detectar_cajas.py --modelo cnn` |
 | Presentación de resultados | [presentacion_resultados_PMC.html](PMC/presentacion_resultados_PMC.html) | [presentacion_resultados_CNN.html](CNN/presentacion_resultados_CNN.html) |
 | Informe técnico | [Informe de la EP1](PMC/docs/oldDataset/Informe.md), sobre el dataset anterior de 25 personajes | [Informe de la EP2](CNN/docs/newDataset/Informe.md): la CNN y su comparación con el MLP |
 
-Las presentaciones son archivos HTML de un solo archivo: descárgalos y ábrelos en el navegador (GitHub solo muestra su código). El botón **Presentar** muestra una diapositiva a la vez en pantalla completa. Todavía muestran las corridas de octubre a varias resoluciones; se rehacen con las corridas a 128 × 128 con cajas.
+Las presentaciones son archivos HTML de un solo archivo: descárgalos y ábrelos en el navegador (GitHub solo muestra su código). El botón **Presentar** muestra una diapositiva a la vez en pantalla completa. Todavía muestran las corridas de octubre a varias resoluciones; se rehacen con las nuevas corridas a 128 × 128.
 
-## Cada personaje en su caja
+## Primero el modelo, después las cajas
 
-Un fotograma suele mostrar a varios personajes y la etiqueta (la carpeta) solo nombra a uno. Por eso, antes de entrenar, [scripts/newDataset/detectar_cajas.py](scripts/newDataset/detectar_cajas.py) pone una caja alrededor de cada personaje y le da un nombre con su confianza, sin anotar nada a mano:
+El flujo tiene dos pasos separados, y el segundo no interviene en el primero:
 
-1. **Dónde.** Grounding DINO, un detector preentrenado de Hugging Face, encuentra a cada personaje animado. No sabe quién es cada uno: solo dónde está.
-2. **Quién.** Una CNN del proyecto, afinada con recortes, nombra cada caja con uno de los 64 personajes y su confianza: si aparece Jasper Beardly, su caja dice `Jasper Beardly · 92 %`.
+1. **Entrenar.** Cada notebook entrena y evalúa su red con la imagen completa: la etiqueta es la carpeta y una predicción acierta si nombra a ese personaje. Ningún notebook usa el script de cajas ni los archivos que deja. Al final, la celda «Selección del modelo final» guarda el modelo con todo lo necesario para usarlo fuera del notebook, en `models_gpu/newDataset/` de cada red:
 
-La caja del personaje de la carpeta es la que entra a los dos modelos: la CNN recibe el recorte y el MLP calcula sus descriptores sobre él. Si en una imagen nadie reconoce al personaje, entra completa. Una predicción acierta solo si nombra al personaje de la caja.
+   | Archivo | Contenido |
+   |---|---|
+   | `mlp_final.keras` o `cnn_final.keras` | La red entrenada |
+   | `<nombre>.json` | Clases, resolución y representación de la entrada |
+   | `<nombre>_entrada.py` | Cómo se prepara la entrada. En el MLP son las funciones de descriptores con que se entrenó, copiadas del notebook y comprobadas contra la entrada de test |
+   | `<nombre>_particion.csv` | El conjunto (train, val o test) de cada imagen original |
+
+2. **Detectar las cajas.** [scripts/newDataset/detectar_cajas.py](scripts/newDataset/detectar_cajas.py) carga uno de esos modelos y, en cada imagen, pone una caja alrededor de cada personaje y le da un nombre con su confianza, sin anotar nada a mano:
+   - **Dónde.** Grounding DINO, un detector preentrenado de Hugging Face, encuentra a cada personaje animado. No sabe quién es cada uno: solo dónde está.
+   - **Quién.** El modelo entrenado nombra cada recorte con uno de los 64 personajes y su confianza: si aparece Jasper Beardly, su caja dice `Jasper Beardly · 92 %`.
 
 ```mermaid
 flowchart LR
-    A["Fotograma"] --> B["Grounding DINO<br/>dónde hay un personaje"]
-    B --> C["CNN afinada con recortes<br/>quién es, con qué confianza"]
-    C --> D["Cada caja con su nombre<br/>Jasper Beardly · 92 %"]
-    C --> E["La caja del personaje de la carpeta<br/>entra a la CNN y al MLP"]
+    N["Notebook del MLP o de la CNN<br/>entrena con la imagen completa"] --> M["Modelo final<br/>.keras, .json, _entrada.py, _particion.csv"]
+    F["Fotograma"] --> G["Grounding DINO<br/>dónde hay un personaje"]
+    M --> S["detectar_cajas.py<br/>el modelo nombra cada caja"]
+    G --> S
+    S --> E["Cada caja con su nombre<br/>Jasper Beardly · 92 %"]
 ```
 
-El script mide la cobertura de los 64 personajes y deja hojas de contacto en `cajas_por_revisar/`, junto al dataset, para mirar las cajas sin anotarlas.
+```powershell
+.\.venv-gpu\Scripts\python.exe -m pip install -r requirements-cajas.txt   # una vez
+.\.venv-gpu\Scripts\python.exe scripts\newDataset\detectar_cajas.py --modelo cnn ruta\a\imagen.jpg
+.\.venv-gpu\Scripts\python.exe scripts\newDataset\detectar_cajas.py --modelo mlp --dataset --muestra 5
+```
+
+El script deja `cajas.csv` (una fila por caja, con el personaje, la confianza y las otras candidatas), cada imagen con sus cajas dibujadas y un `resumen.json` en `cajas_<modelo>/`, junto al modelo. Con `--dataset` toma por defecto solo imágenes de test, que el modelo no vio al entrenar, y deja una hoja de contacto por personaje. Como el modelo aprendió con fotogramas completos, nombra un recorte con menos seguridad que la imagen entera; el resumen informa en cuántas imágenes alguna caja nombra al personaje de la carpeta y en cuántas lo nombra la imagen completa.
 
 ## Cómo funciona la comparativa
 
-Todo lo que no es el modelo se comparte: los datos, su preparación, el entrenamiento, la elección de la configuración y la evaluación. Cada corrida deja un JSON con las mismas claves en `resultados/newDataset/cajas/GPU/rendimiento_gpu_128x128.json` (la corrida con la imagen completa, en `resultados/newDataset/GPU/`), así que las dos redes se comparan cifra a cifra.
+Todo lo que no es el modelo se comparte: los datos, su preparación, el entrenamiento, la elección de la configuración y la evaluación. Cada corrida deja un JSON con las mismas claves en `resultados/newDataset/GPU/rendimiento_gpu_128x128.json`, así que las dos redes se comparan cifra a cifra.
 
 ```mermaid
 flowchart TD
     A["Dataset: 64 carpetas, una por personaje<br/>40.123 imágenes originales"] --> B["Script compartido<br/>alteradas, parecidas y gemelas"]
-    B --> K["Script de cajas<br/>cada personaje en su caja, con su nombre"]
-    K --> C["Partición estratificada 70 / 20 / 10<br/>semilla 42: 35.023 / 10.080 / 5.063 imágenes"]
-    C --> D["Recortar a la caja del personaje<br/>y redimensionar a 128 x 128 px"]
-    D --> M["MLP · PMC/<br/>descriptores de color y textura del recorte"]
-    D --> N["CNN · CNN/<br/>el recorte, sin aplanar"]
+    B --> C["Partición estratificada 70 / 20 / 10<br/>semilla 42: 35.023 / 10.080 / 5.063 imágenes"]
+    C --> D["Redimensionar la imagen completa<br/>a 128 x 128 px"]
+    D --> M["MLP · PMC/<br/>descriptores de color y textura"]
+    D --> N["CNN · CNN/<br/>la imagen, sin aplanar"]
     M --> E["Mismo entrenamiento<br/>Adam, batch 128, pesos por clase<br/>y suavizado 0,1"]
     N --> E
     E --> F["Experimentos: un factor a la vez<br/>se elige por F1 macro de validación"]
     F --> G["Una sola prueba en test<br/>criterio de acierto y cinco KPIs"]
     G --> H["Un JSON por corrida<br/>comparación MLP frente a CNN"]
+    G --> K["Modelo final guardado<br/>lo usa después el script de cajas"]
 ```
 
 Las cifras de 35.023 / 10.080 / 5.063 imágenes son las de las corridas de octubre; cambian si el dataset crece, por ejemplo con Frinkiac.
@@ -65,11 +80,11 @@ Las cifras de 35.023 / 10.080 / 5.063 imágenes son las de las corridas de octub
 
 ### MLP: descriptores elegidos a mano
 
-Cada recorte se resume primero en un vector fijo que calcula la CPU: histogramas de color HSV y Lab, en el recorte completo y en sus cuatro cuadrantes, y descriptores de textura LBP, Gabor y HOG. La red solo ve ese vector. Cada neurona se conecta con todas las entradas y no sabe qué parte de la imagen describe cada una, así que el MLP distingue paletas, no formas. En la corrida con la imagen completa ganó una entrada de solo color (370 valores).
+Cada imagen se resume primero en un vector fijo que calcula la CPU: histogramas de color HSV y Lab, en la imagen completa y en sus cuatro cuadrantes, y descriptores de textura LBP, Gabor y HOG. La red solo ve ese vector. Cada neurona se conecta con todas las entradas y no sabe qué parte de la imagen describe cada una, así que el MLP distingue paletas, no formas. En la corrida de octubre ganó una entrada de solo color (370 valores).
 
 ```mermaid
 flowchart LR
-    A["Recorte del personaje<br/>tamaño variable"] --> B["Redimensionar<br/>128 x 128 px"]
+    A["Imagen completa<br/>tamaño variable"] --> B["Redimensionar<br/>128 x 128 px"]
     B --> C["Color<br/>HSV 170 y Lab 200"]
     B --> T["Textura<br/>LBP 232, Gabor 96 y HOG 1.764"]
     C --> V["Vector de 2.462 descriptores<br/>370 si solo color"]
@@ -82,11 +97,11 @@ flowchart LR
 
 ### CNN: filtros que se aprenden
 
-La CNN recibe el recorte del personaje como un tensor de alto × ancho × 3. Cada bloque aplica filtros de 3 × 3 con los mismos pesos en todas las posiciones, normaliza, activa con ReLU y reduce el mapa a la mitad con *max pooling*. Los primeros bloques responden a bordes y zonas de color; el último, con un campo receptivo de 38 × 38 píxeles, a partes del personaje. El pooling global resume cada uno de los 256 mapas en un número, esté donde esté el patrón, y una capa densa decide entre los 64 personajes.
+La CNN recibe la imagen completa como un tensor de alto × ancho × 3. Cada bloque aplica filtros de 3 × 3 con los mismos pesos en todas las posiciones, normaliza, activa con ReLU y reduce el mapa a la mitad con *max pooling*. Los primeros bloques responden a bordes y zonas de color; el último, con un campo receptivo de 38 × 38 píxeles, a partes del personaje. El pooling global resume cada uno de los 256 mapas en un número, esté donde esté el patrón, y una capa densa decide entre los 64 personajes.
 
 ```mermaid
 flowchart TB
-    A["Recorte RGB 128 x 128 x 3<br/>sin aplanar"] --> R["Rescaling<br/>de 0-255 a 0-1, dentro del modelo"]
+    A["Imagen RGB 128 x 128 x 3<br/>sin aplanar"] --> R["Rescaling<br/>de 0-255 a 0-1, dentro del modelo"]
     subgraph EXT["Filtros 3x3 aprendidos"]
         direction LR
         B1["Bloque 1<br/>32 filtros<br/>sale 64 x 64 x 32"] --> B2["Bloque 2<br/>64 filtros<br/>sale 32 x 32 x 64"]
@@ -105,7 +120,7 @@ Cada bloque es Conv2D 3 × 3 → BatchNorm → ReLU → MaxPool 2 × 2; la varia
 
 | | MLP | CNN |
 |---|---|---|
-| Entrada | Vector de 2.462 descriptores del recorte (370 en el modelo final con la imagen completa) | Tensor del recorte, sin aplanar |
+| Entrada | Vector de 2.462 descriptores de la imagen (370 en el modelo final de octubre) | Tensor de la imagen, sin aplanar |
 | Estructura espacial | Se pierde: cada neurona ve todo el vector | Se conserva: cada filtro mira una vecindad de 3 × 3 |
 | Características | Fijas, elegidas a mano | Aprendidas junto con el resto de la red |
 | Dónde se calcula la entrada | En la CPU, antes de la red | Dentro de la red, en la GPU |
@@ -114,7 +129,7 @@ Cada bloque es Conv2D 3 × 3 → BatchNorm → ReLU → MaxPool 2 × 2; la varia
 
 ## Cómo se entrena y se elige cada modelo
 
-Los dos modelos pasan por el mismo protocolo, con un bucle de entrenamiento propio sobre PyTorch: Adam con tasa `1e-3`, batch 128, pesos por clase (la raíz cuadrada de los balanceados), suavizado de etiquetas 0,1, parada temprana y `ReduceLROnPlateau`. Cada variante cambia un solo factor respecto del modelo base: la entrada, la profundidad, la activación, la tasa de aprendizaje, el batch, el dropout, los pesos por clase, el suavizado o las imágenes alteradas. Las corridas con la imagen completa daban además un 15 % del objetivo a los otros personajes de la escena; con el recorte ya no hace falta.
+Los dos modelos pasan por el mismo protocolo, con un bucle de entrenamiento propio sobre PyTorch: Adam con tasa `1e-3`, batch 128, pesos por clase (la raíz cuadrada de los balanceados), suavizado de etiquetas 0,1, parada temprana y `ReduceLROnPlateau`. Cada variante cambia un solo factor respecto del modelo base: la entrada, la profundidad, la activación, la tasa de aprendizaje, el batch, el dropout, los pesos por clase, el suavizado o las imágenes alteradas. Las corridas de octubre daban además un 15 % del objetivo a los otros personajes de la escena; ahora el objetivo es solo el personaje de la carpeta.
 
 ```mermaid
 flowchart TD
@@ -127,11 +142,11 @@ flowchart TD
     F --> G["Prueba única en test<br/>métricas, KPIs, errores y escenas"]
 ```
 
-El test no se toca hasta el final. Una predicción es correcta si nombra al personaje de la caja, que es el de la carpeta. La accuracy por escena, que además acepta a otro personaje presente (misma escena del episodio o imagen gemela en otra carpeta), se informa solo como referencia. Las corridas con la imagen completa usaban ese criterio tolerante, más una verificación por imagen de los errores confiados.
+El test no se toca hasta el final. Una predicción es correcta si nombra al personaje de la carpeta. La accuracy por escena, que además acepta a otro personaje presente (misma escena del episodio o imagen gemela en otra carpeta), se informa solo como referencia. Las corridas de octubre usaban ese criterio tolerante como oficial, más una verificación por imagen de los errores confiados.
 
-## Resultados con la imagen completa: MLP frente a CNN
+## Resultados de octubre: MLP frente a CNN
 
-Las cifras de esta sección son las de las corridas de octubre, con la imagen completa y el criterio de acierto de entonces: la columna «Estricta» es la comparable con las corridas con cajas. Esas corridas dejan su JSON en `resultados/newDataset/cajas/GPU/` de cada modelo, y cada notebook las compara con estas en su sección «Imagen completa frente a caja».
+Las cifras de esta sección son las de las corridas de octubre, con la imagen completa y el criterio de acierto de entonces: la columna «Estricta» es la comparable con el criterio actual. Cada corrida nueva reemplaza el JSON de `resultados/newDataset/GPU/` de cada modelo; las de octubre quedan en el historial de Git.
 
 Corridas en GPU (NVIDIA GeForce RTX 4060 Laptop) a 128 × 128:
 
@@ -169,14 +184,9 @@ Las lecturas completas están en el [README del MLP](PMC/README.md), el [README 
 .\.venv-gpu\Scripts\python.exe scripts\newDataset\generar_imagenes_alteradas.py
 ```
 
-**Cajas alrededor de cada personaje.** Después, también cada vez que cambia el dataset, [scripts/newDataset/detectar_cajas.py](scripts/newDataset/detectar_cajas.py) pone la caja con nombre de cada personaje (ver «Cada personaje en su caja»). Deja `_cajas.csv` y `_cajas_candidatas.csv` en la raíz del dataset, y los notebooks de GPU no se ejecutan sin ellos. La primera vez tarda unas 2 a 2,5 horas en la RTX 4060; las siguientes solo procesan las imágenes nuevas:
+Con eso los notebooks ya se pueden ejecutar: no necesitan nada más del dataset. Las cajas alrededor de cada personaje van después del entrenamiento (ver «Primero el modelo, después las cajas»).
 
-```powershell
-.\.venv-gpu\Scripts\python.exe -m pip install -r requirements-cajas.txt
-.\.venv-gpu\Scripts\python.exe scripts\newDataset\detectar_cajas.py
-```
-
-Los pasos completos, con sus opciones y la versión en Docker, están en la [guía del dataset nuevo](PMC/notebooks/newDataset/README.md).
+Los pasos completos, con sus opciones y la versión en Docker, están en la [guía del dataset nuevo](PMC/notebooks/README.md).
 
 **Ampliación con Frinkiac.** 52 personajes tienen menos de 1000 imágenes originales. `pnpm frinkiac` los completa hasta 1000 con fotogramas de Frinkiac, ubicados con los guiones de Kaggle:
 - guarda todo en `frinkiac_ampliacion/`, junto al dataset en el Escritorio;
@@ -192,7 +202,7 @@ También puede correr en una EC2 con S3. Solo agrega originales: las variantes s
 |---|---|
 | `requirements-gpu-windows.txt` | Entorno `.venv-gpu`: Keras 3 sobre PyTorch con CUDA. Los pasos de instalación están en [PMC/notebooks/oldDataset/README_GPU.md](PMC/notebooks/oldDataset/README_GPU.md). |
 | `requirements-newDataset.txt` | scikit-image, para los descriptores de color y textura del MLP del dataset nuevo. |
-| `requirements-cajas.txt` | transformers, para el detector de `scripts/newDataset/detectar_cajas.py`. Se instala en `.venv-gpu`; los notebooks no lo necesitan. |
+| `requirements-cajas.txt` | transformers, para el detector de `scripts/newDataset/detectar_cajas.py`, que se usa después de entrenar. Se instala en `.venv-gpu`; los notebooks no lo necesitan. |
 | `Dockerfile` y `docker-compose.yml` | Jupyter Lab con la GPU y el dataset montados: copia `.env.example` como `.env`, pon la ruta del dataset y ejecuta `docker compose up --build`. |
 
 ## Estructura del repositorio
@@ -200,8 +210,8 @@ También puede correr en una EC2 con S3. Solo agrega originales: las variantes s
 ```text
 .
 ├── PMC/                            # Perceptrón multicapa: todo su trabajo, con su propio README
-│   ├── notebooks/<oldDataset|newDataset>/
-│   ├── models_gpu/                 # Modelos .keras regenerables, ignorados por Git
+│   ├── notebooks/                  # Notebook de GPU a 128 × 128 del dataset nuevo
+│   ├── models_gpu/newDataset/      # Modelo final y sus archivos (y cajas_<modelo>/), ignorados por Git
 │   ├── resultados/<oldDataset|newDataset>/GPU/
 │   ├── scripts/                    # Lanzadores de los notebooks de GPU
 │   ├── images/                     # Imágenes de los notebooks y del README del MLP
@@ -209,9 +219,9 @@ También puede correr en una EC2 con S3. Solo agrega originales: las variantes s
 │   ├── presentacion_resultados_PMC.html  # Presentación de resultados del MLP (19 diapositivas)
 │   └── README.md
 ├── CNN/                            # Red convolucional: mismo dataset y mismo proceso, con su propio README
-│   ├── notebooks/newDataset/       # Notebook de GPU a 128 × 128 (sin versión para el dataset anterior)
-│   ├── models_gpu/                 # Modelos .keras regenerables, ignorados por Git
-│   ├── resultados/newDataset/      # JSON de cada corrida a 128 × 128: GPU/ con la imagen completa y cajas/GPU/
+│   ├── notebooks/                  # Notebook de GPU a 128 × 128 del dataset nuevo
+│   ├── models_gpu/newDataset/      # Modelo final y sus archivos (y cajas_<modelo>/), ignorados por Git
+│   ├── resultados/newDataset/GPU/  # JSON de la corrida a 128 × 128
 │   ├── scripts/                    # Lanzador del notebook de GPU, generador de la presentación y predicción de imágenes
 │   ├── images/                     # Imágenes de los notebooks
 │   ├── docs/                       # Encargo de la EP2 e informe técnico, con sus figuras
@@ -219,8 +229,8 @@ También puede correr en una EC2 con S3. Solo agrega originales: las variantes s
 │   └── README.md
 ├── scripts/newDataset/
 │   ├── generar_imagenes_alteradas.py  # Prepara el dataset nuevo: alteradas, parecidas y gemelas
-│   ├── detectar_cajas.py           # Cada personaje en su caja, con su nombre y su confianza
-│   ├── tests/                      # Pruebas de la geometría de las cajas
+│   ├── detectar_cajas.py           # Después de entrenar: cada personaje en su caja, con su nombre y su confianza
+│   ├── tests/                      # Pruebas del script de cajas (sin GPU)
 │   └── frinkiac/                   # pnpm frinkiac: amplía con Frinkiac a 1000 originales por personaje
 ├── images/logoLosSimpsons.png
 ├── Dockerfile
@@ -228,18 +238,18 @@ También puede correr en una EC2 con S3. Solo agrega originales: las variantes s
 ├── .env.example                    # Ruta del dataset para Docker; se copia como .env
 ├── requirements-gpu-windows.txt
 ├── requirements-newDataset.txt
-├── requirements-cajas.txt          # transformers, para detectar_cajas.py
+├── requirements-cajas.txt          # transformers, para detectar_cajas.py (después de entrenar)
 ├── package.json                    # Atajos de pnpm (pnpm frinkiac)
 └── README.md                       # Este documento
 ```
 
-Cada modelo sigue la misma organización: una carpeta propia con `notebooks/`, `models_gpu/`, `resultados/` y `scripts/`, y dentro de cada una una subcarpeta por dataset.
+Cada modelo sigue la misma organización: una carpeta propia con `notebooks/`, `models_gpu/`, `resultados/` y `scripts/`.
 
 ## Integrantes
 
+- Diego Ignacio Peña y Lillo Luhrs
 - Vincent Farenden Cerón
 - Rodrigo Ignacio Martínez Becker
 - Iván Manuel Pavón Barría
-- Diego Ignacio Peña y Lillo Luhrs
 
 Trabajo para la asignatura **Técnicas Avanzadas para Machine Learning_001D**.

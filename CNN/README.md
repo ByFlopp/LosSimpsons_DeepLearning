@@ -3,17 +3,16 @@
 Esta carpeta contiene una **red neuronal convolucional (CNN)** que identifica qué personaje de Los Simpson
 aparece en una imagen RGB. Usa el dataset nuevo —64 personajes, una carpeta por personaje— y el mismo proceso
 de entrenamiento y evaluación que el Perceptrón Multicapa de [`../PMC/`](../PMC/): la misma partición, las
-mismas imágenes alteradas y parecidas, la misma caja alrededor de cada personaje, los mismos pesos por clase,
+mismas imágenes alteradas y parecidas, la misma imagen completa como entrada, los mismos pesos por clase,
 el mismo bucle de entrenamiento, el mismo criterio de acierto y los mismos KPIs. Cambia el modelo. Todo se
 entrena y se evalúa a **128 × 128 en la GPU** (NVIDIA GeForce RTX 4060 Laptop).
 
-> **Cada personaje en su caja (desde el 07-11-2026).** El notebook de GPU ya no recibe el fotograma completo,
-> sino el recorte de la caja del personaje de la carpeta, que pone
-> [`scripts/newDataset/detectar_cajas.py`](../scripts/newDataset/detectar_cajas.py) sin anotar nada a mano
-> (Grounding DINO encuentra a los personajes y una CNN les pone nombre). Una predicción acierta solo si nombra
-> a ese personaje, y una sección nueva muestra cada caja de un fotograma con su nombre y su confianza
-> (`Jasper Beardly · 92 %`). Los modelos van a `models_gpu/newDataset/cajas/` y los resultados a
-> `resultados/newDataset/cajas/GPU/`. Las cifras de este documento son de la corrida con la imagen completa.
+> **Primero el modelo, después las cajas.** El notebook de GPU entrena y evalúa con la imagen completa, y una
+> predicción acierta solo si nombra al personaje de la carpeta. Al final guarda el modelo con todo lo necesario
+> para usarlo fuera de él (`cnn_final.keras`, `.json`, `_entrada.py` y `_particion.csv`). Después,
+> [`scripts/newDataset/detectar_cajas.py`](../scripts/newDataset/detectar_cajas.py) encuentra a cada personaje
+> con Grounding DINO y la CNN nombra cada caja con su confianza (`Jasper Beardly · 92 %`), sin anotar nada a
+> mano. El notebook no depende de ese script. Las cifras de este documento son de la corrida del 19-10-2026.
 
 > Las rutas de este documento son relativas a la carpeta `CNN/`, salvo las del script del dataset, los
 > `requirements` y el entorno `.venv-gpu`, que están en la raíz del repositorio. Los comandos se ejecutan
@@ -31,7 +30,7 @@ desventajas de cada arquitectura—, las mejoras por regularización y el impact
 completas. Es un solo archivo:
 descárgalo y ábrelo en el navegador (GitHub solo muestra su código). El botón **Presentar** muestra una
 diapositiva a la vez en pantalla completa; las flechas avanzan y `Esc` sale. Todavía muestra las tres corridas
-de octubre (32, 64 y 128 píxeles): se rehace con la corrida a 128 × 128 con cajas.
+de octubre (32, 64 y 128 píxeles): se rehace con la nueva corrida a 128 × 128.
 
 **Informe técnico.** [docs/newDataset/Informe.md](docs/newDataset/Informe.md) documenta la Evaluación Parcial 2:
 el cambio de dataset respecto de la EP1, la preparación de los datos, el diseño y el entrenamiento de la CNN,
@@ -43,7 +42,7 @@ comparación con el MLP, el impacto ético y las conclusiones. El encargo de la 
 
 El notebook de GPU se ejecutó completo a 128 × 128, con la imagen completa, en el mismo equipo que la corrida
 del MLP (Intel Core i7-13620H y NVIDIA GeForce RTX 4060 Laptop). La accuracy usa el criterio de acierto de
-entonces; la estricta solo acepta el personaje de la carpeta y es la comparable con las corridas con cajas.
+entonces; la estricta solo acepta el personaje de la carpeta y es la comparable con el criterio actual.
 
 | Corrida | Configuración final | Accuracy | Estricta | Top-3 | F1 macro | Duración |
 |---|---|---:|---:|---:|---:|---:|
@@ -114,7 +113,7 @@ caben en los 8 GB de la tarjeta y quedan fuera de la comparación.
 
 ## Cómo ejecutarlo
 
-Los pasos completos están en [notebooks/newDataset/README.md](notebooks/newDataset/README.md). En resumen:
+Los pasos completos están en [notebooks/README.md](notebooks/README.md). En resumen:
 
 1. Prepara el dataset con el script compartido, igual que para el MLP:
 
@@ -129,10 +128,10 @@ Los pasos completos están en [notebooks/newDataset/README.md](notebooks/newData
    ```
 
    Una corrida completa a 128 × 128 tarda unas cinco horas. Guarda su resumen en
-   `resultados/newDataset/cajas/GPU/rendimiento_gpu_128x128.json`, con el mismo formato que el MLP, y sus
-   modelos en `models_gpu/newDataset/cajas/`.
+   `resultados/newDataset/GPU/rendimiento_gpu_128x128.json`, con el mismo formato que el MLP, y sus
+   modelos en `models_gpu/newDataset/`, con el modelo final listo para usarse fuera del notebook.
 
-3. La presentación se rehace después de la corrida a 128 × 128 con cajas. Su generador,
+3. La presentación se rehace después de la nueva corrida a 128 × 128. Su generador,
    `CNN/scripts/newDataset/generar_presentacion.py`, todavía lee las tres corridas de octubre, incluidos los
    JSON de 32 × 32 y 64 × 64 que ya no están en el repositorio, así que hay que adaptarlo a una sola corrida
    antes de volver a ejecutarlo.
@@ -149,17 +148,26 @@ Los pasos completos están en [notebooks/newDataset/README.md](notebooks/newData
    pre-procesamiento del notebook. La red siempre nombra a alguno de sus 64
    personajes, así que bajo un 50 % de confianza avisa que conviene revisar la imagen a mano.
 
+5. Pon cada personaje de una imagen en su caja, con su nombre y su confianza, usando el modelo guardado:
+
+   ```powershell
+   .\.venv-gpu\Scripts\python.exe -m pip install -r requirements-cajas.txt
+   .\.venv-gpu\Scripts\python.exe scripts\newDataset\detectar_cajas.py --modelo cnn ruta\a\imagen.jpg
+   ```
+
+   Grounding DINO encuentra a cada personaje y la CNN nombra cada caja. Deja `cajas.csv`, las imágenes con sus
+   cajas y un `resumen.json` en `models_gpu/newDataset/cajas_cnn_final/`.
+
 ## Estructura de la carpeta
 
 ```text
 CNN/
-├── notebooks/newDataset/
+├── notebooks/
 │   ├── LosSimpsons_GPU_4060M.ipynb   # CNN en GPU: experimentos, evaluación, Grad-CAM y rendimiento
 │   └── README.md                     # Qué cambia respecto del MLP, ejecución y tiempos
-├── models_gpu/newDataset/            # Modelos de la corrida en GPU, ignorados por Git
+├── models_gpu/newDataset/            # Modelos de la corrida en GPU y cajas_cnn_final/, ignorados por Git
 ├── resultados/newDataset/
-│   ├── GPU/                          # rendimiento_gpu_128x128.json, la corrida con la imagen completa
-│   └── cajas/GPU/                    # El de la corrida con cajas, al ejecutar el notebook
+│   └── GPU/                          # rendimiento_gpu_128x128.json; cada corrida reemplaza el anterior
 ├── scripts/newDataset/
 │   ├── ejecutar_notebook_gpu.ps1     # Comprueba el entorno y abre el notebook de GPU
 │   ├── generar_presentacion.py       # Genera presentacion_resultados_CNN.html

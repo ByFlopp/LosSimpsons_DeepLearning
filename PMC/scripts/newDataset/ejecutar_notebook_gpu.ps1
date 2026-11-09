@@ -9,13 +9,15 @@
     tiempos se duplican), y abre el notebook.
 
     Antes de la primera ejecucion hay que generar las imagenes alteradas con
-    scripts\newDataset\generar_imagenes_alteradas.py.
+    scripts\newDataset\generar_imagenes_alteradas.py. El notebook no necesita el
+    script de cajas: scripts\newDataset\detectar_cajas.py se usa despues, con el
+    modelo final que guarda el notebook.
 #>
 $ErrorActionPreference = "Stop"
 
 $raiz = Split-Path -Parent (Split-Path -Parent (Split-Path -Parent $PSScriptRoot))
 $python = Join-Path $raiz ".venv-gpu\Scripts\python.exe"
-$notebook = Join-Path $raiz "PMC\notebooks\newDataset\LosSimpsons_GPU_4060M.ipynb"
+$notebook = Join-Path $raiz "PMC\notebooks\LosSimpsons_GPU_4060M.ipynb"
 
 if (-not (Test-Path $python)) {
     throw "No existe $python. Crea el entorno siguiendo requirements-gpu-windows.txt."

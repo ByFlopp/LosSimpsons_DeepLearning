@@ -14,7 +14,7 @@ $ErrorActionPreference = "Stop"
 
 $raiz = Split-Path -Parent (Split-Path -Parent (Split-Path -Parent $PSScriptRoot))
 $python = Join-Path $raiz ".venv-gpu\Scripts\python.exe"
-$notebook = Join-Path $raiz "CNN\notebooks\newDataset\LosSimpsons_GPU_4060M.ipynb"
+$notebook = Join-Path $raiz "CNN\notebooks\LosSimpsons_GPU_4060M.ipynb"
 
 if (-not (Test-Path $python)) {
     throw "No existe $python. Crea el entorno siguiendo requirements-gpu-windows.txt."

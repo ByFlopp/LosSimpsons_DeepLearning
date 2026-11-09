@@ -1,9 +1,10 @@
-"""Pruebas de las cajas de detectar_cajas.py y de su geometría en generar_imagenes_alteradas.py.
+"""Pruebas de detectar_cajas.py y del giro de generar_imagenes_alteradas.py.
 
 No necesitan GPU, modelos ni el dataset:
     .venv-frinkiac/Scripts/python.exe -m pytest scripts/newDataset/tests -q
 """
 
+import csv
 import hashlib
 import json
 import sys
@@ -11,25 +12,12 @@ from pathlib import Path
 
 import numpy as np
 import pytest
-from PIL import Image, ImageDraw
+from PIL import Image
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 import detectar_cajas as D  # noqa: E402
 import generar_imagenes_alteradas as G  # noqa: E402
-
-
-class GiroFijo:
-    """Hace que girar() use exactamente este ángulo (con su signo)."""
-
-    def __init__(self, angulo):
-        self.angulo = angulo
-
-    def uniform(self, *_):
-        return abs(self.angulo)
-
-    def choice(self, _):
-        return 1.0 if self.angulo > 0 else -1.0
 
 
 def degradado(ancho, alto):
@@ -40,7 +28,7 @@ def degradado(ancho, alto):
     return Image.fromarray(np.concatenate(canales, axis=2).astype(np.uint8), "RGB")
 
 
-# Salida de girar() antes de separar recorte_del_giro: la variante tiene que seguir siendo la misma
+# Salida de girar(): las variantes del dataset tienen que seguir siendo las mismas, byte a byte
 HASHES_GIRAR = {
     (160, 90, 1): "2840237b82b8f453b74866297cfbfa46ee313f9853595d801e8b9ceb0ef23c0c",
     (90, 160, 2): "397e6cfde6994e36ebe8f576b0ed748e9c46b6f14afd27395424a9a48b7fe74d",
@@ -56,31 +44,7 @@ def test_girar_no_cambia_byte_a_byte(ancho, alto, semilla):
     assert hashlib.sha256(girada.tobytes()).hexdigest() == HASHES_GIRAR[(ancho, alto, semilla)]
 
 
-@pytest.mark.parametrize("ancho, alto", [(640, 480), (300, 500), (960, 720)])
-@pytest.mark.parametrize("relativa", [(0.1, 0.1, 0.31, 0.62), (0.62, 0.2, 0.95, 0.92), (0.0, 0.0, 1.0, 1.0),
-                                      (0.4, 0.4, 0.6, 0.6)])
-@pytest.mark.parametrize("angulo", [10.0, -10.0, 15.5, -15.5, 20.0, -20.0])
-def test_caja_tras_giro_sigue_al_personaje(ancho, alto, relativa, angulo):
-    # Un rectángulo rojo hace de personaje: su caja en la variante es la que envuelve a lo rojo
-    caja = (round(relativa[0] * ancho), round(relativa[1] * alto), round(relativa[2] * ancho), round(relativa[3] * alto))
-    imagen = Image.new("RGB", (ancho, alto), (128, 128, 128))
-    ImageDraw.Draw(imagen).rectangle((caja[0], caja[1], caja[2] - 1, caja[3] - 1), fill=(255, 0, 0))
-    variante, aplicado = G.girar(imagen, GiroFijo(angulo))
-    pixeles = np.asarray(variante).astype(int)
-    filas, columnas = np.nonzero((pixeles[..., 0] > 200) & (pixeles[..., 1] < 60))
-    real = (columnas.min(), filas.min(), columnas.max() + 1, filas.max() + 1)
-    calculada = G.caja_tras_giro(caja, ancho, alto, aplicado)
-    tolerancia = max(4, 0.01 * max(ancho, alto))
-    assert all(abs(c - r) <= tolerancia for c, r in zip(calculada, real)), (real, calculada)
-
-
-def test_caja_tras_giro_fuera_de_la_variante():
-    # Una esquina que el giro deja fuera del recorte
-    assert G.caja_tras_giro((0, 0, 20, 20), 640, 480, 20.0) is None
-    # Sin recorte posible (imagen diminuta), la caja solo gira
-    assert G.recorte_del_giro(3, 3, 18.0) is None
-    assert G.caja_tras_giro((0, 0, 3, 3), 3, 3, 18.0) is not None
-
+# --- Geometría -------------------------------------------------------------------------------------------
 
 @pytest.mark.parametrize("caja, ancho, alto", [
     ((100, 50, 200, 400), 640, 480),     # alta: el cuadrado cabe
@@ -120,107 +84,165 @@ def test_filtrar_cajas_deja_una_por_personaje():
     assert len(D.filtrar_cajas(muchas, [0.5] * len(muchas), 640, 300)) == D.MAXIMO_CAJAS
 
 
-def test_elegir_la_caja_del_personaje_de_la_carpeta():
-    chica = {"caja": (0, 0, 50, 50), "p_carpeta": 0.01}
-    grande = {"caja": (0, 0, 300, 300), "p_carpeta": 0.02}
-    buena = {"caja": (0, 0, 40, 40), "p_carpeta": 0.60}
-    assert D.elegir([]) == (None, "sin_detecciones")
-    assert D.elegir([chica, buena, grande]) == (1, "cnn")
-    # Nadie lo reconoce: entra la imagen completa, no la caja más grande
-    assert D.elegir([chica, grande]) == (None, "nadie_lo_reconoce")
-    # Con la CNN de recortes, manda su puntuación
-    con_recortes = {**chica, "recortes": {"nombre": "lou", "confianza": 0.7, "p_carpeta": 0.7}}
-    assert D.elegir([con_recortes, buena]) == (0, "cnn")
-
-
 def test_rotulo_con_nombre_y_confianza():
     assert D.rotulo("jasper_beardly", 0.923) == "Jasper Beardly · 92 %"
     assert D.rotulo("kang_kodos", 0.5) == "Kang y Kodos · 50 %"
     assert D.rotulo("krusty_the_clown", 0.996) == "Krusty the Clown · 100 %"
 
 
-def registro_de_prueba(cajas, p_completa=0.3):
-    return {"personaje": "lou", "archivo": "lou__S01E01__t0001000.jpg", "ancho": 640, "alto": 480, "pasada": 1,
-            "config": "x", "completa": {"nombre": "chief_wiggum", "confianza": 0.4, "p_carpeta": p_completa},
-            "cajas": cajas}
+# --- El modelo y su entrada ------------------------------------------------------------------------------
+
+def modelo_falso(carpeta, nombre="mlp_final", representacion="color", con_entrada=True, **extra):
+    """Un .keras vacío (no se carga) con su .json y, si se pide, su _entrada.py."""
+    ruta = carpeta / f"{nombre}.keras"
+    ruta.write_bytes(b"")
+    metadatos = {"configuracion": "Base", "representacion": representacion, "alto": 8, "ancho": 6,
+                 "clases": ["bart_simpson", "homer_simpson", "lisa_simpson"], **extra}
+    ruta.with_suffix(".json").write_text(json.dumps(metadatos), encoding="utf-8")
+    if con_entrada:
+        (carpeta / f"{nombre}{D.SUFIJO_ENTRADA}").write_text(
+            "import numpy as np\n"
+            "def preparar(lote):\n"
+            "    return np.asarray(lote, dtype=np.float32).mean(axis=(1, 2))\n",
+            encoding="utf-8",
+        )
+    return ruta, metadatos
 
 
-def test_filas_de_la_original_y_de_sus_variantes():
-    cajas = [
-        {"caja": [300, 100, 420, 400], "puntaje": 0.5, "recorte": list(D.recorte_cuadrado((300, 100, 420, 400), 640, 480)),
-         "nombre": "lou", "confianza": 0.7, "p_carpeta": 0.7},
-        {"caja": [50, 120, 160, 420], "puntaje": 0.6, "recorte": list(D.recorte_cuadrado((50, 120, 160, 420), 640, 480)),
-         "nombre": "chief_wiggum", "confianza": 0.9, "p_carpeta": 0.01},
+def test_resolver_modelo(tmp_path):
+    ruta, _ = modelo_falso(tmp_path)
+    assert D.resolver_modelo(str(ruta)) == ruta
+    with pytest.raises(SystemExit):
+        D.resolver_modelo(str(tmp_path / "no_existe.keras"))
+    with pytest.raises(SystemExit):
+        D.resolver_modelo(str(ruta.with_suffix(".json")))
+    ruta.with_suffix(".json").unlink()
+    with pytest.raises(SystemExit):  # sin su .json no sirve
+        D.resolver_modelo(str(ruta))
+
+
+def test_cargar_preparacion_usa_el_archivo_del_notebook(tmp_path):
+    ruta, metadatos = modelo_falso(tmp_path)
+    preparar = D.cargar_preparacion(ruta, metadatos)
+    lote = np.full((2, 8, 6, 3), 10, dtype=np.uint8)
+    assert preparar(lote).shape == (2, 3)
+
+
+def test_cargar_preparacion_sin_archivo(tmp_path):
+    # La CNN recibe la imagen RGB tal cual: no necesita _entrada.py
+    ruta, metadatos = modelo_falso(tmp_path, "cnn_final", representacion="rgb", con_entrada=False)
+    lote = np.zeros((1, 8, 6, 3), dtype=np.uint8)
+    assert D.cargar_preparacion(ruta, metadatos)(lote) is not None
+    # El MLP con descriptores sí: sin él no se puede repetir su entrada
+    ruta, metadatos = modelo_falso(tmp_path, "mlp_final", representacion="color", con_entrada=False)
+    with pytest.raises(SystemExit):
+        D.cargar_preparacion(ruta, metadatos)
+
+
+def test_redimensionar_como_el_notebook():
+    lote = D.redimensionar([degradado(64, 48), degradado(20, 30).convert("L")], (6, 8))
+    assert lote.shape == (2, 8, 6, 3) and lote.dtype == np.uint8
+    esperado = np.asarray(degradado(64, 48).resize((6, 8), Image.Resampling.BILINEAR), dtype=np.uint8)
+    assert np.array_equal(lote[0], esperado)
+
+
+def test_nombrar_cada_caja_con_su_personaje():
+    clases = ["bart_simpson", "homer_simpson", "lisa_simpson"]
+    imagen = degradado(640, 480)
+    cajas = [((100, 50, 200, 400), 0.8), ((400, 100, 500, 300), 0.6)]
+    vistos = []
+
+    def clasificar(recortes):
+        vistos.extend(r.size for r in recortes)
+        return np.array([[0.1, 0.7, 0.2], [0.05, 0.15, 0.8], [0.92, 0.05, 0.03]], dtype=np.float32)
+
+    filas = D.nombrar(imagen, cajas, clasificar, clases)
+    assert vistos[0] == (640, 480)  # primero la imagen completa
+    assert [f["caja"] for f in filas] == [0, 1, 2]
+    assert [f["fuente"] for f in filas] == ["imagen_completa", "detector", "detector"]
+    assert filas[0]["rotulo"] == "Homer Simpson · 70 %" and filas[0]["puntaje"] == ""
+    assert filas[1]["rotulo"] == "Lisa Simpson · 80 %" and filas[1]["puntaje"] == 0.8
+    assert filas[2]["personaje"] == "bart_simpson" and filas[2]["confianza"] == 0.92
+    assert filas[1]["candidatas"] == "Homer Simpson · 15 %, Bart Simpson · 5 %"
+    assert (filas[1]["x1"], filas[1]["y2"]) == (100.0, 400.0)
+    assert [filas[1][f"recorte_{e}"] for e in ("x1", "y1", "x2", "y2")] == list(D.recorte_cuadrado(cajas[0][0], 640, 480))
+    assert set(filas[0]) | {"imagen", "carpeta", "ancho", "alto"} == set(D.CAMPOS)
+
+
+def test_nombrar_sin_cajas_deja_la_imagen_completa():
+    filas = D.nombrar(degradado(64, 48), [], lambda r: np.array([[0.2, 0.3, 0.5]]), ["a", "b", "c"])
+    assert len(filas) == 1 and filas[0]["fuente"] == "imagen_completa"
+
+
+def test_dibujar_marca_la_carpeta():
+    imagen = degradado(1280, 720)
+    filas = [
+        {"fuente": "imagen_completa", "personaje": "homer_simpson", "rotulo": "Homer Simpson · 70 %",
+         "x1": 0, "y1": 0, "x2": 1280, "y2": 720},
+        {"fuente": "detector", "personaje": "lisa_simpson", "rotulo": "Lisa Simpson · 80 %",
+         "x1": 100, "y1": 100, "x2": 400, "y2": 600},
     ]
-    original = D.fila_original(registro_de_prueba(cajas))
-    assert (original["fuente"], original["motivo"], original["nombre"]) == ("caja", "cnn", "lou")
-    assert (original["caja_x1"], original["recorte_x1"]) == (300, cajas[0]["recorte"][0])
-
-    variante = D.fila_variante(original, "lou__S01E01__t0001000__alterada.jpg", "alterada", -15.0)
-    esperada = G.caja_tras_giro((300, 100, 420, 400), 640, 480, -15.0)
-    assert variante["tipo"] == "alterada" and variante["fuente"] == "caja"
-    assert [variante[f"caja_{e}"] for e in ("x1", "y1", "x2", "y2")] == [round(v, 1) for v in esperada]
-    recorte = [variante[f"recorte_{e}"] for e in ("x1", "y1", "x2", "y2")]
-    assert recorte == list(D.recorte_cuadrado(esperada, 640, 480))
-
-    # Si la original entra completa, sus variantes también
-    completa = D.fila_original(registro_de_prueba([], p_completa=0.9))
-    assert (completa["fuente"], completa["motivo"]) == ("completa", "sin_detecciones")
-    assert (completa["recorte_x2"], completa["recorte_y2"]) == (640, 480)
-    assert D.fila_variante(completa, "otra.jpg", "parecida", 12.0)["fuente"] == "completa"
-
-    # Una caja que el giro deja fuera: la variante entra completa
-    esquina = {"caja": [0, 0, 20, 20], "puntaje": 0.5, "recorte": [0, 0, 24, 24], "nombre": "lou", "confianza": 0.5,
-               "p_carpeta": 0.5}
-    fuera = D.fila_variante(D.fila_original(registro_de_prueba([esquina])), "v.jpg", "alterada", 20.0)
-    assert (fuera["fuente"], fuera["motivo"], fuera["recorte_x2"]) == ("completa", "fuera_de_la_variante", 640)
+    dibujada = D.dibujar(imagen, filas, "lisa_simpson")
+    assert max(dibujada.size) == D.LADO_MAXIMO_IMAGEN
+    pixel = dibujada.getpixel((round(100 * D.LADO_MAXIMO_IMAGEN / 1280), 300))
+    assert pixel == D.VERDE
+    sin_cajas = D.dibujar(imagen, filas[:1], "lisa_simpson")
+    assert sin_cajas.getpixel((sin_cajas.size[0] // 2, sin_cajas.size[1] - 3)) == D.NARANJO
 
 
-def test_registros_con_variantes(tmp_path):
-    caja = {"caja": [300, 100, 420, 400], "puntaje": 0.5, "recorte": list(D.recorte_cuadrado((300, 100, 420, 400), 640, 480)),
-            "nombre": "lou", "confianza": 0.7, "p_carpeta": 0.7}
-    original = registro_de_prueba([caja])
-    carpeta = tmp_path / "lou"
-    carpeta.mkdir()
-    alterada = original["archivo"].replace(".jpg", G.MARCA_ALTERADA + ".jpg")
-    (carpeta / alterada).write_bytes(b"")
-    base = {"rotacion": "-15.0", "color": "", "parametro_color": "", "textura": "", "parametro_textura": ""}
-    G.escribir_registro(tmp_path / G.REGISTRO, G.CAMPOS_REGISTRO, [
-        {"personaje": "lou", "original": original["archivo"], "alterada": alterada, **base},
-        # Una variante que se borró del dataset no aparece, y una sin su original en la caché queda fuera
-        {"personaje": "lou", "original": original["archivo"], "alterada": "borrada__alterada.jpg", **base},
-        {"personaje": "lou", "original": "otra.jpg", "alterada": "otra__alterada.jpg", **base},
-    ])
-    (carpeta / "otra__alterada.jpg").write_bytes(b"")
-    filas, candidatas = D.construir_registros(tmp_path, {("lou", original["archivo"]): original})
-    assert [(f["archivo"], f["tipo"], f["fuente"]) for f in filas] == [
-        (original["archivo"], "original", "caja"), (alterada, "alterada", "caja")]
-    assert [(c["archivo"], c["elegida"]) for c in candidatas] == [(original["archivo"], True)]
+# --- Qué imágenes ----------------------------------------------------------------------------------------
+
+def dataset_falso(raiz):
+    for personaje, archivos in {"bart_simpson": ["b1.jpg", "b2.jpg", "b3.jpg", "b1__alterada.jpg"],
+                                "lisa_simpson": ["l1.jpg", "l2.png", "l2__parecida.png", "notas.txt"]}.items():
+        carpeta = raiz / personaje
+        carpeta.mkdir(parents=True)
+        for archivo in archivos:
+            (carpeta / archivo).write_bytes(b"")
+    return raiz
 
 
-def test_caja_segura_para_la_cnn_de_recortes():
-    def caja(p):
-        return {"caja": [0, 0, 50, 50], "puntaje": 0.5, "recorte": [0, 0, 60, 60], "nombre": "lou", "confianza": p,
-                "p_carpeta": p}
-
-    assert D.caja_segura(registro_de_prueba([])) is None
-    # Una sola caja: sirve si la CNN ve al personaje en ella o en la imagen completa
-    assert D.caja_segura(registro_de_prueba([caja(0.01)], p_completa=0.30)) == 0
-    assert D.caja_segura(registro_de_prueba([caja(0.01)], p_completa=0.01)) is None
-    # Varias: solo una ganadora clara
-    assert D.caja_segura(registro_de_prueba([caja(0.1), caja(0.8)])) == 1
-    assert D.caja_segura(registro_de_prueba([caja(0.6), caja(0.3)])) is None  # menos del triple
-    assert D.caja_segura(registro_de_prueba([caja(0.4), caja(0.01)])) is None  # bajo UMBRAL_SEGURA
-    # Se elige con la CNN final aunque ya haya puntuación de la CNN de recortes: no se refuerza a sí misma
-    con_recortes = {**caja(0.1), "recortes": {"nombre": "lou", "confianza": 0.9, "p_carpeta": 0.9}}
-    assert D.caja_segura(registro_de_prueba([con_recortes, caja(0.8)])) == 1
+def test_reunir_imagenes_salta_las_variantes(tmp_path):
+    dataset = dataset_falso(tmp_path / "ds")
+    rutas = D.reunir_imagenes([dataset, dataset / "bart_simpson" / "b1.jpg"])
+    assert [r.name for r in rutas] == ["b1.jpg", "b2.jpg", "b3.jpg", "l1.jpg", "l2.png"]
+    with pytest.raises(SystemExit):
+        D.reunir_imagenes([dataset / "lisa_simpson" / "notas.txt"])
 
 
-def test_cache_ignora_una_linea_cortada(tmp_path):
-    ruta = tmp_path / D.CACHE
-    primero = registro_de_prueba([])
-    segundo = {**primero, "pasada": 2}
-    ruta.write_text(json.dumps(primero) + "\n" + json.dumps(segundo) + "\n" + '{"personaje": "lo', encoding="utf-8")
-    registros = D.leer_cache(ruta)
-    assert list(registros) == [("lou", primero["archivo"])]
-    assert registros[("lou", primero["archivo"])]["pasada"] == 2  # la última línea manda
+def test_imagenes_del_dataset_con_la_particion(tmp_path):
+    dataset = dataset_falso(tmp_path / "ds")
+    ruta = tmp_path / "mlp_final_particion.csv"
+    with open(ruta, "w", newline="", encoding="utf-8") as archivo:
+        escritor = csv.writer(archivo)
+        escritor.writerow(["personaje", "archivo", "conjunto"])
+        escritor.writerows([("bart_simpson", "b1.jpg", "train"), ("bart_simpson", "b2.jpg", "test"),
+                            ("bart_simpson", "b3.jpg", "test"), ("lisa_simpson", "l1.jpg", "val"),
+                            ("lisa_simpson", "l2.png", "test")])
+    particion = D.leer_particion(ruta)
+    nombres = [r.name for r in D.imagenes_del_dataset(dataset, particion, "test", None, 42)]
+    assert nombres == ["b2.jpg", "b3.jpg", "l2.png"]
+    assert len(D.imagenes_del_dataset(dataset, particion, "test", 1, 42)) == 2
+    assert len(D.imagenes_del_dataset(dataset, particion, "todos", None, 42)) == 5
+    assert len(D.imagenes_del_dataset(dataset, None, "test", None, 42)) == 5  # sin partición, todas
+    solo_lisa = D.imagenes_del_dataset(dataset, particion, "test", None, 42, ["lisa_simpson"])
+    assert [r.name for r in solo_lisa] == ["l2.png"]
+    with pytest.raises(SystemExit):
+        D.imagenes_del_dataset(dataset, particion, "test", None, 42, ["moe_szyslak"])
+
+
+def test_carpeta_y_destino(tmp_path):
+    clases = ["bart_simpson"]
+    assert D.carpeta_de(Path("ds/bart_simpson/b1.jpg"), clases) == "bart_simpson"
+    assert D.carpeta_de(Path("descargas/foto.png"), clases) == ""
+    usados = set()
+    primero = D.destino_imagen(tmp_path, Path("a/x/foto.png"), usados)
+    segundo = D.destino_imagen(tmp_path, Path("b/x/foto.jpg"), usados)
+    assert primero == tmp_path / "x" / "foto.jpg" and segundo == tmp_path / "x" / "foto_2.jpg"
+
+
+def test_argumentos():
+    with pytest.raises(SystemExit):
+        D.leer_argumentos(["--modelo", "cnn"])  # ni imágenes ni --dataset
+    argumentos = D.leer_argumentos(["--modelo", "mlp", "--dataset", "--muestra", "3"])
+    assert argumentos.dataset is not None and argumentos.muestra == 3 and argumentos.conjunto == "test"

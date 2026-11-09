@@ -1,12 +1,12 @@
-# Dependencias de scripts/newDataset/detectar_cajas.py, que pone una caja alrededor de cada personaje para
-# los notebooks de GPU de la CNN y del MLP del dataset nuevo.
+# Dependencias de scripts/newDataset/detectar_cajas.py, que pone una caja alrededor de cada personaje y la
+# nombra con el modelo final que guarda el notebook de la CNN o del MLP. Se usa DESPUÉS de entrenar.
 #
 # Se instalan encima de requirements-gpu-windows.txt, en el mismo entorno:
 #   .venv-gpu\Scripts\python.exe -m pip install -r requirements-cajas.txt
 #
 # transformers trae Grounding DINO (IDEA-Research/grounding-dino-base). Sus pesos, unos 0,9 GB, se bajan de
 # Hugging Face la primera vez y quedan en la caché del usuario. Su procesador de imágenes usa PIL, así que no
-# hace falta torchvision. Los notebooks solo leen los CSV que deja el script: no necesitan este archivo.
+# hace falta torchvision. Los notebooks no usan el script ni este archivo.
 #
 # Versiones fijadas, todas con al menos dos semanas de publicadas al 07-11-2026; las dependencias de
 # transformers también, para no arrastrar versiones recién salidas.

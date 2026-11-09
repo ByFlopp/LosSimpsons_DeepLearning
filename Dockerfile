@@ -1,4 +1,4 @@
-# Entorno de los notebooks de GPU de PMC/notebooks/newDataset y CNN/notebooks/newDataset, a 128 x 128,
+# Entorno de los notebooks de GPU de PMC/notebooks y CNN/notebooks, a 128 x 128,
 # en un solo contenedor Linux.
 #
 # - GPU: Keras 3 sobre PyTorch con CUDA 13.0. El wheel de torch trae sus propias

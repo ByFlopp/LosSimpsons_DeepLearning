@@ -4,12 +4,12 @@ Esta carpeta contiene un proyecto de Machine Learning que entrena, compara y eva
 
 | Versión | Dataset | Notebooks | Resultado en test |
 |---|---|---|---|
-| **Dataset nuevo (actual)** | 64 personajes y 40.123 imágenes, una carpeta por personaje | [notebooks/newDataset/](notebooks/newDataset/) | Accuracy de 0,586 con la imagen completa |
+| **Dataset nuevo (actual)** | 64 personajes y 40.123 imágenes, una carpeta por personaje | [notebooks/](notebooks/) | Accuracy de 0,586 con la imagen completa |
 | Dataset anterior | 25 personajes y 20.074 imágenes de Kaggle, con `train` y `test` | [notebooks/oldDataset/](notebooks/oldDataset/) | Accuracy de 51,7 % |
 
 Las dos versiones se entrenan y se evalúan a **128 × 128 en la GPU** (NVIDIA GeForce RTX 4060 Laptop).
 
-> Es un proyecto didáctico de clasificación de imágenes. No detecta la posición de un personaje, no dibuja cajas y no asigna varias etiquetas a una misma imagen.
+> Es un proyecto didáctico de clasificación de imágenes: el MLP asigna un personaje a cada imagen completa. Las cajas alrededor de cada personaje las pone después, con el modelo ya entrenado, el script aparte [scripts/newDataset/detectar_cajas.py](../scripts/newDataset/detectar_cajas.py).
 
 > Las rutas de este documento son relativas a la carpeta `PMC/`, salvo las del script del dataset, los `requirements` y el entorno `.venv-gpu`, que están en la raíz del repositorio y se comparten con los demás modelos. Los comandos se ejecutan desde la raíz del repositorio.
 
@@ -17,7 +17,7 @@ Las dos versiones se entrenan y se evalúan a **128 × 128 en la GPU** (NVIDIA G
   <img src="../images/logoLosSimpsons.png" alt="Logo de Los Simpson" width="480">
 </p>
 
-**Presentación de resultados.** [presentacion_resultados_PMC.html](presentacion_resultados_PMC.html) resume el dataset nuevo en 19 diapositivas: experimentos, KPIs, análisis de errores, costo en CPU frente a GPU y anexos con las tablas completas. Todavía muestra las seis corridas de octubre, en CPU y GPU a 32, 64 y 128 píxeles: se rehace con la corrida a 128 × 128 con cajas. Es un solo archivo: descárgalo y ábrelo en el navegador (GitHub solo muestra su código). El botón **Presentar** muestra una diapositiva a la vez en pantalla completa; las flechas avanzan y `Esc` sale.
+**Presentación de resultados.** [presentacion_resultados_PMC.html](presentacion_resultados_PMC.html) resume el dataset nuevo en 19 diapositivas: experimentos, KPIs, análisis de errores, costo en CPU frente a GPU y anexos con las tablas completas. Todavía muestra las seis corridas de octubre, en CPU y GPU a 32, 64 y 128 píxeles: se rehace con la nueva corrida a 128 × 128. Es un solo archivo: descárgalo y ábrelo en el navegador (GitHub solo muestra su código). El botón **Presentar** muestra una diapositiva a la vez en pantalla completa; las flechas avanzan y `Esc` sale.
 
 ## Dataset nuevo: 64 personajes
 
@@ -32,8 +32,8 @@ El equipo amplió el dataset público de Kaggle con más personajes y con fotogr
 | Imágenes alteradas | Un cuarto de las imágenes de cada personaje tiene una variante con giro, cambio de color y filtro de textura. Cada variante va al mismo conjunto que su original. |
 | Imágenes parecidas | Las casi idénticas a otra del mismo personaje entran con una versión filtrada, para que el modelo no acierte en test porque vio casi la misma imagen al entrenar. |
 | Descriptores | El MLP no recibe píxeles, sino 2.462 descriptores de color (HSV, Lab) y de textura (LBP, Gabor, HOG). |
-| Escenas con varios personajes | En las corridas con la imagen completa, nombrar a otro personaje presente cuenta como acierto en test y la accuracy estricta se informa como referencia. Con cajas, solo alimenta la accuracy por escena, de referencia. |
-| Cada personaje en su caja (desde el 07-11-2026, notebook de GPU) | [scripts/newDataset/detectar_cajas.py](../scripts/newDataset/detectar_cajas.py) pone una caja con nombre alrededor de cada personaje, sin anotar nada a mano. Los descriptores se calculan sobre el recorte del personaje de la carpeta y una predicción acierta solo si lo nombra. Modelos en `models_gpu/newDataset/cajas/` y resultados en `resultados/newDataset/cajas/`. |
+| Escenas con varios personajes | En la corrida del 16-10-2026, nombrar a otro personaje presente contaba como acierto en test. Ahora una predicción acierta solo si nombra al personaje de la carpeta, y la escena solo alimenta la accuracy por escena, de referencia. |
+| Primero el modelo, después las cajas | El notebook entrena y evalúa con la imagen completa y guarda el modelo final con todo lo necesario para usarlo fuera de él (`mlp_final.keras`, `.json`, `_entrada.py` y `_particion.csv`). Después, [scripts/newDataset/detectar_cajas.py](../scripts/newDataset/detectar_cajas.py) encuentra a cada personaje y el MLP nombra cada caja, sin anotar nada a mano. El notebook no depende de ese script. |
 | GPU a 128 × 128 | El notebook usa Keras 3 sobre PyTorch, con un bucle de entrenamiento propio, en la RTX 4060 Laptop. |
 
 El script [scripts/newDataset/generar_imagenes_alteradas.py](../scripts/newDataset/generar_imagenes_alteradas.py), en la raíz del repositorio, genera las alteradas y las parecidas dentro del dataset y registra las imágenes repetidas entre carpetas de personajes distintos. Nunca modifica las originales.
@@ -54,7 +54,7 @@ El modelo base tiene dos capas ocultas (`512 → 256`) con ReLU, BatchNormalizat
 
 ### Resultados de la corrida del 16-10-2026
 
-El notebook de GPU se ejecutó completo a 128 × 128, con la imagen completa, en un equipo con Intel Core i7-13620H y NVIDIA GeForce RTX 4060 Laptop. La accuracy usa el criterio de acierto de entonces, que también aceptaba a otro personaje presente; la estricta solo acepta el personaje de la carpeta y es la comparable con las corridas con cajas.
+El notebook de GPU se ejecutó completo a 128 × 128, con la imagen completa, en un equipo con Intel Core i7-13620H y NVIDIA GeForce RTX 4060 Laptop. La accuracy usa el criterio de acierto de entonces, que también aceptaba a otro personaje presente; la estricta solo acepta el personaje de la carpeta y es la comparable con el criterio actual.
 
 | Corrida | Configuración final | Accuracy | Estricta | Top-3 | F1 macro | Duración |
 |---|---|---:|---:|---:|---:|---:|
@@ -79,7 +79,7 @@ Los umbrales se fijaron antes de entrenar. Los cuatro de calidad se cumplen, tam
 
 ### Cómo ejecutarlo
 
-Los pasos completos están en [notebooks/newDataset/README.md](notebooks/newDataset/README.md). En resumen:
+Los pasos completos están en [notebooks/README.md](notebooks/README.md). En resumen:
 
 1. Deja el dataset, una carpeta por personaje, en `~/Desktop/simpsons_dataset`, o define su ruta en la variable de entorno `SIMPSONS_DATASET`.
 2. Genera las imágenes alteradas y parecidas:
@@ -97,7 +97,14 @@ Los pasos completos están en [notebooks/newDataset/README.md](notebooks/newData
 
    También se puede usar Docker: copia `.env.example` como `.env`, pon la ruta del dataset y ejecuta `docker compose up --build`.
 
-Cada corrida guarda su resumen en `resultados/newDataset/cajas/GPU/rendimiento_gpu_128x128.json`, y sus modelos en `models_gpu/newDataset/cajas/`.
+   Cada corrida guarda su resumen en `resultados/newDataset/GPU/rendimiento_gpu_128x128.json` y sus modelos en `models_gpu/newDataset/`, con el modelo final listo para usarse fuera del notebook.
+
+4. Después, si se quiere, pon cada personaje en su caja con el modelo guardado (paso 4 de la guía):
+
+   ```powershell
+   .\.venv-gpu\Scripts\python.exe -m pip install -r requirements-cajas.txt
+   .\.venv-gpu\Scripts\python.exe scripts\newDataset\detectar_cajas.py --modelo mlp ruta\a\imagen.jpg
+   ```
 
 ## Dataset anterior: 25 personajes
 
@@ -347,20 +354,18 @@ PMC/
 │   ├── oldDataset/
 │   │   ├── LosSimpsons_GPU_4060M.ipynb # MLP en GPU (Windows nativo + RTX 4060), a 128 × 128
 │   │   └── README_GPU.md               # Cómo ejecutar el notebook en GPU
-│   └── newDataset/                     # Dataset de 64 personajes, una carpeta por personaje
-│       ├── LosSimpsons_GPU_4060M.ipynb # MLP sobre descriptores en GPU a 128 × 128: experimentos, evaluación y rendimiento
-│       └── README.md                   # Cambios, ejecución y resultados del dataset nuevo
+│   ├── LosSimpsons_GPU_4060M.ipynb     # Dataset nuevo: MLP sobre descriptores en GPU a 128 × 128
+│   └── README.md                       # Cambios, ejecución y resultados del dataset nuevo
 ├── docs/
 │   ├── oldDataset/
 │   │   └── Informe.md                  # Informe técnico del proyecto
 │   ├── EP1_TLY1102_Instrucciones y Pauta PRESENTACIÓN_Estudiante.pdf
 │   └── material_complementario/    # Material de apoyo de la asignatura
-├── models_gpu/<oldDataset|newDataset>/  # Modelos .keras regenerables, ignorados por Git
+├── models_gpu/<oldDataset|newDataset>/  # Modelos .keras regenerables (y cajas_mlp_final/), ignorados por Git
 ├── resultados/
 │   ├── oldDataset/GPU/                 # rendimiento_gpu_128x128.json
 │   └── newDataset/
-│       ├── GPU/                        # rendimiento_gpu_128x128.json, con la imagen completa
-│       └── cajas/GPU/                  # El de la corrida con cajas, al ejecutar el notebook
+│       └── GPU/                        # rendimiento_gpu_128x128.json; cada corrida reemplaza el anterior
 ├── images/                         # Recursos visuales
 │   ├── homero.png, lisa.png            # Ilustraciones de la portada de los notebooks
 │   └── oldDataset/imageGPU.png         # Captura del montaje anterior en GPU
@@ -375,15 +380,15 @@ PMC/
 
 El script que prepara el dataset nuevo (`scripts/newDataset/generar_imagenes_alteradas.py`), los `requirements`, el `Dockerfile` y `docker-compose.yml` están en la raíz del repositorio, porque los comparten todos los modelos; el [README de la raíz](../README.md) los describe.
 
-El dataset no forma parte del repositorio: se descarga aparte y se deja en una ubicación externa, como se explica en [Descargar los datos fuera del repositorio](#2-descargar-los-datos-fuera-del-repositorio). El dataset nuevo tampoco: su ubicación y su preparación están en [notebooks/newDataset/README.md](notebooks/newDataset/README.md).
+El dataset no forma parte del repositorio: se descarga aparte y se deja en una ubicación externa, como se explica en [Descargar los datos fuera del repositorio](#2-descargar-los-datos-fuera-del-repositorio). El dataset nuevo tampoco: su ubicación y su preparación están en [notebooks/README.md](notebooks/README.md).
 
 ## Referencias internas
 
 **Dataset nuevo**
 
-- [Presentación de resultados](presentacion_resultados_PMC.html): 19 diapositivas con experimentos, KPIs, errores y las seis corridas en CPU y GPU; se rehace con la corrida a 128 × 128 con cajas.
-- [Guía del dataset nuevo](notebooks/newDataset/README.md): qué cambia, cómo preparar el dataset, cómo ejecutar los notebooks y resultados.
-- [Notebook GPU](notebooks/newDataset/LosSimpsons_GPU_4060M.ipynb): experimentos, evaluación y rendimiento a 128 × 128.
+- [Presentación de resultados](presentacion_resultados_PMC.html): 19 diapositivas con experimentos, KPIs, errores y las seis corridas en CPU y GPU; se rehace con la nueva corrida a 128 × 128.
+- [Guía del dataset nuevo](notebooks/README.md): qué cambia, cómo preparar el dataset, cómo ejecutar los notebooks, cómo poner las cajas después y resultados.
+- [Notebook GPU](notebooks/LosSimpsons_GPU_4060M.ipynb): experimentos, evaluación y rendimiento a 128 × 128.
 - [Resúmenes de rendimiento](resultados/newDataset/): un JSON por corrida con tiempos, entorno y métricas.
 
 **Dataset anterior**
