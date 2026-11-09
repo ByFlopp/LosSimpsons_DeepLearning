@@ -31,433 +31,609 @@
   ],
   "tecnica": "DeepInversion (Yin et al., 2020)",
   "hiperparametros": {
-    "pasos": 2000,
+    "pasos": 3000,
     "lr": 0.05,
-    "alfa_bn": 0.01,
+    "alfa_bn": 0.0,
     "alfa_tv": 0.001,
     "alfa_l2": 1e-05,
-    "desplazamiento": 16,
+    "desplazamiento": 0,
     "multiplicador_primera_bn": 10.0,
     "beta1": 0.5,
     "beta2": 0.9,
-    "lote": 64,
+    "volteo": false,
+    "bn_normalizada": true,
+    "escalas": [
+      8,
+      16,
+      32
+    ],
+    "reinicios": 4,
+    "lote": 256,
     "optimizador": "Adam, tasa coseno",
     "instantaneas": [
       0,
       50,
       200,
       500,
-      2000
+      3000
     ]
   },
   "semilla": 42,
   "semilla_sorteada": false,
-  "segundos": 14.6,
-  "desde_cache": true,
+  "segundos": 109.2,
+  "desde_cache": false,
   "dispositivo": "cuda",
-  "fecha": "2026-11-09 17:36:46",
+  "fecha": "2026-11-09 18:19:57",
   "azar": 0.0156,
   "matriz": {
     "cnn": {
-      "top1": 1,
-      "top3": 2,
+      "top1": 2,
+      "top3": 8,
       "n": 64,
-      "confianza": 0.0223
+      "confianza": 0.0214,
+      "posicion_media": 30.14
     },
     "cnn_recortes": {
-      "top1": 2,
-      "top3": 3,
+      "top1": 1,
+      "top3": 5,
       "n": 64,
-      "confianza": 0.0202
+      "confianza": 0.0221,
+      "posicion_media": 29.95
     },
     "mlp": {
-      "top1": 30,
-      "top3": 39,
+      "top1": 64,
+      "top3": 64,
       "n": 64,
-      "confianza": 0.1807
+      "confianza": 0.9849,
+      "posicion_media": 1.0
     }
   },
   "correlacion_pesos": [],
   "instantaneas": [
     {
       "paso": 0,
-      "top1": 1,
-      "top3": 5,
+      "top1": 0,
+      "top3": 1,
       "n": 64,
-      "confianza": 0.015,
-      "confianza_prediccion": 0.0994,
-      "mas_nombrado": "professor_john_frink",
-      "veces_mas_nombrado": 22
+      "confianza": 0.011,
+      "posicion_media": 32.72,
+      "confianza_prediccion": 0.2107,
+      "mas_nombrado": "krusty_the_clown",
+      "veces_mas_nombrado": 10
     },
     {
       "paso": 50,
-      "top1": 5,
-      "top3": 13,
+      "top1": 64,
+      "top3": 64,
       "n": 64,
-      "confianza": 0.0526,
-      "confianza_prediccion": 0.2215,
-      "mas_nombrado": "homer_simpson",
-      "veces_mas_nombrado": 11
+      "confianza": 0.9779,
+      "posicion_media": 1.0,
+      "confianza_prediccion": 0.9779,
+      "mas_nombrado": "abraham_grampa_simpson",
+      "veces_mas_nombrado": 1
     },
     {
       "paso": 200,
-      "top1": 4,
-      "top3": 14,
+      "top1": 64,
+      "top3": 64,
       "n": 64,
-      "confianza": 0.0507,
-      "confianza_prediccion": 0.2047,
-      "mas_nombrado": "comic_book_guy",
-      "veces_mas_nombrado": 8
+      "confianza": 0.9794,
+      "posicion_media": 1.0,
+      "confianza_prediccion": 0.9794,
+      "mas_nombrado": "abraham_grampa_simpson",
+      "veces_mas_nombrado": 1
     },
     {
       "paso": 500,
-      "top1": 8,
-      "top3": 16,
+      "top1": 64,
+      "top3": 64,
       "n": 64,
-      "confianza": 0.058,
-      "confianza_prediccion": 0.2137,
-      "mas_nombrado": "chief_wiggum",
-      "veces_mas_nombrado": 5
+      "confianza": 0.9794,
+      "posicion_media": 1.0,
+      "confianza_prediccion": 0.9794,
+      "mas_nombrado": "abraham_grampa_simpson",
+      "veces_mas_nombrado": 1
     },
     {
-      "paso": 2000,
-      "top1": 30,
-      "top3": 39,
+      "paso": 3000,
+      "top1": 64,
+      "top3": 64,
       "n": 64,
-      "confianza": 0.1807,
-      "confianza_prediccion": 0.2463,
-      "mas_nombrado": "homer_simpson",
-      "veces_mas_nombrado": 5
+      "confianza": 0.9849,
+      "posicion_media": 1.0,
+      "confianza_prediccion": 0.9849,
+      "mas_nombrado": "abraham_grampa_simpson",
+      "veces_mas_nombrado": 1
     }
   ],
   "historial": [
     {
       "paso": 0,
-      "total": 770.48126,
-      "entropia": 4.57033,
-      "bn": 76303.10938,
-      "tv": 2878.59204,
-      "l2": 127.95227
+      "total": 5.49286,
+      "entropia": 5.15624,
+      "bn": 100.77864,
+      "tv": 335.4252,
+      "l2": 119.83456
     },
     {
       "paso": 50,
-      "total": 127.56925,
-      "entropia": 4.37332,
-      "bn": 12079.3623,
-      "tv": 2401.06323,
-      "l2": 125.10281
+      "total": 0.14662,
+      "entropia": 0.02652,
+      "bn": 202.43463,
+      "tv": 118.91688,
+      "l2": 118.49079
     },
     {
       "paso": 100,
-      "total": 1007.78894,
-      "entropia": 3.26525,
-      "bn": 100236.19531,
-      "tv": 2160.52637,
-      "l2": 123.51242
+      "total": 0.11615,
+      "entropia": 0.02396,
+      "bn": 225.78754,
+      "tv": 90.99137,
+      "l2": 119.98083
     },
     {
       "paso": 150,
-      "total": 98.80743,
-      "entropia": 4.24162,
-      "bn": 9254.50488,
-      "tv": 2019.53931,
-      "l2": 122.33772
+      "total": 0.11229,
+      "entropia": 0.02364,
+      "bn": 231.51495,
+      "tv": 87.44974,
+      "l2": 119.50745
     },
     {
       "paso": 200,
-      "total": 193.08966,
-      "entropia": 4.17018,
-      "bn": 18699.26953,
-      "tv": 1925.56335,
-      "l2": 121.69209
+      "total": 0.11162,
+      "entropia": 0.02355,
+      "bn": 233.62668,
+      "tv": 86.87646,
+      "l2": 119.01941
     },
     {
       "paso": 250,
-      "total": 313.14539,
-      "entropia": 4.14255,
-      "bn": 30714.46875,
-      "tv": 1856.97388,
-      "l2": 118.68759
+      "total": 0.11138,
+      "entropia": 0.02388,
+      "bn": 232.35127,
+      "tv": 86.31147,
+      "l2": 118.7825
     },
     {
       "paso": 300,
-      "total": 138.31198,
-      "entropia": 3.72926,
-      "bn": 13277.39648,
-      "tv": 1807.60413,
-      "l2": 116.8223
+      "total": 0.11145,
+      "entropia": 0.02411,
+      "bn": 232.59671,
+      "tv": 86.15127,
+      "l2": 118.78789
     },
     {
       "paso": 350,
-      "total": 113.33196,
-      "entropia": 3.68902,
-      "bn": 10785.9707,
-      "tv": 1782.09229,
-      "l2": 115.39651
+      "total": 0.1105,
+      "entropia": 0.02337,
+      "bn": 232.50317,
+      "tv": 85.93967,
+      "l2": 118.81329
     },
     {
       "paso": 400,
-      "total": 150.66713,
-      "entropia": 4.21676,
-      "bn": 14469.90918,
-      "tv": 1750.15491,
-      "l2": 114.64466
+      "total": 0.10967,
+      "entropia": 0.02351,
+      "bn": 232.26758,
+      "tv": 84.97276,
+      "l2": 118.77942
     },
     {
       "paso": 450,
-      "total": 118.17187,
-      "entropia": 3.59905,
-      "bn": 11283.86914,
-      "tv": 1732.98999,
-      "l2": 113.39438
+      "total": 0.10945,
+      "entropia": 0.02343,
+      "bn": 231.31482,
+      "tv": 84.82909,
+      "l2": 118.83566
     },
     {
       "paso": 500,
-      "total": 107.90025,
-      "entropia": 3.69145,
-      "bn": 10249.26953,
-      "tv": 1714.96484,
-      "l2": 113.45349
+      "total": 0.10909,
+      "entropia": 0.02356,
+      "bn": 231.0127,
+      "tv": 84.3453,
+      "l2": 118.82874
     },
     {
       "paso": 550,
-      "total": 62.12236,
-      "entropia": 3.63124,
-      "bn": 5677.83398,
-      "tv": 1711.65649,
-      "l2": 112.41765
+      "total": 0.10869,
+      "entropia": 0.02343,
+      "bn": 230.28745,
+      "tv": 84.06668,
+      "l2": 118.77583
     },
     {
       "paso": 600,
-      "total": 212.68297,
-      "entropia": 3.45516,
-      "bn": 20752.87695,
-      "tv": 1697.91711,
-      "l2": 112.23474
+      "total": 0.10829,
+      "entropia": 0.02331,
+      "bn": 230.13017,
+      "tv": 83.79418,
+      "l2": 118.75549
     },
     {
       "paso": 650,
-      "total": 91.75168,
-      "entropia": 3.60822,
-      "bn": 8644.08789,
-      "tv": 1701.4563,
-      "l2": 111.83453
+      "total": 0.10796,
+      "entropia": 0.02325,
+      "bn": 229.99986,
+      "tv": 83.52872,
+      "l2": 118.70503
     },
     {
       "paso": 700,
-      "total": 180.39584,
-      "entropia": 3.87307,
-      "bn": 17483.41992,
-      "tv": 1687.45874,
-      "l2": 110.6462
+      "total": 0.10764,
+      "entropia": 0.02309,
+      "bn": 229.67735,
+      "tv": 83.36971,
+      "l2": 118.67212
     },
     {
       "paso": 750,
-      "total": 149.14035,
-      "entropia": 3.43718,
-      "bn": 14401.49414,
-      "tv": 1687.11914,
-      "l2": 110.71514
+      "total": 0.10744,
+      "entropia": 0.02314,
+      "bn": 229.3495,
+      "tv": 83.11584,
+      "l2": 118.64
     },
     {
       "paso": 800,
-      "total": 64.56881,
-      "entropia": 3.76869,
-      "bn": 5911.5957,
-      "tv": 1683.06384,
-      "l2": 110.12878
+      "total": 0.10721,
+      "entropia": 0.02308,
+      "bn": 229.25214,
+      "tv": 82.94573,
+      "l2": 118.61504
     },
     {
       "paso": 850,
-      "total": 153.68524,
-      "entropia": 3.2066,
-      "bn": 14878.96777,
-      "tv": 1687.87292,
-      "l2": 110.53412
+      "total": 0.10706,
+      "entropia": 0.02301,
+      "bn": 229.18405,
+      "tv": 82.86974,
+      "l2": 118.5933
     },
     {
       "paso": 900,
-      "total": 95.43201,
-      "entropia": 3.28774,
-      "bn": 9045.38184,
-      "tv": 1689.35278,
-      "l2": 109.64925
+      "total": 0.10694,
+      "entropia": 0.02296,
+      "bn": 229.13202,
+      "tv": 82.79243,
+      "l2": 118.58269
     },
     {
       "paso": 950,
-      "total": 273.7948,
-      "entropia": 3.25945,
-      "bn": 26885.35156,
-      "tv": 1680.72766,
-      "l2": 108.73198
+      "total": 0.10687,
+      "entropia": 0.02293,
+      "bn": 229.07469,
+      "tv": 82.75569,
+      "l2": 118.57715
     },
     {
       "paso": 1000,
-      "total": 90.62148,
-      "entropia": 3.09987,
-      "bn": 8583.02539,
-      "tv": 1690.26587,
-      "l2": 108.84869
+      "total": 0.10846,
+      "entropia": 0.03213,
+      "bn": 220.34554,
+      "tv": 75.15043,
+      "l2": 118.42297
     },
     {
       "paso": 1050,
-      "total": 57.30118,
-      "entropia": 3.24863,
-      "bn": 5236.82031,
-      "tv": 1683.25647,
-      "l2": 108.80389
+      "total": 0.10482,
+      "entropia": 0.01906,
+      "bn": 236.55319,
+      "tv": 84.58044,
+      "l2": 118.05682
     },
     {
       "paso": 1100,
-      "total": 46.17301,
-      "entropia": 3.13163,
-      "bn": 4136.78271,
-      "tv": 1672.46704,
-      "l2": 108.33505
+      "total": 0.10315,
+      "entropia": 0.0184,
+      "bn": 233.23502,
+      "tv": 83.57094,
+      "l2": 117.97685
     },
     {
       "paso": 1150,
-      "total": 58.41613,
-      "entropia": 3.28179,
-      "bn": 5345.86377,
-      "tv": 1674.62329,
-      "l2": 108.31956
+      "total": 0.10283,
+      "entropia": 0.01833,
+      "bn": 232.3073,
+      "tv": 83.32033,
+      "l2": 117.77179
     },
     {
       "paso": 1200,
-      "total": 90.62503,
-      "entropia": 3.27266,
-      "bn": 8568.06152,
-      "tv": 1670.67517,
-      "l2": 108.59338
+      "total": 0.10228,
+      "entropia": 0.01832,
+      "bn": 231.50865,
+      "tv": 82.77656,
+      "l2": 117.58961
     },
     {
       "paso": 1250,
-      "total": 69.91536,
-      "entropia": 3.34484,
-      "bn": 6490.50244,
-      "tv": 1664.41797,
-      "l2": 107.7859
+      "total": 0.10171,
+      "entropia": 0.018,
+      "bn": 230.716,
+      "tv": 82.53805,
+      "l2": 117.53308
     },
     {
       "paso": 1300,
-      "total": 101.85062,
-      "entropia": 3.26856,
-      "bn": 9692.20996,
-      "tv": 1658.88721,
-      "l2": 106.81685
+      "total": 0.1006,
+      "entropia": 0.01815,
+      "bn": 230.43271,
+      "tv": 81.28411,
+      "l2": 117.42496
     },
     {
       "paso": 1350,
-      "total": 39.84599,
-      "entropia": 2.91045,
-      "bn": 3528.07031,
-      "tv": 1653.76831,
-      "l2": 107.35902
+      "total": 0.09963,
+      "entropia": 0.01812,
+      "bn": 229.82043,
+      "tv": 80.33871,
+      "l2": 117.4047
     },
     {
       "paso": 1400,
-      "total": 45.99754,
-      "entropia": 2.96717,
-      "bn": 4138.07812,
-      "tv": 1648.51953,
-      "l2": 107.36711
+      "total": 0.09906,
+      "entropia": 0.01874,
+      "bn": 228.45178,
+      "tv": 79.14357,
+      "l2": 117.2672
     },
     {
       "paso": 1450,
-      "total": 27.72543,
-      "entropia": 2.71456,
-      "bn": 2336.51123,
-      "tv": 1644.69287,
-      "l2": 106.89417
+      "total": 0.09773,
+      "entropia": 0.01863,
+      "bn": 226.43906,
+      "tv": 77.93037,
+      "l2": 117.07803
     },
     {
       "paso": 1500,
-      "total": 42.51434,
-      "entropia": 3.06873,
-      "bn": 3780.55054,
-      "tv": 1639.03564,
-      "l2": 107.25581
+      "total": 0.09694,
+      "entropia": 0.01878,
+      "bn": 225.73145,
+      "tv": 76.98949,
+      "l2": 116.93562
     },
     {
       "paso": 1550,
-      "total": 31.3154,
-      "entropia": 2.58172,
-      "bn": 2709.52979,
-      "tv": 1637.31494,
-      "l2": 107.18477
+      "total": 0.09625,
+      "entropia": 0.01842,
+      "bn": 225.04694,
+      "tv": 76.66154,
+      "l2": 116.87772
     },
     {
       "paso": 1600,
-      "total": 26.82143,
-      "entropia": 2.70069,
-      "bn": 2248.83862,
-      "tv": 1631.2804,
-      "l2": 107.12575
+      "total": 0.09575,
+      "entropia": 0.01863,
+      "bn": 224.47009,
+      "tv": 75.9449,
+      "l2": 116.84184
     },
     {
       "paso": 1650,
-      "total": 57.80733,
-      "entropia": 2.81057,
-      "bn": 5336.83301,
-      "tv": 1627.36194,
-      "l2": 106.89818
+      "total": 0.09515,
+      "entropia": 0.01859,
+      "bn": 224.09164,
+      "tv": 75.39742,
+      "l2": 116.81461
     },
     {
       "paso": 1700,
-      "total": 49.04568,
-      "entropia": 3.01367,
-      "bn": 4440.771,
-      "tv": 1623.23535,
-      "l2": 107.01417
+      "total": 0.09479,
+      "entropia": 0.01858,
+      "bn": 223.42047,
+      "tv": 75.04272,
+      "l2": 116.79286
     },
     {
       "paso": 1750,
-      "total": 30.7766,
-      "entropia": 2.60742,
-      "bn": 2654.77466,
-      "tv": 1620.36182,
-      "l2": 106.97376
+      "total": 0.09439,
+      "entropia": 0.0185,
+      "bn": 223.31714,
+      "tv": 74.71503,
+      "l2": 116.76997
     },
     {
       "paso": 1800,
-      "total": 48.01559,
-      "entropia": 2.38112,
-      "bn": 4401.53857,
-      "tv": 1618.01782,
-      "l2": 107.03251
+      "total": 0.09411,
+      "entropia": 0.01845,
+      "bn": 222.93947,
+      "tv": 74.4861,
+      "l2": 116.75549
     },
     {
       "paso": 1850,
-      "total": 39.62261,
-      "entropia": 2.86016,
-      "bn": 3514.521,
-      "tv": 1616.16382,
-      "l2": 107.06666
+      "total": 0.09389,
+      "entropia": 0.01841,
+      "bn": 222.70966,
+      "tv": 74.31699,
+      "l2": 116.74301
     },
     {
       "paso": 1900,
-      "total": 17.88662,
-      "entropia": 2.7954,
-      "bn": 1347.5415,
-      "tv": 1614.73962,
-      "l2": 107.03835
+      "total": 0.09374,
+      "entropia": 0.0184,
+      "bn": 222.52756,
+      "tv": 74.16768,
+      "l2": 116.73326
     },
     {
       "paso": 1950,
-      "total": 20.23323,
-      "entropia": 2.47809,
-      "bn": 1613.89392,
-      "tv": 1615.13135,
-      "l2": 107.06434
+      "total": 0.09364,
+      "entropia": 0.01838,
+      "bn": 222.44559,
+      "tv": 74.0883,
+      "l2": 116.72733
     },
     {
-      "paso": 1999,
-      "total": 43.82195,
-      "entropia": 2.76109,
-      "bn": 3944.47461,
-      "tv": 1615.04541,
-      "l2": 107.0612
+      "paso": 2000,
+      "total": 0.09411,
+      "entropia": 0.02298,
+      "bn": 217.31952,
+      "tv": 69.96603,
+      "l2": 116.69258
+    },
+    {
+      "paso": 2050,
+      "total": 0.10779,
+      "entropia": 0.01578,
+      "bn": 239.87427,
+      "tv": 90.84875,
+      "l2": 116.56767
+    },
+    {
+      "paso": 2100,
+      "total": 0.11005,
+      "entropia": 0.01521,
+      "bn": 243.30672,
+      "tv": 93.67471,
+      "l2": 116.53867
+    },
+    {
+      "paso": 2150,
+      "total": 0.10841,
+      "entropia": 0.01569,
+      "bn": 241.2926,
+      "tv": 91.56242,
+      "l2": 116.45276
+    },
+    {
+      "paso": 2200,
+      "total": 0.10532,
+      "entropia": 0.01578,
+      "bn": 239.25497,
+      "tv": 88.37873,
+      "l2": 116.35921
+    },
+    {
+      "paso": 2250,
+      "total": 0.10538,
+      "entropia": 0.01596,
+      "bn": 237.60608,
+      "tv": 88.25409,
+      "l2": 116.27852
+    },
+    {
+      "paso": 2300,
+      "total": 0.10115,
+      "entropia": 0.01598,
+      "bn": 235.27708,
+      "tv": 84.00419,
+      "l2": 116.23634
+    },
+    {
+      "paso": 2350,
+      "total": 0.09994,
+      "entropia": 0.01584,
+      "bn": 234.57382,
+      "tv": 82.9416,
+      "l2": 116.17271
+    },
+    {
+      "paso": 2400,
+      "total": 0.09775,
+      "entropia": 0.01616,
+      "bn": 231.98935,
+      "tv": 80.42651,
+      "l2": 116.14233
+    },
+    {
+      "paso": 2450,
+      "total": 0.09585,
+      "entropia": 0.01671,
+      "bn": 229.64711,
+      "tv": 77.97921,
+      "l2": 116.0874
+    },
+    {
+      "paso": 2500,
+      "total": 0.09504,
+      "entropia": 0.01651,
+      "bn": 228.10864,
+      "tv": 77.36671,
+      "l2": 116.06868
+    },
+    {
+      "paso": 2550,
+      "total": 0.0933,
+      "entropia": 0.01679,
+      "bn": 226.74094,
+      "tv": 75.35065,
+      "l2": 116.02344
+    },
+    {
+      "paso": 2600,
+      "total": 0.09201,
+      "entropia": 0.01688,
+      "bn": 225.16487,
+      "tv": 73.96911,
+      "l2": 115.99428
+    },
+    {
+      "paso": 2650,
+      "total": 0.09079,
+      "entropia": 0.01675,
+      "bn": 224.7804,
+      "tv": 72.87546,
+      "l2": 115.96965
+    },
+    {
+      "paso": 2700,
+      "total": 0.09,
+      "entropia": 0.01677,
+      "bn": 223.97218,
+      "tv": 72.0705,
+      "l2": 115.95137
+    },
+    {
+      "paso": 2750,
+      "total": 0.08935,
+      "entropia": 0.01694,
+      "bn": 223.08449,
+      "tv": 71.25134,
+      "l2": 115.93964
+    },
+    {
+      "paso": 2800,
+      "total": 0.0889,
+      "entropia": 0.0169,
+      "bn": 222.62665,
+      "tv": 70.84122,
+      "l2": 115.93115
+    },
+    {
+      "paso": 2850,
+      "total": 0.08853,
+      "entropia": 0.01685,
+      "bn": 222.28319,
+      "tv": 70.52713,
+      "l2": 115.92258
+    },
+    {
+      "paso": 2900,
+      "total": 0.08827,
+      "entropia": 0.01683,
+      "bn": 222.00769,
+      "tv": 70.28501,
+      "l2": 115.91589
+    },
+    {
+      "paso": 2950,
+      "total": 0.08813,
+      "entropia": 0.01679,
+      "bn": 221.91312,
+      "tv": 70.18884,
+      "l2": 115.91216
+    },
+    {
+      "paso": 2999,
+      "total": 0.08809,
+      "entropia": 0.01676,
+      "bn": 221.90042,
+      "tv": 70.16252,
+      "l2": 115.91117
     }
   ],
   "detalle": [
@@ -466,25 +642,25 @@
       "archivo": "abraham_grampa_simpson.png",
       "jueces": {
         "cnn": {
-          "prediccion": "groundskeeper_willie",
-          "confianza": 0.4614,
-          "p_objetivo": 0.001,
-          "posicion": 54,
-          "rotulo": "Groundskeeper Willie · 46 %"
+          "prediccion": "bart_simpson",
+          "confianza": 0.4834,
+          "p_objetivo": 0.0026,
+          "posicion": 34,
+          "rotulo": "Bart Simpson · 48 %"
         },
         "cnn_recortes": {
-          "prediccion": "kang_kodos",
-          "confianza": 0.282,
-          "p_objetivo": 0.0009,
-          "posicion": 63,
-          "rotulo": "Kang y Kodos · 28 %"
+          "prediccion": "bart_simpson",
+          "confianza": 0.29,
+          "p_objetivo": 0.0031,
+          "posicion": 38,
+          "rotulo": "Bart Simpson · 29 %"
         },
         "mlp": {
-          "prediccion": "kirk_van_houten",
-          "confianza": 0.0654,
-          "p_objetivo": 0.0328,
-          "posicion": 9,
-          "rotulo": "Kirk Van Houten · 7 %"
+          "prediccion": "abraham_grampa_simpson",
+          "confianza": 0.9875,
+          "p_objetivo": 0.9875,
+          "posicion": 1,
+          "rotulo": "Abraham Grampa Simpson · 99 %"
         }
       }
     },
@@ -493,25 +669,25 @@
       "archivo": "agnes_skinner.png",
       "jueces": {
         "cnn": {
-          "prediccion": "sideshow_mel",
-          "confianza": 0.1999,
-          "p_objetivo": 0.0043,
-          "posicion": 33,
-          "rotulo": "Sideshow Mel · 20 %"
+          "prediccion": "homer_simpson",
+          "confianza": 0.1421,
+          "p_objetivo": 0.0106,
+          "posicion": 28,
+          "rotulo": "Homer Simpson · 14 %"
         },
         "cnn_recortes": {
-          "prediccion": "rich_texan",
-          "confianza": 0.1898,
-          "p_objetivo": 0.0079,
-          "posicion": 28,
-          "rotulo": "Rich Texan · 19 %"
+          "prediccion": "homer_simpson",
+          "confianza": 0.117,
+          "p_objetivo": 0.0088,
+          "posicion": 34,
+          "rotulo": "Homer Simpson · 12 %"
         },
         "mlp": {
-          "prediccion": "homer_simpson",
-          "confianza": 0.4172,
-          "p_objetivo": 0.0037,
-          "posicion": 27,
-          "rotulo": "Homer Simpson · 42 %"
+          "prediccion": "agnes_skinner",
+          "confianza": 0.9832,
+          "p_objetivo": 0.9832,
+          "posicion": 1,
+          "rotulo": "Agnes Skinner · 98 %"
         }
       }
     },
@@ -520,25 +696,25 @@
       "archivo": "apu_nahasapeemapetilon.png",
       "jueces": {
         "cnn": {
-          "prediccion": "sideshow_mel",
-          "confianza": 0.4249,
-          "p_objetivo": 0.0018,
-          "posicion": 32,
-          "rotulo": "Sideshow Mel · 42 %"
+          "prediccion": "homer_simpson",
+          "confianza": 0.0719,
+          "p_objetivo": 0.017,
+          "posicion": 21,
+          "rotulo": "Homer Simpson · 7 %"
         },
         "cnn_recortes": {
-          "prediccion": "sideshow_mel",
-          "confianza": 0.3246,
-          "p_objetivo": 0.0006,
-          "posicion": 53,
-          "rotulo": "Sideshow Mel · 32 %"
+          "prediccion": "homer_simpson",
+          "confianza": 0.0658,
+          "p_objetivo": 0.0192,
+          "posicion": 19,
+          "rotulo": "Homer Simpson · 7 %"
         },
         "mlp": {
           "prediccion": "apu_nahasapeemapetilon",
-          "confianza": 0.3321,
-          "p_objetivo": 0.3321,
+          "confianza": 0.9918,
+          "p_objetivo": 0.9918,
           "posicion": 1,
-          "rotulo": "Apu Nahasapeemapetilon · 33 %"
+          "rotulo": "Apu Nahasapeemapetilon · 99 %"
         }
       }
     },
@@ -547,25 +723,25 @@
       "archivo": "barney_gumble.png",
       "jueces": {
         "cnn": {
-          "prediccion": "mayor_quimby",
-          "confianza": 0.5785,
-          "p_objetivo": 0.006,
-          "posicion": 17,
-          "rotulo": "Mayor Quimby · 58 %"
+          "prediccion": "bart_simpson",
+          "confianza": 0.1331,
+          "p_objetivo": 0.0062,
+          "posicion": 39,
+          "rotulo": "Bart Simpson · 13 %"
         },
         "cnn_recortes": {
-          "prediccion": "mayor_quimby",
-          "confianza": 0.294,
-          "p_objetivo": 0.0047,
-          "posicion": 24,
-          "rotulo": "Mayor Quimby · 29 %"
+          "prediccion": "bart_simpson",
+          "confianza": 0.0963,
+          "p_objetivo": 0.0137,
+          "posicion": 25,
+          "rotulo": "Bart Simpson · 10 %"
         },
         "mlp": {
-          "prediccion": "milhouse_van_houten",
-          "confianza": 0.2173,
-          "p_objetivo": 0.0371,
-          "posicion": 6,
-          "rotulo": "Milhouse Van Houten · 22 %"
+          "prediccion": "barney_gumble",
+          "confianza": 0.9894,
+          "p_objetivo": 0.9894,
+          "posicion": 1,
+          "rotulo": "Barney Gumble · 99 %"
         }
       }
     },
@@ -574,25 +750,25 @@
       "archivo": "bart_simpson.png",
       "jueces": {
         "cnn": {
-          "prediccion": "sideshow_mel",
-          "confianza": 0.1726,
-          "p_objetivo": 0.022,
-          "posicion": 9,
-          "rotulo": "Sideshow Mel · 17 %"
+          "prediccion": "homer_simpson",
+          "confianza": 0.1662,
+          "p_objetivo": 0.106,
+          "posicion": 3,
+          "rotulo": "Homer Simpson · 17 %"
         },
         "cnn_recortes": {
-          "prediccion": "kang_kodos",
-          "confianza": 0.244,
-          "p_objetivo": 0.0082,
-          "posicion": 13,
-          "rotulo": "Kang y Kodos · 24 %"
+          "prediccion": "sideshow_bob",
+          "confianza": 0.1654,
+          "p_objetivo": 0.0926,
+          "posicion": 3,
+          "rotulo": "Sideshow Bob · 17 %"
         },
         "mlp": {
           "prediccion": "bart_simpson",
-          "confianza": 0.0829,
-          "p_objetivo": 0.0829,
+          "confianza": 0.9487,
+          "p_objetivo": 0.9487,
           "posicion": 1,
-          "rotulo": "Bart Simpson · 8 %"
+          "rotulo": "Bart Simpson · 95 %"
         }
       }
     },
@@ -601,25 +777,25 @@
       "archivo": "captain_horatio_mccallister.png",
       "jueces": {
         "cnn": {
-          "prediccion": "mayor_quimby",
-          "confianza": 0.5892,
-          "p_objetivo": 0.0009,
-          "posicion": 37,
-          "rotulo": "Mayor Quimby · 59 %"
+          "prediccion": "homer_simpson",
+          "confianza": 0.1186,
+          "p_objetivo": 0.0038,
+          "posicion": 49,
+          "rotulo": "Homer Simpson · 12 %"
         },
         "cnn_recortes": {
-          "prediccion": "mayor_quimby",
-          "confianza": 0.5919,
-          "p_objetivo": 0.0011,
-          "posicion": 42,
-          "rotulo": "Mayor Quimby · 59 %"
+          "prediccion": "homer_simpson",
+          "confianza": 0.0981,
+          "p_objetivo": 0.0035,
+          "posicion": 52,
+          "rotulo": "Homer Simpson · 10 %"
         },
         "mlp": {
           "prediccion": "captain_horatio_mccallister",
-          "confianza": 0.4369,
-          "p_objetivo": 0.4369,
+          "confianza": 0.9947,
+          "p_objetivo": 0.9947,
           "posicion": 1,
-          "rotulo": "Captain Horatio McCallister · 44 %"
+          "rotulo": "Captain Horatio McCallister · 99 %"
         }
       }
     },
@@ -628,25 +804,25 @@
       "archivo": "carl_carlson.png",
       "jueces": {
         "cnn": {
-          "prediccion": "mayor_quimby",
-          "confianza": 0.435,
-          "p_objetivo": 0.0024,
+          "prediccion": "homer_simpson",
+          "confianza": 0.1003,
+          "p_objetivo": 0.0203,
           "posicion": 16,
-          "rotulo": "Mayor Quimby · 43 %"
+          "rotulo": "Homer Simpson · 10 %"
         },
         "cnn_recortes": {
-          "prediccion": "mayor_quimby",
-          "confianza": 0.3977,
-          "p_objetivo": 0.0065,
-          "posicion": 12,
-          "rotulo": "Mayor Quimby · 40 %"
+          "prediccion": "homer_simpson",
+          "confianza": 0.0869,
+          "p_objetivo": 0.0206,
+          "posicion": 15,
+          "rotulo": "Homer Simpson · 9 %"
         },
         "mlp": {
           "prediccion": "carl_carlson",
-          "confianza": 0.229,
-          "p_objetivo": 0.229,
+          "confianza": 0.9878,
+          "p_objetivo": 0.9878,
           "posicion": 1,
-          "rotulo": "Carl Carlson · 23 %"
+          "rotulo": "Carl Carlson · 99 %"
         }
       }
     },
@@ -655,25 +831,25 @@
       "archivo": "charles_montgomery_burns.png",
       "jueces": {
         "cnn": {
-          "prediccion": "kang_kodos",
-          "confianza": 0.2342,
-          "p_objetivo": 0.0227,
-          "posicion": 12,
-          "rotulo": "Kang y Kodos · 23 %"
+          "prediccion": "bart_simpson",
+          "confianza": 0.1294,
+          "p_objetivo": 0.0108,
+          "posicion": 21,
+          "rotulo": "Bart Simpson · 13 %"
         },
         "cnn_recortes": {
-          "prediccion": "kang_kodos",
-          "confianza": 0.4476,
-          "p_objetivo": 0.0103,
-          "posicion": 13,
-          "rotulo": "Kang y Kodos · 45 %"
+          "prediccion": "bart_simpson",
+          "confianza": 0.0864,
+          "p_objetivo": 0.025,
+          "posicion": 11,
+          "rotulo": "Bart Simpson · 9 %"
         },
         "mlp": {
           "prediccion": "charles_montgomery_burns",
-          "confianza": 0.5958,
-          "p_objetivo": 0.5958,
+          "confianza": 0.9844,
+          "p_objetivo": 0.9844,
           "posicion": 1,
-          "rotulo": "Charles Montgomery Burns · 60 %"
+          "rotulo": "Charles Montgomery Burns · 98 %"
         }
       }
     },
@@ -682,25 +858,25 @@
       "archivo": "chief_wiggum.png",
       "jueces": {
         "cnn": {
-          "prediccion": "sideshow_mel",
-          "confianza": 0.1932,
-          "p_objetivo": 0.0144,
-          "posicion": 15,
-          "rotulo": "Sideshow Mel · 19 %"
+          "prediccion": "homer_simpson",
+          "confianza": 0.1055,
+          "p_objetivo": 0.0135,
+          "posicion": 22,
+          "rotulo": "Homer Simpson · 11 %"
         },
         "cnn_recortes": {
-          "prediccion": "kang_kodos",
-          "confianza": 0.2888,
-          "p_objetivo": 0.0029,
-          "posicion": 33,
-          "rotulo": "Kang y Kodos · 29 %"
+          "prediccion": "homer_simpson",
+          "confianza": 0.0988,
+          "p_objetivo": 0.0149,
+          "posicion": 24,
+          "rotulo": "Homer Simpson · 10 %"
         },
         "mlp": {
           "prediccion": "chief_wiggum",
-          "confianza": 0.8561,
-          "p_objetivo": 0.8561,
+          "confianza": 0.9898,
+          "p_objetivo": 0.9898,
           "posicion": 1,
-          "rotulo": "Chief Wiggum · 86 %"
+          "rotulo": "Chief Wiggum · 99 %"
         }
       }
     },
@@ -709,25 +885,25 @@
       "archivo": "cletus_spuckler.png",
       "jueces": {
         "cnn": {
-          "prediccion": "kang_kodos",
-          "confianza": 0.1796,
-          "p_objetivo": 0.0236,
-          "posicion": 12,
-          "rotulo": "Kang y Kodos · 18 %"
+          "prediccion": "bart_simpson",
+          "confianza": 0.2923,
+          "p_objetivo": 0.0059,
+          "posicion": 28,
+          "rotulo": "Bart Simpson · 29 %"
         },
         "cnn_recortes": {
-          "prediccion": "kang_kodos",
-          "confianza": 0.4251,
-          "p_objetivo": 0.0188,
-          "posicion": 8,
-          "rotulo": "Kang y Kodos · 43 %"
+          "prediccion": "bart_simpson",
+          "confianza": 0.1894,
+          "p_objetivo": 0.0052,
+          "posicion": 40,
+          "rotulo": "Bart Simpson · 19 %"
         },
         "mlp": {
           "prediccion": "cletus_spuckler",
-          "confianza": 0.2426,
-          "p_objetivo": 0.2426,
+          "confianza": 0.9854,
+          "p_objetivo": 0.9854,
           "posicion": 1,
-          "rotulo": "Cletus Spuckler · 24 %"
+          "rotulo": "Cletus Spuckler · 99 %"
         }
       }
     },
@@ -736,25 +912,25 @@
       "archivo": "comic_book_guy.png",
       "jueces": {
         "cnn": {
-          "prediccion": "mayor_quimby",
-          "confianza": 0.6664,
-          "p_objetivo": 0.0,
-          "posicion": 62,
-          "rotulo": "Mayor Quimby · 67 %"
+          "prediccion": "bart_simpson",
+          "confianza": 0.1934,
+          "p_objetivo": 0.0068,
+          "posicion": 35,
+          "rotulo": "Bart Simpson · 19 %"
         },
         "cnn_recortes": {
-          "prediccion": "mayor_quimby",
-          "confianza": 0.5278,
-          "p_objetivo": 0.0001,
-          "posicion": 63,
-          "rotulo": "Mayor Quimby · 53 %"
+          "prediccion": "bart_simpson",
+          "confianza": 0.1392,
+          "p_objetivo": 0.0039,
+          "posicion": 50,
+          "rotulo": "Bart Simpson · 14 %"
         },
         "mlp": {
           "prediccion": "comic_book_guy",
-          "confianza": 0.1288,
-          "p_objetivo": 0.1288,
+          "confianza": 0.9914,
+          "p_objetivo": 0.9914,
           "posicion": 1,
-          "rotulo": "Comic Book Guy · 13 %"
+          "rotulo": "Comic Book Guy · 99 %"
         }
       }
     },
@@ -763,25 +939,25 @@
       "archivo": "disco_stu.png",
       "jueces": {
         "cnn": {
-          "prediccion": "sideshow_mel",
-          "confianza": 0.4063,
-          "p_objetivo": 0.003,
-          "posicion": 12,
-          "rotulo": "Sideshow Mel · 41 %"
+          "prediccion": "homer_simpson",
+          "confianza": 0.1171,
+          "p_objetivo": 0.0104,
+          "posicion": 28,
+          "rotulo": "Homer Simpson · 12 %"
         },
         "cnn_recortes": {
-          "prediccion": "sideshow_mel",
-          "confianza": 0.417,
-          "p_objetivo": 0.0038,
-          "posicion": 17,
-          "rotulo": "Sideshow Mel · 42 %"
+          "prediccion": "homer_simpson",
+          "confianza": 0.0804,
+          "p_objetivo": 0.0113,
+          "posicion": 30,
+          "rotulo": "Homer Simpson · 8 %"
         },
         "mlp": {
-          "prediccion": "homer_simpson",
-          "confianza": 0.1033,
-          "p_objetivo": 0.0122,
-          "posicion": 27,
-          "rotulo": "Homer Simpson · 10 %"
+          "prediccion": "disco_stu",
+          "confianza": 0.992,
+          "p_objetivo": 0.992,
+          "posicion": 1,
+          "rotulo": "Disco Stu · 99 %"
         }
       }
     },
@@ -790,25 +966,25 @@
       "archivo": "dolph_starbeam.png",
       "jueces": {
         "cnn": {
-          "prediccion": "kang_kodos",
-          "confianza": 0.2881,
-          "p_objetivo": 0.0039,
-          "posicion": 24,
-          "rotulo": "Kang y Kodos · 29 %"
+          "prediccion": "lisa_simpson",
+          "confianza": 0.6215,
+          "p_objetivo": 0.0422,
+          "posicion": 3,
+          "rotulo": "Lisa Simpson · 62 %"
         },
         "cnn_recortes": {
-          "prediccion": "kang_kodos",
-          "confianza": 0.5469,
-          "p_objetivo": 0.0044,
-          "posicion": 20,
-          "rotulo": "Kang y Kodos · 55 %"
+          "prediccion": "lisa_simpson",
+          "confianza": 0.5246,
+          "p_objetivo": 0.0475,
+          "posicion": 4,
+          "rotulo": "Lisa Simpson · 52 %"
         },
         "mlp": {
           "prediccion": "dolph_starbeam",
-          "confianza": 0.4101,
-          "p_objetivo": 0.4101,
+          "confianza": 0.9792,
+          "p_objetivo": 0.9792,
           "posicion": 1,
-          "rotulo": "Dolph Starbeam · 41 %"
+          "rotulo": "Dolph Starbeam · 98 %"
         }
       }
     },
@@ -817,25 +993,25 @@
       "archivo": "dr_julius_hibbert.png",
       "jueces": {
         "cnn": {
-          "prediccion": "mayor_quimby",
-          "confianza": 0.7733,
-          "p_objetivo": 0.0005,
-          "posicion": 44,
-          "rotulo": "Mayor Quimby · 77 %"
+          "prediccion": "homer_simpson",
+          "confianza": 0.0929,
+          "p_objetivo": 0.0017,
+          "posicion": 63,
+          "rotulo": "Homer Simpson · 9 %"
         },
         "cnn_recortes": {
-          "prediccion": "mayor_quimby",
-          "confianza": 0.5233,
-          "p_objetivo": 0.0007,
-          "posicion": 52,
-          "rotulo": "Mayor Quimby · 52 %"
+          "prediccion": "homer_simpson",
+          "confianza": 0.0672,
+          "p_objetivo": 0.0026,
+          "posicion": 61,
+          "rotulo": "Homer Simpson · 7 %"
         },
         "mlp": {
           "prediccion": "dr_julius_hibbert",
-          "confianza": 0.3148,
-          "p_objetivo": 0.3148,
+          "confianza": 0.9945,
+          "p_objetivo": 0.9945,
           "posicion": 1,
-          "rotulo": "Dr. Julius Hibbert · 31 %"
+          "rotulo": "Dr. Julius Hibbert · 99 %"
         }
       }
     },
@@ -844,25 +1020,25 @@
       "archivo": "dr_nick_riviera.png",
       "jueces": {
         "cnn": {
-          "prediccion": "kang_kodos",
-          "confianza": 0.2452,
-          "p_objetivo": 0.0006,
-          "posicion": 57,
-          "rotulo": "Kang y Kodos · 25 %"
+          "prediccion": "homer_simpson",
+          "confianza": 0.1341,
+          "p_objetivo": 0.0037,
+          "posicion": 51,
+          "rotulo": "Homer Simpson · 13 %"
         },
         "cnn_recortes": {
-          "prediccion": "kang_kodos",
-          "confianza": 0.4043,
-          "p_objetivo": 0.0007,
-          "posicion": 53,
-          "rotulo": "Kang y Kodos · 40 %"
+          "prediccion": "homer_simpson",
+          "confianza": 0.0892,
+          "p_objetivo": 0.0034,
+          "posicion": 59,
+          "rotulo": "Homer Simpson · 9 %"
         },
         "mlp": {
-          "prediccion": "dolph_starbeam",
-          "confianza": 0.1064,
-          "p_objetivo": 0.0069,
-          "posicion": 41,
-          "rotulo": "Dolph Starbeam · 11 %"
+          "prediccion": "dr_nick_riviera",
+          "confianza": 0.9934,
+          "p_objetivo": 0.9934,
+          "posicion": 1,
+          "rotulo": "Dr. Nick Riviera · 99 %"
         }
       }
     },
@@ -871,25 +1047,25 @@
       "archivo": "edna_krabappel.png",
       "jueces": {
         "cnn": {
-          "prediccion": "kang_kodos",
-          "confianza": 0.1677,
-          "p_objetivo": 0.0057,
-          "posicion": 33,
-          "rotulo": "Kang y Kodos · 17 %"
+          "prediccion": "lisa_simpson",
+          "confianza": 0.6701,
+          "p_objetivo": 0.0006,
+          "posicion": 31,
+          "rotulo": "Lisa Simpson · 67 %"
         },
         "cnn_recortes": {
-          "prediccion": "kang_kodos",
-          "confianza": 0.4571,
-          "p_objetivo": 0.0067,
-          "posicion": 14,
-          "rotulo": "Kang y Kodos · 46 %"
+          "prediccion": "lisa_simpson",
+          "confianza": 0.8577,
+          "p_objetivo": 0.0016,
+          "posicion": 19,
+          "rotulo": "Lisa Simpson · 86 %"
         },
         "mlp": {
           "prediccion": "edna_krabappel",
-          "confianza": 0.7771,
-          "p_objetivo": 0.7771,
+          "confianza": 0.9965,
+          "p_objetivo": 0.9965,
           "posicion": 1,
-          "rotulo": "Edna Krabappel · 78 %"
+          "rotulo": "Edna Krabappel · 100 %"
         }
       }
     },
@@ -898,25 +1074,25 @@
       "archivo": "fat_tony.png",
       "jueces": {
         "cnn": {
-          "prediccion": "kang_kodos",
-          "confianza": 0.1315,
-          "p_objetivo": 0.0274,
-          "posicion": 10,
-          "rotulo": "Kang y Kodos · 13 %"
+          "prediccion": "bart_simpson",
+          "confianza": 0.1002,
+          "p_objetivo": 0.004,
+          "posicion": 54,
+          "rotulo": "Bart Simpson · 10 %"
         },
         "cnn_recortes": {
-          "prediccion": "kang_kodos",
-          "confianza": 0.493,
-          "p_objetivo": 0.0067,
-          "posicion": 14,
-          "rotulo": "Kang y Kodos · 49 %"
+          "prediccion": "homer_simpson",
+          "confianza": 0.085,
+          "p_objetivo": 0.0035,
+          "posicion": 57,
+          "rotulo": "Homer Simpson · 8 %"
         },
         "mlp": {
-          "prediccion": "principal_skinner",
-          "confianza": 0.1611,
-          "p_objetivo": 0.1199,
-          "posicion": 2,
-          "rotulo": "Principal Skinner · 16 %"
+          "prediccion": "fat_tony",
+          "confianza": 0.9694,
+          "p_objetivo": 0.9694,
+          "posicion": 1,
+          "rotulo": "Fat Tony · 97 %"
         }
       }
     },
@@ -925,25 +1101,25 @@
       "archivo": "gary_chalmers.png",
       "jueces": {
         "cnn": {
-          "prediccion": "mayor_quimby",
-          "confianza": 0.5555,
-          "p_objetivo": 0.0093,
-          "posicion": 11,
-          "rotulo": "Mayor Quimby · 56 %"
+          "prediccion": "homer_simpson",
+          "confianza": 0.0812,
+          "p_objetivo": 0.0144,
+          "posicion": 21,
+          "rotulo": "Homer Simpson · 8 %"
         },
         "cnn_recortes": {
-          "prediccion": "mayor_quimby",
-          "confianza": 0.3278,
-          "p_objetivo": 0.0123,
-          "posicion": 10,
-          "rotulo": "Mayor Quimby · 33 %"
+          "prediccion": "lenny_leonard",
+          "confianza": 0.0858,
+          "p_objetivo": 0.0088,
+          "posicion": 31,
+          "rotulo": "Lenny Leonard · 9 %"
         },
         "mlp": {
           "prediccion": "gary_chalmers",
-          "confianza": 0.0805,
-          "p_objetivo": 0.0805,
+          "confianza": 0.9837,
+          "p_objetivo": 0.9837,
           "posicion": 1,
-          "rotulo": "Gary Chalmers · 8 %"
+          "rotulo": "Gary Chalmers · 98 %"
         }
       }
     },
@@ -952,25 +1128,25 @@
       "archivo": "gil.png",
       "jueces": {
         "cnn": {
-          "prediccion": "mayor_quimby",
-          "confianza": 0.3266,
-          "p_objetivo": 0.0014,
-          "posicion": 38,
-          "rotulo": "Mayor Quimby · 33 %"
+          "prediccion": "homer_simpson",
+          "confianza": 0.1674,
+          "p_objetivo": 0.0056,
+          "posicion": 41,
+          "rotulo": "Homer Simpson · 17 %"
         },
         "cnn_recortes": {
-          "prediccion": "sideshow_mel",
-          "confianza": 0.3151,
-          "p_objetivo": 0.0015,
-          "posicion": 32,
-          "rotulo": "Sideshow Mel · 32 %"
+          "prediccion": "homer_simpson",
+          "confianza": 0.1151,
+          "p_objetivo": 0.0082,
+          "posicion": 37,
+          "rotulo": "Homer Simpson · 12 %"
         },
         "mlp": {
-          "prediccion": "apu_nahasapeemapetilon",
-          "confianza": 0.2202,
-          "p_objetivo": 0.0338,
-          "posicion": 9,
-          "rotulo": "Apu Nahasapeemapetilon · 22 %"
+          "prediccion": "gil",
+          "confianza": 0.9742,
+          "p_objetivo": 0.9742,
+          "posicion": 1,
+          "rotulo": "Gil · 97 %"
         }
       }
     },
@@ -979,25 +1155,25 @@
       "archivo": "groundskeeper_willie.png",
       "jueces": {
         "cnn": {
-          "prediccion": "mayor_quimby",
-          "confianza": 0.648,
-          "p_objetivo": 0.0079,
-          "posicion": 11,
-          "rotulo": "Mayor Quimby · 65 %"
+          "prediccion": "apu_nahasapeemapetilon",
+          "confianza": 0.0814,
+          "p_objetivo": 0.0326,
+          "posicion": 9,
+          "rotulo": "Apu Nahasapeemapetilon · 8 %"
         },
         "cnn_recortes": {
-          "prediccion": "mayor_quimby",
-          "confianza": 0.2745,
-          "p_objetivo": 0.0031,
-          "posicion": 16,
-          "rotulo": "Mayor Quimby · 27 %"
+          "prediccion": "lenny_leonard",
+          "confianza": 0.0728,
+          "p_objetivo": 0.0383,
+          "posicion": 8,
+          "rotulo": "Lenny Leonard · 7 %"
         },
         "mlp": {
           "prediccion": "groundskeeper_willie",
-          "confianza": 0.3719,
-          "p_objetivo": 0.3719,
+          "confianza": 0.9916,
+          "p_objetivo": 0.9916,
           "posicion": 1,
-          "rotulo": "Groundskeeper Willie · 37 %"
+          "rotulo": "Groundskeeper Willie · 99 %"
         }
       }
     },
@@ -1006,25 +1182,25 @@
       "archivo": "helen_lovejoy.png",
       "jueces": {
         "cnn": {
-          "prediccion": "sideshow_mel",
-          "confianza": 0.2559,
-          "p_objetivo": 0.0018,
-          "posicion": 43,
-          "rotulo": "Sideshow Mel · 26 %"
+          "prediccion": "homer_simpson",
+          "confianza": 0.1847,
+          "p_objetivo": 0.008,
+          "posicion": 29,
+          "rotulo": "Homer Simpson · 18 %"
         },
         "cnn_recortes": {
-          "prediccion": "sideshow_mel",
-          "confianza": 0.4307,
-          "p_objetivo": 0.003,
-          "posicion": 29,
-          "rotulo": "Sideshow Mel · 43 %"
+          "prediccion": "homer_simpson",
+          "confianza": 0.1761,
+          "p_objetivo": 0.0049,
+          "posicion": 50,
+          "rotulo": "Homer Simpson · 18 %"
         },
         "mlp": {
-          "prediccion": "groundskeeper_willie",
-          "confianza": 0.1173,
-          "p_objetivo": 0.0269,
-          "posicion": 12,
-          "rotulo": "Groundskeeper Willie · 12 %"
+          "prediccion": "helen_lovejoy",
+          "confianza": 0.9591,
+          "p_objetivo": 0.9591,
+          "posicion": 1,
+          "rotulo": "Helen Lovejoy · 96 %"
         }
       }
     },
@@ -1033,25 +1209,25 @@
       "archivo": "herb_powell.png",
       "jueces": {
         "cnn": {
-          "prediccion": "mayor_quimby",
-          "confianza": 0.3945,
-          "p_objetivo": 0.0012,
-          "posicion": 31,
-          "rotulo": "Mayor Quimby · 39 %"
+          "prediccion": "homer_simpson",
+          "confianza": 0.1055,
+          "p_objetivo": 0.0031,
+          "posicion": 56,
+          "rotulo": "Homer Simpson · 11 %"
         },
         "cnn_recortes": {
-          "prediccion": "mayor_quimby",
-          "confianza": 0.3928,
-          "p_objetivo": 0.002,
-          "posicion": 24,
-          "rotulo": "Mayor Quimby · 39 %"
+          "prediccion": "homer_simpson",
+          "confianza": 0.073,
+          "p_objetivo": 0.0041,
+          "posicion": 54,
+          "rotulo": "Homer Simpson · 7 %"
         },
         "mlp": {
-          "prediccion": "kang_kodos",
-          "confianza": 0.0594,
-          "p_objetivo": 0.0061,
-          "posicion": 47,
-          "rotulo": "Kang y Kodos · 6 %"
+          "prediccion": "herb_powell",
+          "confianza": 0.9932,
+          "p_objetivo": 0.9932,
+          "posicion": 1,
+          "rotulo": "Herb Powell · 99 %"
         }
       }
     },
@@ -1060,25 +1236,25 @@
       "archivo": "homer_simpson.png",
       "jueces": {
         "cnn": {
-          "prediccion": "mayor_quimby",
-          "confianza": 0.4903,
-          "p_objetivo": 0.0011,
-          "posicion": 43,
-          "rotulo": "Mayor Quimby · 49 %"
+          "prediccion": "homer_simpson",
+          "confianza": 0.1168,
+          "p_objetivo": 0.1168,
+          "posicion": 1,
+          "rotulo": "Homer Simpson · 12 %"
         },
         "cnn_recortes": {
-          "prediccion": "kang_kodos",
-          "confianza": 0.2925,
-          "p_objetivo": 0.0045,
-          "posicion": 21,
-          "rotulo": "Kang y Kodos · 29 %"
+          "prediccion": "homer_simpson",
+          "confianza": 0.1113,
+          "p_objetivo": 0.1113,
+          "posicion": 1,
+          "rotulo": "Homer Simpson · 11 %"
         },
         "mlp": {
           "prediccion": "homer_simpson",
-          "confianza": 0.0884,
-          "p_objetivo": 0.0884,
+          "confianza": 0.979,
+          "p_objetivo": 0.979,
           "posicion": 1,
-          "rotulo": "Homer Simpson · 9 %"
+          "rotulo": "Homer Simpson · 98 %"
         }
       }
     },
@@ -1087,25 +1263,25 @@
       "archivo": "jasper_beardly.png",
       "jueces": {
         "cnn": {
-          "prediccion": "kang_kodos",
-          "confianza": 0.1004,
-          "p_objetivo": 0.0011,
-          "posicion": 50,
-          "rotulo": "Kang y Kodos · 10 %"
+          "prediccion": "homer_simpson",
+          "confianza": 0.1694,
+          "p_objetivo": 0.0037,
+          "posicion": 49,
+          "rotulo": "Homer Simpson · 17 %"
         },
         "cnn_recortes": {
-          "prediccion": "kang_kodos",
-          "confianza": 0.3965,
-          "p_objetivo": 0.0016,
-          "posicion": 35,
-          "rotulo": "Kang y Kodos · 40 %"
+          "prediccion": "homer_simpson",
+          "confianza": 0.1311,
+          "p_objetivo": 0.0055,
+          "posicion": 44,
+          "rotulo": "Homer Simpson · 13 %"
         },
         "mlp": {
-          "prediccion": "charles_montgomery_burns",
-          "confianza": 0.1144,
-          "p_objetivo": 0.0812,
-          "posicion": 3,
-          "rotulo": "Charles Montgomery Burns · 11 %"
+          "prediccion": "jasper_beardly",
+          "confianza": 0.9911,
+          "p_objetivo": 0.9911,
+          "posicion": 1,
+          "rotulo": "Jasper Beardly · 99 %"
         }
       }
     },
@@ -1114,25 +1290,25 @@
       "archivo": "jimbo_jones.png",
       "jueces": {
         "cnn": {
-          "prediccion": "professor_john_frink",
-          "confianza": 0.1532,
-          "p_objetivo": 0.0134,
-          "posicion": 13,
-          "rotulo": "Professor John Frink · 15 %"
+          "prediccion": "homer_simpson",
+          "confianza": 0.0942,
+          "p_objetivo": 0.0052,
+          "posicion": 49,
+          "rotulo": "Homer Simpson · 9 %"
         },
         "cnn_recortes": {
-          "prediccion": "kang_kodos",
-          "confianza": 0.4175,
-          "p_objetivo": 0.0039,
-          "posicion": 20,
-          "rotulo": "Kang y Kodos · 42 %"
+          "prediccion": "homer_simpson",
+          "confianza": 0.0895,
+          "p_objetivo": 0.0059,
+          "posicion": 46,
+          "rotulo": "Homer Simpson · 9 %"
         },
         "mlp": {
-          "prediccion": "chief_wiggum",
-          "confianza": 0.1378,
-          "p_objetivo": 0.0888,
-          "posicion": 3,
-          "rotulo": "Chief Wiggum · 14 %"
+          "prediccion": "jimbo_jones",
+          "confianza": 0.9753,
+          "p_objetivo": 0.9753,
+          "posicion": 1,
+          "rotulo": "Jimbo Jones · 98 %"
         }
       }
     },
@@ -1141,25 +1317,25 @@
       "archivo": "judge_snyder.png",
       "jueces": {
         "cnn": {
-          "prediccion": "mayor_quimby",
-          "confianza": 0.7948,
-          "p_objetivo": 0.001,
-          "posicion": 22,
-          "rotulo": "Mayor Quimby · 79 %"
+          "prediccion": "bart_simpson",
+          "confianza": 0.2145,
+          "p_objetivo": 0.0781,
+          "posicion": 2,
+          "rotulo": "Bart Simpson · 21 %"
         },
         "cnn_recortes": {
-          "prediccion": "mayor_quimby",
-          "confianza": 0.7607,
-          "p_objetivo": 0.0006,
-          "posicion": 34,
-          "rotulo": "Mayor Quimby · 76 %"
+          "prediccion": "bart_simpson",
+          "confianza": 0.2237,
+          "p_objetivo": 0.1763,
+          "posicion": 2,
+          "rotulo": "Bart Simpson · 22 %"
         },
         "mlp": {
-          "prediccion": "gary_chalmers",
-          "confianza": 0.069,
-          "p_objetivo": 0.0171,
-          "posicion": 23,
-          "rotulo": "Gary Chalmers · 7 %"
+          "prediccion": "judge_snyder",
+          "confianza": 0.9968,
+          "p_objetivo": 0.9968,
+          "posicion": 1,
+          "rotulo": "Judge Snyder · 100 %"
         }
       }
     },
@@ -1168,25 +1344,25 @@
       "archivo": "kang_kodos.png",
       "jueces": {
         "cnn": {
-          "prediccion": "mayor_quimby",
-          "confianza": 0.2536,
-          "p_objetivo": 0.0504,
-          "posicion": 5,
-          "rotulo": "Mayor Quimby · 25 %"
+          "prediccion": "homer_simpson",
+          "confianza": 0.0906,
+          "p_objetivo": 0.0325,
+          "posicion": 9,
+          "rotulo": "Homer Simpson · 9 %"
         },
         "cnn_recortes": {
-          "prediccion": "kang_kodos",
-          "confianza": 0.302,
-          "p_objetivo": 0.302,
-          "posicion": 1,
-          "rotulo": "Kang y Kodos · 30 %"
+          "prediccion": "homer_simpson",
+          "confianza": 0.0872,
+          "p_objetivo": 0.0369,
+          "posicion": 7,
+          "rotulo": "Homer Simpson · 9 %"
         },
         "mlp": {
           "prediccion": "kang_kodos",
-          "confianza": 0.3291,
-          "p_objetivo": 0.3291,
+          "confianza": 0.9946,
+          "p_objetivo": 0.9946,
           "posicion": 1,
-          "rotulo": "Kang y Kodos · 33 %"
+          "rotulo": "Kang y Kodos · 99 %"
         }
       }
     },
@@ -1195,25 +1371,25 @@
       "archivo": "kearney_zzyzwicz.png",
       "jueces": {
         "cnn": {
-          "prediccion": "kang_kodos",
-          "confianza": 0.1608,
-          "p_objetivo": 0.0184,
-          "posicion": 12,
-          "rotulo": "Kang y Kodos · 16 %"
+          "prediccion": "kearney_zzyzwicz",
+          "confianza": 0.2564,
+          "p_objetivo": 0.2564,
+          "posicion": 1,
+          "rotulo": "Kearney Zzyzwicz · 26 %"
         },
         "cnn_recortes": {
-          "prediccion": "kang_kodos",
-          "confianza": 0.4366,
-          "p_objetivo": 0.0043,
-          "posicion": 31,
-          "rotulo": "Kang y Kodos · 44 %"
+          "prediccion": "lisa_simpson",
+          "confianza": 0.2781,
+          "p_objetivo": 0.1377,
+          "posicion": 4,
+          "rotulo": "Lisa Simpson · 28 %"
         },
         "mlp": {
-          "prediccion": "dolph_starbeam",
-          "confianza": 0.427,
-          "p_objetivo": 0.0923,
-          "posicion": 2,
-          "rotulo": "Dolph Starbeam · 43 %"
+          "prediccion": "kearney_zzyzwicz",
+          "confianza": 0.9877,
+          "p_objetivo": 0.9877,
+          "posicion": 1,
+          "rotulo": "Kearney Zzyzwicz · 99 %"
         }
       }
     },
@@ -1222,25 +1398,25 @@
       "archivo": "kent_brockman.png",
       "jueces": {
         "cnn": {
-          "prediccion": "cletus_spuckler",
-          "confianza": 0.2948,
-          "p_objetivo": 0.0021,
-          "posicion": 40,
-          "rotulo": "Cletus Spuckler · 29 %"
+          "prediccion": "bart_simpson",
+          "confianza": 0.0744,
+          "p_objetivo": 0.024,
+          "posicion": 13,
+          "rotulo": "Bart Simpson · 7 %"
         },
         "cnn_recortes": {
-          "prediccion": "kang_kodos",
-          "confianza": 0.308,
-          "p_objetivo": 0.0025,
-          "posicion": 26,
-          "rotulo": "Kang y Kodos · 31 %"
+          "prediccion": "homer_simpson",
+          "confianza": 0.0678,
+          "p_objetivo": 0.0226,
+          "posicion": 17,
+          "rotulo": "Homer Simpson · 7 %"
         },
         "mlp": {
           "prediccion": "kent_brockman",
-          "confianza": 0.2425,
-          "p_objetivo": 0.2425,
+          "confianza": 0.9936,
+          "p_objetivo": 0.9936,
           "posicion": 1,
-          "rotulo": "Kent Brockman · 24 %"
+          "rotulo": "Kent Brockman · 99 %"
         }
       }
     },
@@ -1249,25 +1425,25 @@
       "archivo": "kirk_van_houten.png",
       "jueces": {
         "cnn": {
-          "prediccion": "ralph_wiggum",
-          "confianza": 0.175,
-          "p_objetivo": 0.025,
-          "posicion": 9,
-          "rotulo": "Ralph Wiggum · 17 %"
+          "prediccion": "homer_simpson",
+          "confianza": 0.0844,
+          "p_objetivo": 0.0088,
+          "posicion": 36,
+          "rotulo": "Homer Simpson · 8 %"
         },
         "cnn_recortes": {
-          "prediccion": "kang_kodos",
-          "confianza": 0.2696,
-          "p_objetivo": 0.0051,
-          "posicion": 23,
-          "rotulo": "Kang y Kodos · 27 %"
+          "prediccion": "homer_simpson",
+          "confianza": 0.073,
+          "p_objetivo": 0.0079,
+          "posicion": 40,
+          "rotulo": "Homer Simpson · 7 %"
         },
         "mlp": {
           "prediccion": "kirk_van_houten",
-          "confianza": 0.091,
-          "p_objetivo": 0.091,
+          "confianza": 0.9891,
+          "p_objetivo": 0.9891,
           "posicion": 1,
-          "rotulo": "Kirk Van Houten · 9 %"
+          "rotulo": "Kirk Van Houten · 99 %"
         }
       }
     },
@@ -1276,25 +1452,25 @@
       "archivo": "krusty_the_clown.png",
       "jueces": {
         "cnn": {
-          "prediccion": "mayor_quimby",
-          "confianza": 0.2791,
-          "p_objetivo": 0.004,
-          "posicion": 29,
-          "rotulo": "Mayor Quimby · 28 %"
+          "prediccion": "charles_montgomery_burns",
+          "confianza": 0.0882,
+          "p_objetivo": 0.0262,
+          "posicion": 12,
+          "rotulo": "Charles Montgomery Burns · 9 %"
         },
         "cnn_recortes": {
-          "prediccion": "kang_kodos",
-          "confianza": 0.2374,
-          "p_objetivo": 0.0084,
-          "posicion": 13,
-          "rotulo": "Kang y Kodos · 24 %"
+          "prediccion": "charles_montgomery_burns",
+          "confianza": 0.0835,
+          "p_objetivo": 0.029,
+          "posicion": 10,
+          "rotulo": "Charles Montgomery Burns · 8 %"
         },
         "mlp": {
           "prediccion": "krusty_the_clown",
-          "confianza": 0.2657,
-          "p_objetivo": 0.2657,
+          "confianza": 0.9968,
+          "p_objetivo": 0.9968,
           "posicion": 1,
-          "rotulo": "Krusty the Clown · 27 %"
+          "rotulo": "Krusty the Clown · 100 %"
         }
       }
     },
@@ -1303,25 +1479,25 @@
       "archivo": "lenny_leonard.png",
       "jueces": {
         "cnn": {
-          "prediccion": "mayor_quimby",
-          "confianza": 0.4431,
-          "p_objetivo": 0.0033,
-          "posicion": 29,
-          "rotulo": "Mayor Quimby · 44 %"
+          "prediccion": "homer_simpson",
+          "confianza": 0.1906,
+          "p_objetivo": 0.0133,
+          "posicion": 21,
+          "rotulo": "Homer Simpson · 19 %"
         },
         "cnn_recortes": {
-          "prediccion": "mayor_quimby",
-          "confianza": 0.401,
-          "p_objetivo": 0.0031,
-          "posicion": 27,
-          "rotulo": "Mayor Quimby · 40 %"
+          "prediccion": "homer_simpson",
+          "confianza": 0.1405,
+          "p_objetivo": 0.0158,
+          "posicion": 20,
+          "rotulo": "Homer Simpson · 14 %"
         },
         "mlp": {
           "prediccion": "lenny_leonard",
-          "confianza": 0.1657,
-          "p_objetivo": 0.1657,
+          "confianza": 0.9765,
+          "p_objetivo": 0.9765,
           "posicion": 1,
-          "rotulo": "Lenny Leonard · 17 %"
+          "rotulo": "Lenny Leonard · 98 %"
         }
       }
     },
@@ -1330,25 +1506,25 @@
       "archivo": "lionel_hutz.png",
       "jueces": {
         "cnn": {
-          "prediccion": "mayor_quimby",
-          "confianza": 0.5055,
-          "p_objetivo": 0.0,
-          "posicion": 62,
-          "rotulo": "Mayor Quimby · 51 %"
+          "prediccion": "bart_simpson",
+          "confianza": 0.145,
+          "p_objetivo": 0.0016,
+          "posicion": 64,
+          "rotulo": "Bart Simpson · 14 %"
         },
         "cnn_recortes": {
-          "prediccion": "mayor_quimby",
-          "confianza": 0.5923,
-          "p_objetivo": 0.0001,
-          "posicion": 62,
-          "rotulo": "Mayor Quimby · 59 %"
+          "prediccion": "bart_simpson",
+          "confianza": 0.0986,
+          "p_objetivo": 0.0026,
+          "posicion": 57,
+          "rotulo": "Bart Simpson · 10 %"
         },
         "mlp": {
-          "prediccion": "krusty_the_clown",
-          "confianza": 0.0558,
-          "p_objetivo": 0.0271,
-          "posicion": 10,
-          "rotulo": "Krusty the Clown · 6 %"
+          "prediccion": "lionel_hutz",
+          "confianza": 0.9926,
+          "p_objetivo": 0.9926,
+          "posicion": 1,
+          "rotulo": "Lionel Hutz · 99 %"
         }
       }
     },
@@ -1357,25 +1533,25 @@
       "archivo": "lisa_simpson.png",
       "jueces": {
         "cnn": {
-          "prediccion": "sideshow_mel",
-          "confianza": 0.8911,
-          "p_objetivo": 0.0,
-          "posicion": 60,
-          "rotulo": "Sideshow Mel · 89 %"
+          "prediccion": "bart_simpson",
+          "confianza": 0.5804,
+          "p_objetivo": 0.0687,
+          "posicion": 3,
+          "rotulo": "Bart Simpson · 58 %"
         },
         "cnn_recortes": {
-          "prediccion": "sideshow_mel",
-          "confianza": 0.6651,
-          "p_objetivo": 0.0,
-          "posicion": 62,
-          "rotulo": "Sideshow Mel · 67 %"
+          "prediccion": "bart_simpson",
+          "confianza": 0.3545,
+          "p_objetivo": 0.0896,
+          "posicion": 3,
+          "rotulo": "Bart Simpson · 35 %"
         },
         "mlp": {
-          "prediccion": "captain_horatio_mccallister",
-          "confianza": 0.1276,
-          "p_objetivo": 0.0025,
-          "posicion": 39,
-          "rotulo": "Captain Horatio McCallister · 13 %"
+          "prediccion": "lisa_simpson",
+          "confianza": 0.974,
+          "p_objetivo": 0.974,
+          "posicion": 1,
+          "rotulo": "Lisa Simpson · 97 %"
         }
       }
     },
@@ -1384,25 +1560,25 @@
       "archivo": "lou.png",
       "jueces": {
         "cnn": {
-          "prediccion": "mayor_quimby",
-          "confianza": 0.4581,
-          "p_objetivo": 0.0113,
-          "posicion": 12,
-          "rotulo": "Mayor Quimby · 46 %"
+          "prediccion": "homer_simpson",
+          "confianza": 0.0914,
+          "p_objetivo": 0.0017,
+          "posicion": 63,
+          "rotulo": "Homer Simpson · 9 %"
         },
         "cnn_recortes": {
-          "prediccion": "mayor_quimby",
-          "confianza": 0.4014,
-          "p_objetivo": 0.0039,
-          "posicion": 18,
-          "rotulo": "Mayor Quimby · 40 %"
+          "prediccion": "homer_simpson",
+          "confianza": 0.0716,
+          "p_objetivo": 0.0018,
+          "posicion": 64,
+          "rotulo": "Homer Simpson · 7 %"
         },
         "mlp": {
-          "prediccion": "nelson_muntz",
-          "confianza": 0.1225,
-          "p_objetivo": 0.0546,
-          "posicion": 4,
-          "rotulo": "Nelson Muntz · 12 %"
+          "prediccion": "lou",
+          "confianza": 0.9764,
+          "p_objetivo": 0.9764,
+          "posicion": 1,
+          "rotulo": "Lou · 98 %"
         }
       }
     },
@@ -1411,25 +1587,25 @@
       "archivo": "louie.png",
       "jueces": {
         "cnn": {
-          "prediccion": "mayor_quimby",
-          "confianza": 0.7258,
-          "p_objetivo": 0.0001,
-          "posicion": 53,
-          "rotulo": "Mayor Quimby · 73 %"
+          "prediccion": "bart_simpson",
+          "confianza": 0.343,
+          "p_objetivo": 0.0047,
+          "posicion": 40,
+          "rotulo": "Bart Simpson · 34 %"
         },
         "cnn_recortes": {
-          "prediccion": "mayor_quimby",
-          "confianza": 0.6596,
-          "p_objetivo": 0.0002,
-          "posicion": 52,
-          "rotulo": "Mayor Quimby · 66 %"
+          "prediccion": "bart_simpson",
+          "confianza": 0.2322,
+          "p_objetivo": 0.005,
+          "posicion": 41,
+          "rotulo": "Bart Simpson · 23 %"
         },
         "mlp": {
-          "prediccion": "ned_flanders",
-          "confianza": 0.1359,
-          "p_objetivo": 0.0323,
-          "posicion": 9,
-          "rotulo": "Ned Flanders · 14 %"
+          "prediccion": "louie",
+          "confianza": 0.9577,
+          "p_objetivo": 0.9577,
+          "posicion": 1,
+          "rotulo": "Louie · 96 %"
         }
       }
     },
@@ -1438,25 +1614,25 @@
       "archivo": "maggie_simpson.png",
       "jueces": {
         "cnn": {
-          "prediccion": "kang_kodos",
-          "confianza": 0.1169,
-          "p_objetivo": 0.0046,
-          "posicion": 33,
-          "rotulo": "Kang y Kodos · 12 %"
+          "prediccion": "bart_simpson",
+          "confianza": 0.2034,
+          "p_objetivo": 0.0052,
+          "posicion": 48,
+          "rotulo": "Bart Simpson · 20 %"
         },
         "cnn_recortes": {
-          "prediccion": "kang_kodos",
-          "confianza": 0.3828,
-          "p_objetivo": 0.0023,
-          "posicion": 39,
-          "rotulo": "Kang y Kodos · 38 %"
+          "prediccion": "bart_simpson",
+          "confianza": 0.0978,
+          "p_objetivo": 0.0053,
+          "posicion": 54,
+          "rotulo": "Bart Simpson · 10 %"
         },
         "mlp": {
-          "prediccion": "charles_montgomery_burns",
-          "confianza": 0.2788,
-          "p_objetivo": 0.02,
-          "posicion": 10,
-          "rotulo": "Charles Montgomery Burns · 28 %"
+          "prediccion": "maggie_simpson",
+          "confianza": 0.9889,
+          "p_objetivo": 0.9889,
+          "posicion": 1,
+          "rotulo": "Maggie Simpson · 99 %"
         }
       }
     },
@@ -1465,25 +1641,25 @@
       "archivo": "manjula_nahasapeemapetilon.png",
       "jueces": {
         "cnn": {
-          "prediccion": "mayor_quimby",
-          "confianza": 0.5179,
-          "p_objetivo": 0.002,
-          "posicion": 32,
-          "rotulo": "Mayor Quimby · 52 %"
+          "prediccion": "bart_simpson",
+          "confianza": 0.1635,
+          "p_objetivo": 0.0036,
+          "posicion": 49,
+          "rotulo": "Bart Simpson · 16 %"
         },
         "cnn_recortes": {
-          "prediccion": "mayor_quimby",
-          "confianza": 0.2782,
-          "p_objetivo": 0.002,
-          "posicion": 51,
-          "rotulo": "Mayor Quimby · 28 %"
+          "prediccion": "bart_simpson",
+          "confianza": 0.1067,
+          "p_objetivo": 0.0029,
+          "posicion": 59,
+          "rotulo": "Bart Simpson · 11 %"
         },
         "mlp": {
           "prediccion": "manjula_nahasapeemapetilon",
-          "confianza": 0.1752,
-          "p_objetivo": 0.1752,
+          "confianza": 0.9944,
+          "p_objetivo": 0.9944,
           "posicion": 1,
-          "rotulo": "Manjula Nahasapeemapetilon · 18 %"
+          "rotulo": "Manjula Nahasapeemapetilon · 99 %"
         }
       }
     },
@@ -1492,25 +1668,25 @@
       "archivo": "marge_simpson.png",
       "jueces": {
         "cnn": {
-          "prediccion": "mayor_quimby",
-          "confianza": 0.5233,
-          "p_objetivo": 0.0009,
-          "posicion": 44,
-          "rotulo": "Mayor Quimby · 52 %"
+          "prediccion": "homer_simpson",
+          "confianza": 0.1386,
+          "p_objetivo": 0.0537,
+          "posicion": 3,
+          "rotulo": "Homer Simpson · 14 %"
         },
         "cnn_recortes": {
-          "prediccion": "mayor_quimby",
-          "confianza": 0.301,
-          "p_objetivo": 0.0044,
-          "posicion": 36,
-          "rotulo": "Mayor Quimby · 30 %"
+          "prediccion": "homer_simpson",
+          "confianza": 0.1249,
+          "p_objetivo": 0.0515,
+          "posicion": 4,
+          "rotulo": "Homer Simpson · 12 %"
         },
         "mlp": {
           "prediccion": "marge_simpson",
-          "confianza": 0.3104,
-          "p_objetivo": 0.3104,
+          "confianza": 0.9946,
+          "p_objetivo": 0.9946,
           "posicion": 1,
-          "rotulo": "Marge Simpson · 31 %"
+          "rotulo": "Marge Simpson · 99 %"
         }
       }
     },
@@ -1519,25 +1695,25 @@
       "archivo": "martin_prince.png",
       "jueces": {
         "cnn": {
-          "prediccion": "mayor_quimby",
-          "confianza": 0.2146,
-          "p_objetivo": 0.0016,
-          "posicion": 37,
-          "rotulo": "Mayor Quimby · 21 %"
+          "prediccion": "bart_simpson",
+          "confianza": 0.1985,
+          "p_objetivo": 0.0189,
+          "posicion": 14,
+          "rotulo": "Bart Simpson · 20 %"
         },
         "cnn_recortes": {
-          "prediccion": "kang_kodos",
-          "confianza": 0.22,
-          "p_objetivo": 0.0026,
-          "posicion": 28,
-          "rotulo": "Kang y Kodos · 22 %"
+          "prediccion": "bart_simpson",
+          "confianza": 0.1974,
+          "p_objetivo": 0.0317,
+          "posicion": 7,
+          "rotulo": "Bart Simpson · 20 %"
         },
         "mlp": {
-          "prediccion": "comic_book_guy",
-          "confianza": 0.0891,
-          "p_objetivo": 0.0251,
-          "posicion": 11,
-          "rotulo": "Comic Book Guy · 9 %"
+          "prediccion": "martin_prince",
+          "confianza": 0.9761,
+          "p_objetivo": 0.9761,
+          "posicion": 1,
+          "rotulo": "Martin Prince · 98 %"
         }
       }
     },
@@ -1546,25 +1722,25 @@
       "archivo": "maude_flanders.png",
       "jueces": {
         "cnn": {
-          "prediccion": "mayor_quimby",
-          "confianza": 0.5855,
-          "p_objetivo": 0.0002,
-          "posicion": 43,
-          "rotulo": "Mayor Quimby · 59 %"
+          "prediccion": "homer_simpson",
+          "confianza": 0.1226,
+          "p_objetivo": 0.0026,
+          "posicion": 60,
+          "rotulo": "Homer Simpson · 12 %"
         },
         "cnn_recortes": {
-          "prediccion": "mayor_quimby",
-          "confianza": 0.5342,
-          "p_objetivo": 0.0005,
-          "posicion": 48,
-          "rotulo": "Mayor Quimby · 53 %"
+          "prediccion": "kang_kodos",
+          "confianza": 0.0943,
+          "p_objetivo": 0.0029,
+          "posicion": 61,
+          "rotulo": "Kang y Kodos · 9 %"
         },
         "mlp": {
-          "prediccion": "krusty_the_clown",
-          "confianza": 0.1376,
-          "p_objetivo": 0.0174,
-          "posicion": 19,
-          "rotulo": "Krusty the Clown · 14 %"
+          "prediccion": "maude_flanders",
+          "confianza": 0.9808,
+          "p_objetivo": 0.9808,
+          "posicion": 1,
+          "rotulo": "Maude Flanders · 98 %"
         }
       }
     },
@@ -1573,25 +1749,25 @@
       "archivo": "mayor_quimby.png",
       "jueces": {
         "cnn": {
-          "prediccion": "mayor_quimby",
-          "confianza": 0.81,
-          "p_objetivo": 0.81,
-          "posicion": 1,
-          "rotulo": "Mayor Quimby · 81 %"
+          "prediccion": "homer_simpson",
+          "confianza": 0.1134,
+          "p_objetivo": 0.014,
+          "posicion": 24,
+          "rotulo": "Homer Simpson · 11 %"
         },
         "cnn_recortes": {
-          "prediccion": "mayor_quimby",
-          "confianza": 0.5255,
-          "p_objetivo": 0.5255,
-          "posicion": 1,
-          "rotulo": "Mayor Quimby · 53 %"
+          "prediccion": "homer_simpson",
+          "confianza": 0.0944,
+          "p_objetivo": 0.0196,
+          "posicion": 19,
+          "rotulo": "Homer Simpson · 9 %"
         },
         "mlp": {
           "prediccion": "mayor_quimby",
-          "confianza": 0.1279,
-          "p_objetivo": 0.1279,
+          "confianza": 0.9865,
+          "p_objetivo": 0.9865,
           "posicion": 1,
-          "rotulo": "Mayor Quimby · 13 %"
+          "rotulo": "Mayor Quimby · 99 %"
         }
       }
     },
@@ -1600,25 +1776,25 @@
       "archivo": "milhouse_van_houten.png",
       "jueces": {
         "cnn": {
-          "prediccion": "groundskeeper_willie",
-          "confianza": 0.2477,
-          "p_objetivo": 0.0026,
-          "posicion": 57,
-          "rotulo": "Groundskeeper Willie · 25 %"
+          "prediccion": "bart_simpson",
+          "confianza": 0.1809,
+          "p_objetivo": 0.005,
+          "posicion": 45,
+          "rotulo": "Bart Simpson · 18 %"
         },
         "cnn_recortes": {
-          "prediccion": "kang_kodos",
-          "confianza": 0.2826,
-          "p_objetivo": 0.0018,
-          "posicion": 62,
-          "rotulo": "Kang y Kodos · 28 %"
+          "prediccion": "bart_simpson",
+          "confianza": 0.1329,
+          "p_objetivo": 0.0077,
+          "posicion": 38,
+          "rotulo": "Bart Simpson · 13 %"
         },
         "mlp": {
           "prediccion": "milhouse_van_houten",
-          "confianza": 0.4209,
-          "p_objetivo": 0.4209,
+          "confianza": 0.9849,
+          "p_objetivo": 0.9849,
           "posicion": 1,
-          "rotulo": "Milhouse Van Houten · 42 %"
+          "rotulo": "Milhouse Van Houten · 98 %"
         }
       }
     },
@@ -1627,25 +1803,25 @@
       "archivo": "miss_hoover.png",
       "jueces": {
         "cnn": {
-          "prediccion": "sideshow_mel",
-          "confianza": 0.5052,
-          "p_objetivo": 0.0,
-          "posicion": 64,
-          "rotulo": "Sideshow Mel · 51 %"
+          "prediccion": "bart_simpson",
+          "confianza": 0.2396,
+          "p_objetivo": 0.0017,
+          "posicion": 59,
+          "rotulo": "Bart Simpson · 24 %"
         },
         "cnn_recortes": {
-          "prediccion": "mayor_quimby",
-          "confianza": 0.6178,
-          "p_objetivo": 0.0,
-          "posicion": 64,
-          "rotulo": "Mayor Quimby · 62 %"
+          "prediccion": "bart_simpson",
+          "confianza": 0.1127,
+          "p_objetivo": 0.0024,
+          "posicion": 60,
+          "rotulo": "Bart Simpson · 11 %"
         },
         "mlp": {
-          "prediccion": "krusty_the_clown",
-          "confianza": 0.1689,
-          "p_objetivo": 0.0358,
-          "posicion": 9,
-          "rotulo": "Krusty the Clown · 17 %"
+          "prediccion": "miss_hoover",
+          "confianza": 0.9955,
+          "p_objetivo": 0.9955,
+          "posicion": 1,
+          "rotulo": "Miss Hoover · 100 %"
         }
       }
     },
@@ -1654,25 +1830,25 @@
       "archivo": "moe_szyslak.png",
       "jueces": {
         "cnn": {
-          "prediccion": "mayor_quimby",
-          "confianza": 0.4361,
-          "p_objetivo": 0.0007,
-          "posicion": 39,
-          "rotulo": "Mayor Quimby · 44 %"
+          "prediccion": "sideshow_bob",
+          "confianza": 0.2168,
+          "p_objetivo": 0.0087,
+          "posicion": 25,
+          "rotulo": "Sideshow Bob · 22 %"
         },
         "cnn_recortes": {
-          "prediccion": "sideshow_mel",
-          "confianza": 0.45,
-          "p_objetivo": 0.0003,
-          "posicion": 54,
-          "rotulo": "Sideshow Mel · 45 %"
+          "prediccion": "sideshow_bob",
+          "confianza": 0.1738,
+          "p_objetivo": 0.0149,
+          "posicion": 16,
+          "rotulo": "Sideshow Bob · 17 %"
         },
         "mlp": {
-          "prediccion": "charles_montgomery_burns",
-          "confianza": 0.1949,
-          "p_objetivo": 0.1669,
-          "posicion": 2,
-          "rotulo": "Charles Montgomery Burns · 19 %"
+          "prediccion": "moe_szyslak",
+          "confianza": 0.9883,
+          "p_objetivo": 0.9883,
+          "posicion": 1,
+          "rotulo": "Moe Szyslak · 99 %"
         }
       }
     },
@@ -1681,25 +1857,25 @@
       "archivo": "mona_simpson.png",
       "jueces": {
         "cnn": {
-          "prediccion": "mayor_quimby",
-          "confianza": 0.8481,
-          "p_objetivo": 0.0,
-          "posicion": 61,
-          "rotulo": "Mayor Quimby · 85 %"
+          "prediccion": "homer_simpson",
+          "confianza": 0.1636,
+          "p_objetivo": 0.0118,
+          "posicion": 24,
+          "rotulo": "Homer Simpson · 16 %"
         },
         "cnn_recortes": {
-          "prediccion": "mayor_quimby",
-          "confianza": 0.8034,
-          "p_objetivo": 0.0001,
-          "posicion": 63,
-          "rotulo": "Mayor Quimby · 80 %"
+          "prediccion": "kang_kodos",
+          "confianza": 0.1386,
+          "p_objetivo": 0.0132,
+          "posicion": 23,
+          "rotulo": "Kang y Kodos · 14 %"
         },
         "mlp": {
-          "prediccion": "gil",
-          "confianza": 0.1168,
-          "p_objetivo": 0.0071,
-          "posicion": 44,
-          "rotulo": "Gil · 12 %"
+          "prediccion": "mona_simpson",
+          "confianza": 0.9844,
+          "p_objetivo": 0.9844,
+          "posicion": 1,
+          "rotulo": "Mona Simpson · 98 %"
         }
       }
     },
@@ -1708,25 +1884,25 @@
       "archivo": "ned_flanders.png",
       "jueces": {
         "cnn": {
-          "prediccion": "mayor_quimby",
-          "confianza": 0.2299,
-          "p_objetivo": 0.0003,
-          "posicion": 60,
-          "rotulo": "Mayor Quimby · 23 %"
+          "prediccion": "bart_simpson",
+          "confianza": 0.114,
+          "p_objetivo": 0.0306,
+          "posicion": 10,
+          "rotulo": "Bart Simpson · 11 %"
         },
         "cnn_recortes": {
-          "prediccion": "professor_john_frink",
-          "confianza": 0.3121,
-          "p_objetivo": 0.0003,
-          "posicion": 60,
-          "rotulo": "Professor John Frink · 31 %"
+          "prediccion": "bart_simpson",
+          "confianza": 0.0967,
+          "p_objetivo": 0.0219,
+          "posicion": 13,
+          "rotulo": "Bart Simpson · 10 %"
         },
         "mlp": {
           "prediccion": "ned_flanders",
-          "confianza": 0.2853,
-          "p_objetivo": 0.2853,
+          "confianza": 0.9806,
+          "p_objetivo": 0.9806,
           "posicion": 1,
-          "rotulo": "Ned Flanders · 29 %"
+          "rotulo": "Ned Flanders · 98 %"
         }
       }
     },
@@ -1735,25 +1911,25 @@
       "archivo": "nelson_muntz.png",
       "jueces": {
         "cnn": {
-          "prediccion": "mayor_quimby",
-          "confianza": 0.2324,
-          "p_objetivo": 0.0044,
-          "posicion": 31,
-          "rotulo": "Mayor Quimby · 23 %"
+          "prediccion": "homer_simpson",
+          "confianza": 0.1707,
+          "p_objetivo": 0.0206,
+          "posicion": 16,
+          "rotulo": "Homer Simpson · 17 %"
         },
         "cnn_recortes": {
-          "prediccion": "otto_mann",
-          "confianza": 0.1831,
-          "p_objetivo": 0.0066,
-          "posicion": 24,
-          "rotulo": "Otto Mann · 18 %"
+          "prediccion": "homer_simpson",
+          "confianza": 0.1247,
+          "p_objetivo": 0.0287,
+          "posicion": 11,
+          "rotulo": "Homer Simpson · 12 %"
         },
         "mlp": {
-          "prediccion": "barney_gumble",
-          "confianza": 0.2465,
-          "p_objetivo": 0.127,
-          "posicion": 2,
-          "rotulo": "Barney Gumble · 25 %"
+          "prediccion": "nelson_muntz",
+          "confianza": 0.9806,
+          "p_objetivo": 0.9806,
+          "posicion": 1,
+          "rotulo": "Nelson Muntz · 98 %"
         }
       }
     },
@@ -1762,25 +1938,25 @@
       "archivo": "otto_mann.png",
       "jueces": {
         "cnn": {
-          "prediccion": "mayor_quimby",
-          "confianza": 0.1949,
-          "p_objetivo": 0.0397,
-          "posicion": 9,
-          "rotulo": "Mayor Quimby · 19 %"
+          "prediccion": "bart_simpson",
+          "confianza": 0.2827,
+          "p_objetivo": 0.0054,
+          "posicion": 31,
+          "rotulo": "Bart Simpson · 28 %"
         },
         "cnn_recortes": {
-          "prediccion": "kang_kodos",
-          "confianza": 0.2549,
-          "p_objetivo": 0.0249,
-          "posicion": 9,
-          "rotulo": "Kang y Kodos · 25 %"
+          "prediccion": "bart_simpson",
+          "confianza": 0.1793,
+          "p_objetivo": 0.0097,
+          "posicion": 21,
+          "rotulo": "Bart Simpson · 18 %"
         },
         "mlp": {
-          "prediccion": "cletus_spuckler",
-          "confianza": 0.1308,
-          "p_objetivo": 0.0431,
-          "posicion": 7,
-          "rotulo": "Cletus Spuckler · 13 %"
+          "prediccion": "otto_mann",
+          "confianza": 0.9888,
+          "p_objetivo": 0.9888,
+          "posicion": 1,
+          "rotulo": "Otto Mann · 99 %"
         }
       }
     },
@@ -1789,25 +1965,25 @@
       "archivo": "patty_bouvier.png",
       "jueces": {
         "cnn": {
-          "prediccion": "mayor_quimby",
-          "confianza": 0.392,
-          "p_objetivo": 0.0014,
-          "posicion": 33,
-          "rotulo": "Mayor Quimby · 39 %"
+          "prediccion": "gary_chalmers",
+          "confianza": 0.073,
+          "p_objetivo": 0.0025,
+          "posicion": 59,
+          "rotulo": "Gary Chalmers · 7 %"
         },
         "cnn_recortes": {
-          "prediccion": "sideshow_mel",
-          "confianza": 0.3998,
-          "p_objetivo": 0.0032,
-          "posicion": 16,
-          "rotulo": "Sideshow Mel · 40 %"
+          "prediccion": "kang_kodos",
+          "confianza": 0.0664,
+          "p_objetivo": 0.0047,
+          "posicion": 55,
+          "rotulo": "Kang y Kodos · 7 %"
         },
         "mlp": {
           "prediccion": "patty_bouvier",
-          "confianza": 0.4383,
-          "p_objetivo": 0.4383,
+          "confianza": 0.9853,
+          "p_objetivo": 0.9853,
           "posicion": 1,
-          "rotulo": "Patty Bouvier · 44 %"
+          "rotulo": "Patty Bouvier · 99 %"
         }
       }
     },
@@ -1816,25 +1992,25 @@
       "archivo": "principal_skinner.png",
       "jueces": {
         "cnn": {
-          "prediccion": "rich_texan",
-          "confianza": 0.2448,
-          "p_objetivo": 0.0012,
-          "posicion": 48,
-          "rotulo": "Rich Texan · 24 %"
+          "prediccion": "bart_simpson",
+          "confianza": 0.1551,
+          "p_objetivo": 0.0336,
+          "posicion": 7,
+          "rotulo": "Bart Simpson · 16 %"
         },
         "cnn_recortes": {
-          "prediccion": "rich_texan",
-          "confianza": 0.1953,
-          "p_objetivo": 0.0027,
-          "posicion": 42,
-          "rotulo": "Rich Texan · 20 %"
+          "prediccion": "bart_simpson",
+          "confianza": 0.1172,
+          "p_objetivo": 0.0204,
+          "posicion": 14,
+          "rotulo": "Bart Simpson · 12 %"
         },
         "mlp": {
-          "prediccion": "homer_simpson",
-          "confianza": 0.4334,
-          "p_objetivo": 0.0012,
-          "posicion": 37,
-          "rotulo": "Homer Simpson · 43 %"
+          "prediccion": "principal_skinner",
+          "confianza": 0.9781,
+          "p_objetivo": 0.9781,
+          "posicion": 1,
+          "rotulo": "Principal Skinner · 98 %"
         }
       }
     },
@@ -1843,25 +2019,25 @@
       "archivo": "professor_john_frink.png",
       "jueces": {
         "cnn": {
-          "prediccion": "groundskeeper_willie",
-          "confianza": 0.177,
-          "p_objetivo": 0.0149,
-          "posicion": 14,
-          "rotulo": "Groundskeeper Willie · 18 %"
+          "prediccion": "bart_simpson",
+          "confianza": 0.0932,
+          "p_objetivo": 0.017,
+          "posicion": 18,
+          "rotulo": "Bart Simpson · 9 %"
         },
         "cnn_recortes": {
-          "prediccion": "kang_kodos",
-          "confianza": 0.2155,
-          "p_objetivo": 0.0497,
-          "posicion": 5,
-          "rotulo": "Kang y Kodos · 22 %"
+          "prediccion": "bart_simpson",
+          "confianza": 0.1046,
+          "p_objetivo": 0.0149,
+          "posicion": 22,
+          "rotulo": "Bart Simpson · 10 %"
         },
         "mlp": {
-          "prediccion": "manjula_nahasapeemapetilon",
-          "confianza": 0.2334,
-          "p_objetivo": 0.0288,
-          "posicion": 6,
-          "rotulo": "Manjula Nahasapeemapetilon · 23 %"
+          "prediccion": "professor_john_frink",
+          "confianza": 0.9828,
+          "p_objetivo": 0.9828,
+          "posicion": 1,
+          "rotulo": "Professor John Frink · 98 %"
         }
       }
     },
@@ -1870,25 +2046,25 @@
       "archivo": "rainier_wolfcastle.png",
       "jueces": {
         "cnn": {
-          "prediccion": "mayor_quimby",
-          "confianza": 0.5828,
-          "p_objetivo": 0.0065,
-          "posicion": 14,
-          "rotulo": "Mayor Quimby · 58 %"
+          "prediccion": "bart_simpson",
+          "confianza": 0.154,
+          "p_objetivo": 0.0039,
+          "posicion": 56,
+          "rotulo": "Bart Simpson · 15 %"
         },
         "cnn_recortes": {
-          "prediccion": "mayor_quimby",
-          "confianza": 0.2185,
-          "p_objetivo": 0.0146,
-          "posicion": 9,
-          "rotulo": "Mayor Quimby · 22 %"
+          "prediccion": "bart_simpson",
+          "confianza": 0.0809,
+          "p_objetivo": 0.0054,
+          "posicion": 53,
+          "rotulo": "Bart Simpson · 8 %"
         },
         "mlp": {
-          "prediccion": "kirk_van_houten",
-          "confianza": 0.1937,
-          "p_objetivo": 0.1932,
-          "posicion": 2,
-          "rotulo": "Kirk Van Houten · 19 %"
+          "prediccion": "rainier_wolfcastle",
+          "confianza": 0.9911,
+          "p_objetivo": 0.9911,
+          "posicion": 1,
+          "rotulo": "Rainier Wolfcastle · 99 %"
         }
       }
     },
@@ -1897,25 +2073,25 @@
       "archivo": "ralph_wiggum.png",
       "jueces": {
         "cnn": {
-          "prediccion": "cletus_spuckler",
-          "confianza": 0.2557,
-          "p_objetivo": 0.0319,
-          "posicion": 8,
-          "rotulo": "Cletus Spuckler · 26 %"
+          "prediccion": "homer_simpson",
+          "confianza": 0.8301,
+          "p_objetivo": 0.0009,
+          "posicion": 14,
+          "rotulo": "Homer Simpson · 83 %"
         },
         "cnn_recortes": {
-          "prediccion": "kang_kodos",
-          "confianza": 0.3529,
-          "p_objetivo": 0.0101,
+          "prediccion": "homer_simpson",
+          "confianza": 0.792,
+          "p_objetivo": 0.002,
           "posicion": 10,
-          "rotulo": "Kang y Kodos · 35 %"
+          "rotulo": "Homer Simpson · 79 %"
         },
         "mlp": {
-          "prediccion": "gary_chalmers",
-          "confianza": 0.1604,
-          "p_objetivo": 0.0796,
-          "posicion": 4,
-          "rotulo": "Gary Chalmers · 16 %"
+          "prediccion": "ralph_wiggum",
+          "confianza": 0.9803,
+          "p_objetivo": 0.9803,
+          "posicion": 1,
+          "rotulo": "Ralph Wiggum · 98 %"
         }
       }
     },
@@ -1924,25 +2100,25 @@
       "archivo": "rev_timothy_lovejoy.png",
       "jueces": {
         "cnn": {
-          "prediccion": "mayor_quimby",
-          "confianza": 0.3936,
-          "p_objetivo": 0.0163,
-          "posicion": 10,
-          "rotulo": "Mayor Quimby · 39 %"
+          "prediccion": "homer_simpson",
+          "confianza": 0.1337,
+          "p_objetivo": 0.0117,
+          "posicion": 18,
+          "rotulo": "Homer Simpson · 13 %"
         },
         "cnn_recortes": {
-          "prediccion": "kang_kodos",
-          "confianza": 0.2428,
-          "p_objetivo": 0.0238,
-          "posicion": 9,
-          "rotulo": "Kang y Kodos · 24 %"
+          "prediccion": "sideshow_bob",
+          "confianza": 0.1313,
+          "p_objetivo": 0.0141,
+          "posicion": 18,
+          "rotulo": "Sideshow Bob · 13 %"
         },
         "mlp": {
-          "prediccion": "krusty_the_clown",
-          "confianza": 0.094,
-          "p_objetivo": 0.0405,
-          "posicion": 6,
-          "rotulo": "Krusty the Clown · 9 %"
+          "prediccion": "rev_timothy_lovejoy",
+          "confianza": 0.9866,
+          "p_objetivo": 0.9866,
+          "posicion": 1,
+          "rotulo": "Rev. Timothy Lovejoy · 99 %"
         }
       }
     },
@@ -1951,25 +2127,25 @@
       "archivo": "rich_texan.png",
       "jueces": {
         "cnn": {
-          "prediccion": "sideshow_mel",
-          "confianza": 0.5052,
-          "p_objetivo": 0.0004,
-          "posicion": 41,
-          "rotulo": "Sideshow Mel · 51 %"
+          "prediccion": "homer_simpson",
+          "confianza": 0.1259,
+          "p_objetivo": 0.0111,
+          "posicion": 26,
+          "rotulo": "Homer Simpson · 13 %"
         },
         "cnn_recortes": {
-          "prediccion": "sideshow_mel",
-          "confianza": 0.4747,
-          "p_objetivo": 0.0022,
-          "posicion": 20,
-          "rotulo": "Sideshow Mel · 47 %"
+          "prediccion": "homer_simpson",
+          "confianza": 0.1115,
+          "p_objetivo": 0.0103,
+          "posicion": 28,
+          "rotulo": "Homer Simpson · 11 %"
         },
         "mlp": {
           "prediccion": "rich_texan",
-          "confianza": 0.1891,
-          "p_objetivo": 0.1891,
+          "confianza": 0.9829,
+          "p_objetivo": 0.9829,
           "posicion": 1,
-          "rotulo": "Rich Texan · 19 %"
+          "rotulo": "Rich Texan · 98 %"
         }
       }
     },
@@ -1978,25 +2154,25 @@
       "archivo": "rod_flanders.png",
       "jueces": {
         "cnn": {
-          "prediccion": "sideshow_mel",
-          "confianza": 0.1384,
-          "p_objetivo": 0.0066,
-          "posicion": 21,
-          "rotulo": "Sideshow Mel · 14 %"
+          "prediccion": "lisa_simpson",
+          "confianza": 0.0827,
+          "p_objetivo": 0.0149,
+          "posicion": 20,
+          "rotulo": "Lisa Simpson · 8 %"
         },
         "cnn_recortes": {
-          "prediccion": "kang_kodos",
-          "confianza": 0.2417,
-          "p_objetivo": 0.0115,
-          "posicion": 12,
-          "rotulo": "Kang y Kodos · 24 %"
+          "prediccion": "homer_simpson",
+          "confianza": 0.0736,
+          "p_objetivo": 0.0176,
+          "posicion": 19,
+          "rotulo": "Homer Simpson · 7 %"
         },
         "mlp": {
-          "prediccion": "todd_flanders",
-          "confianza": 0.1463,
-          "p_objetivo": 0.1329,
-          "posicion": 2,
-          "rotulo": "Todd Flanders · 15 %"
+          "prediccion": "rod_flanders",
+          "confianza": 0.9759,
+          "p_objetivo": 0.9759,
+          "posicion": 1,
+          "rotulo": "Rod Flanders · 98 %"
         }
       }
     },
@@ -2005,25 +2181,25 @@
       "archivo": "selma_bouvier.png",
       "jueces": {
         "cnn": {
-          "prediccion": "mayor_quimby",
-          "confianza": 0.9422,
-          "p_objetivo": 0.0002,
-          "posicion": 31,
-          "rotulo": "Mayor Quimby · 94 %"
+          "prediccion": "homer_simpson",
+          "confianza": 0.1087,
+          "p_objetivo": 0.0056,
+          "posicion": 45,
+          "rotulo": "Homer Simpson · 11 %"
         },
         "cnn_recortes": {
-          "prediccion": "mayor_quimby",
-          "confianza": 0.887,
-          "p_objetivo": 0.0006,
-          "posicion": 35,
-          "rotulo": "Mayor Quimby · 89 %"
+          "prediccion": "homer_simpson",
+          "confianza": 0.0637,
+          "p_objetivo": 0.0064,
+          "posicion": 44,
+          "rotulo": "Homer Simpson · 6 %"
         },
         "mlp": {
           "prediccion": "selma_bouvier",
-          "confianza": 0.4067,
-          "p_objetivo": 0.4067,
+          "confianza": 0.9846,
+          "p_objetivo": 0.9846,
           "posicion": 1,
-          "rotulo": "Selma Bouvier · 41 %"
+          "rotulo": "Selma Bouvier · 98 %"
         }
       }
     },
@@ -2032,25 +2208,25 @@
       "archivo": "sideshow_bob.png",
       "jueces": {
         "cnn": {
-          "prediccion": "mayor_quimby",
-          "confianza": 0.7509,
-          "p_objetivo": 0.0006,
-          "posicion": 24,
-          "rotulo": "Mayor Quimby · 75 %"
+          "prediccion": "homer_simpson",
+          "confianza": 0.1193,
+          "p_objetivo": 0.0848,
+          "posicion": 2,
+          "rotulo": "Homer Simpson · 12 %"
         },
         "cnn_recortes": {
-          "prediccion": "mayor_quimby",
-          "confianza": 0.564,
-          "p_objetivo": 0.002,
-          "posicion": 26,
-          "rotulo": "Mayor Quimby · 56 %"
+          "prediccion": "homer_simpson",
+          "confianza": 0.0842,
+          "p_objetivo": 0.0694,
+          "posicion": 2,
+          "rotulo": "Homer Simpson · 8 %"
         },
         "mlp": {
           "prediccion": "sideshow_bob",
-          "confianza": 0.2716,
-          "p_objetivo": 0.2716,
+          "confianza": 0.9939,
+          "p_objetivo": 0.9939,
           "posicion": 1,
-          "rotulo": "Sideshow Bob · 27 %"
+          "rotulo": "Sideshow Bob · 99 %"
         }
       }
     },
@@ -2059,25 +2235,25 @@
       "archivo": "sideshow_mel.png",
       "jueces": {
         "cnn": {
-          "prediccion": "mayor_quimby",
-          "confianza": 0.6109,
-          "p_objetivo": 0.1773,
-          "posicion": 2,
-          "rotulo": "Mayor Quimby · 61 %"
+          "prediccion": "homer_simpson",
+          "confianza": 0.136,
+          "p_objetivo": 0.0078,
+          "posicion": 30,
+          "rotulo": "Homer Simpson · 14 %"
         },
         "cnn_recortes": {
-          "prediccion": "mayor_quimby",
-          "confianza": 0.3668,
-          "p_objetivo": 0.1495,
-          "posicion": 2,
-          "rotulo": "Mayor Quimby · 37 %"
+          "prediccion": "homer_simpson",
+          "confianza": 0.1371,
+          "p_objetivo": 0.0081,
+          "posicion": 35,
+          "rotulo": "Homer Simpson · 14 %"
         },
         "mlp": {
           "prediccion": "sideshow_mel",
-          "confianza": 0.8487,
-          "p_objetivo": 0.8487,
+          "confianza": 0.9949,
+          "p_objetivo": 0.9949,
           "posicion": 1,
-          "rotulo": "Sideshow Mel · 85 %"
+          "rotulo": "Sideshow Mel · 99 %"
         }
       }
     },
@@ -2086,25 +2262,25 @@
       "archivo": "snake_jailbird.png",
       "jueces": {
         "cnn": {
-          "prediccion": "mayor_quimby",
-          "confianza": 0.5164,
-          "p_objetivo": 0.0017,
-          "posicion": 27,
-          "rotulo": "Mayor Quimby · 52 %"
+          "prediccion": "homer_simpson",
+          "confianza": 0.1097,
+          "p_objetivo": 0.0063,
+          "posicion": 40,
+          "rotulo": "Homer Simpson · 11 %"
         },
         "cnn_recortes": {
-          "prediccion": "mayor_quimby",
-          "confianza": 0.7322,
-          "p_objetivo": 0.0029,
-          "posicion": 15,
-          "rotulo": "Mayor Quimby · 73 %"
+          "prediccion": "homer_simpson",
+          "confianza": 0.0849,
+          "p_objetivo": 0.0124,
+          "posicion": 27,
+          "rotulo": "Homer Simpson · 8 %"
         },
         "mlp": {
-          "prediccion": "ned_flanders",
-          "confianza": 0.1603,
-          "p_objetivo": 0.0116,
-          "posicion": 23,
-          "rotulo": "Ned Flanders · 16 %"
+          "prediccion": "snake_jailbird",
+          "confianza": 0.99,
+          "p_objetivo": 0.99,
+          "posicion": 1,
+          "rotulo": "Snake Jailbird · 99 %"
         }
       }
     },
@@ -2113,25 +2289,25 @@
       "archivo": "todd_flanders.png",
       "jueces": {
         "cnn": {
-          "prediccion": "mayor_quimby",
-          "confianza": 0.4641,
-          "p_objetivo": 0.0044,
-          "posicion": 21,
-          "rotulo": "Mayor Quimby · 46 %"
+          "prediccion": "lisa_simpson",
+          "confianza": 0.0748,
+          "p_objetivo": 0.0036,
+          "posicion": 57,
+          "rotulo": "Lisa Simpson · 7 %"
         },
         "cnn_recortes": {
-          "prediccion": "mayor_quimby",
-          "confianza": 0.4792,
-          "p_objetivo": 0.0025,
-          "posicion": 34,
-          "rotulo": "Mayor Quimby · 48 %"
+          "prediccion": "homer_simpson",
+          "confianza": 0.0799,
+          "p_objetivo": 0.0044,
+          "posicion": 53,
+          "rotulo": "Homer Simpson · 8 %"
         },
         "mlp": {
           "prediccion": "todd_flanders",
-          "confianza": 0.1061,
-          "p_objetivo": 0.1061,
+          "confianza": 0.9796,
+          "p_objetivo": 0.9796,
           "posicion": 1,
-          "rotulo": "Todd Flanders · 11 %"
+          "rotulo": "Todd Flanders · 98 %"
         }
       }
     },
@@ -2140,25 +2316,25 @@
       "archivo": "troy_mcclure.png",
       "jueces": {
         "cnn": {
-          "prediccion": "mayor_quimby",
-          "confianza": 0.7549,
-          "p_objetivo": 0.0001,
-          "posicion": 45,
-          "rotulo": "Mayor Quimby · 75 %"
+          "prediccion": "homer_simpson",
+          "confianza": 0.1014,
+          "p_objetivo": 0.0084,
+          "posicion": 32,
+          "rotulo": "Homer Simpson · 10 %"
         },
         "cnn_recortes": {
-          "prediccion": "mayor_quimby",
-          "confianza": 0.5139,
-          "p_objetivo": 0.0011,
-          "posicion": 31,
-          "rotulo": "Mayor Quimby · 51 %"
+          "prediccion": "homer_simpson",
+          "confianza": 0.076,
+          "p_objetivo": 0.0151,
+          "posicion": 22,
+          "rotulo": "Homer Simpson · 8 %"
         },
         "mlp": {
-          "prediccion": "dr_julius_hibbert",
-          "confianza": 0.3363,
-          "p_objetivo": 0.3325,
-          "posicion": 2,
-          "rotulo": "Dr. Julius Hibbert · 34 %"
+          "prediccion": "troy_mcclure",
+          "confianza": 0.989,
+          "p_objetivo": 0.989,
+          "posicion": 1,
+          "rotulo": "Troy Mcclure · 99 %"
         }
       }
     },
@@ -2167,25 +2343,25 @@
       "archivo": "waylon_smithers.png",
       "jueces": {
         "cnn": {
-          "prediccion": "sideshow_mel",
-          "confianza": 0.3621,
-          "p_objetivo": 0.0003,
-          "posicion": 34,
-          "rotulo": "Sideshow Mel · 36 %"
+          "prediccion": "homer_simpson",
+          "confianza": 0.1156,
+          "p_objetivo": 0.004,
+          "posicion": 52,
+          "rotulo": "Homer Simpson · 12 %"
         },
         "cnn_recortes": {
-          "prediccion": "professor_john_frink",
-          "confianza": 0.4983,
-          "p_objetivo": 0.0004,
-          "posicion": 44,
-          "rotulo": "Professor John Frink · 50 %"
+          "prediccion": "homer_simpson",
+          "confianza": 0.1013,
+          "p_objetivo": 0.0056,
+          "posicion": 52,
+          "rotulo": "Homer Simpson · 10 %"
         },
         "mlp": {
-          "prediccion": "homer_simpson",
-          "confianza": 0.3629,
-          "p_objetivo": 0.0085,
-          "posicion": 17,
-          "rotulo": "Homer Simpson · 36 %"
+          "prediccion": "waylon_smithers",
+          "confianza": 0.9716,
+          "p_objetivo": 0.9716,
+          "posicion": 1,
+          "rotulo": "Waylon Smithers · 97 %"
         }
       }
     }

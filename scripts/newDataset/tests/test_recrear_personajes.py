@@ -206,7 +206,8 @@ def test_el_juicio_compara_por_nombre_de_clase():
     juicio = R.juzgar(RedFija(), np.zeros((2, ALTO, ANCHO, 3), np.uint8), ["homer_simpson", "lisa_simpson"])
     assert juicio["prediccion"] == ["homer_simpson", "bart_simpson"]
     assert list(juicio["posicion"]) == [1, 3]
-    assert R.fila_matriz(juicio) == {"top1": 1, "top3": 2, "n": 2, "confianza": pytest.approx(0.4, abs=1e-4)}
+    assert R.fila_matriz(juicio) == {"top1": 1, "top3": 2, "n": 2, "confianza": pytest.approx(0.4, abs=1e-4),
+                                     "posicion_media": 2.0}
 
 
 def test_generadores_por_defecto_son_todos_los_modelos():
@@ -297,3 +298,140 @@ def test_correlacion_de_pesos_distingue_una_red_afinada():
     assert R.correlacion_pesos(a, b) == pytest.approx(1.0)
     assert abs(R.correlacion_pesos(a, c)) < R.CORRELACION_DEPENDIENTE
     assert R.correlacion_pesos(a, mlp_minimo()) is None
+
+
+# --- Hiperparámetros por red, BatchNorm normalizada, escalas y reinicios ---------------------------------
+
+def _fijar_estadisticas_del_lote(modelo, x):
+    """Cada BatchNorm guarda la media y la varianza que mide en x; en orden, porque cambiar una cambia las
+    siguientes."""
+    for _ in range(len([c for c in modelo.layers if isinstance(c, layers.BatchNormalization)])):
+        _, estadisticas = R.recorrer(modelo, x)
+        pendiente = next((e for e in estadisticas
+                          if not torch.allclose(e.media, e.media_bn) or not torch.allclose(e.varianza, e.varianza_bn)),
+                         None)
+        if pendiente is None:
+            break
+        capa = modelo.get_layer(pendiente.capa)
+        capa.moving_mean.assign(pendiente.media.detach().numpy())
+        capa.moving_variance.assign(pendiente.varianza.detach().numpy())
+
+
+@pytest.mark.parametrize("construir", [cnn_minima, mlp_minimo])
+def test_perdida_bn_normalizada_vale_cero_si_las_estadisticas_coinciden(construir):
+    modelo = construir()
+    x = en_01(imagenes(n=16))
+    _fijar_estadisticas_del_lote(modelo, x)
+    _, estadisticas = R.recorrer(modelo, x)
+    assert float(R.perdida_bn(estadisticas, normalizada=True)) == pytest.approx(0.0, abs=1e-4)
+    _, otras = R.recorrer(modelo, en_01(imagenes(n=16, semilla=7)) * 0.2)
+    assert float(R.perdida_bn(otras, normalizada=True)) > 0.01
+
+
+def test_la_bn_normalizada_no_depende_de_la_escala_de_la_capa():
+    """La misma desviación relativa pesa lo mismo en una neurona con activaciones de 1 que en una de 1.000."""
+    def estadistica(escala):
+        uno = torch.ones(4)
+        return R.Estadistica("norm", 1.5 * escala * uno, 2.0 * escala ** 2 * uno, escala * uno, escala ** 2 * uno)
+
+    chica = float(R.perdida_bn([estadistica(1.0)], 1.0, normalizada=True))
+    grande = float(R.perdida_bn([estadistica(1000.0)], 1.0, normalizada=True))
+    assert grande == pytest.approx(chica, rel=1e-2)
+    # Sin normalizar, la neurona grande domina por un factor de miles
+    assert float(R.perdida_bn([estadistica(1000.0)], 1.0)) > 1000 * float(R.perdida_bn([estadistica(1.0)], 1.0))
+
+
+def test_la_clave_de_cache_de_las_cnn_no_cambia():
+    """Con los valores por defecto, la clave es la de antes de agregar los campos del MLP: las recreaciones de las
+    CNN que ya estaban en caché siguen valiendo."""
+    antes = {"pasos": 2000, "lr": 0.05, "alfa_bn": 0.01, "alfa_tv": 1e-3, "alfa_l2": 1e-5, "desplazamiento": 16,
+             "multiplicador_primera_bn": 10.0, "beta1": 0.5, "beta2": 0.9}
+    assert R.clave_hiper(R.Hiperparametros()) == antes
+    assert R.clave_hiper(R.ESPECIFICACIONES["cnn"].hiper) == antes
+    assert R.clave_hiper(R.ESPECIFICACIONES["cnn_recortes"].hiper) == antes
+    # Un campo nuevo distinto de su valor por defecto sí entra
+    assert R.clave_hiper(R.Hiperparametros(reinicios=4)) == {**antes, "reinicios": 4}
+
+
+def test_los_flags_solo_reemplazan_lo_que_se_paso():
+    from dataclasses import replace
+
+    sin_flags = R.leer_argumentos([])
+    assert R.hiper_de(R.ESPECIFICACIONES["cnn"], sin_flags) == R.Hiperparametros()
+    assert R.hiper_de(R.ESPECIFICACIONES["mlp"], sin_flags) == R.HIPER_MLP
+    con_flags = R.leer_argumentos(["--pasos", "5", "--escalas", "ninguna", "--no-volteo", "--reinicios", "2"])
+    assert R.hiper_de(R.ESPECIFICACIONES["mlp_robusto"], con_flags) == replace(
+        R.HIPER_MLP_ROBUSTO, pasos=5, escalas=(), volteo=False, reinicios=2)
+    assert R.leer_argumentos(["--escalas", "16,32,64"]).escalas == (16, 32, 64)
+
+
+def test_las_etapas_reparten_los_pasos_de_lo_grueso_a_lo_fino():
+    assert R.etapas(R.Hiperparametros(pasos=10), (8, 8)) == [(8, 8, 10)]
+    assert R.etapas(R.Hiperparametros(pasos=10, escalas=(2, 4, 8)), (8, 8)) == [(2, 2, 3), (4, 4, 3), (8, 8, 4)]
+    # Las escalas mayores que el modelo no se usan; si no queda ninguna, es una sola etapa
+    assert R.etapas(R.Hiperparametros(pasos=10, escalas=(4, 16)), (8, 8)) == [(4, 4, 10)]
+    assert R.etapas(R.Hiperparametros(pasos=10, escalas=(16, 32)), (8, 8)) == [(8, 8, 10)]
+    with pytest.raises(ValueError):
+        R.etapas(R.Hiperparametros(pasos=10, escalas=(8, 4)), (8, 8))
+
+
+@pytest.mark.parametrize("construir", [cnn_minima, mlp_minimo])
+def test_con_escalas_la_recreacion_sale_a_la_resolucion_del_modelo(construir):
+    modelo = construir()
+    hiper = R.Hiperparametros(pasos=9, lr=0.1, alfa_bn=0.0, desplazamiento=0, volteo=False, escalas=(2, 4, 8),
+                              bn_normalizada=True)
+    recreacion = R.recrear(modelo, [0, 1, 2], (ALTO, ANCHO), hiper, semilla=3, dispositivo="cpu")
+    assert sorted(recreacion.instantaneas) == [0, 9]
+    assert recreacion.final.dtype == np.uint8 and recreacion.final.shape == (3, ALTO, ANCHO, 3)
+    # El punto de partida es ruido de 2 × 2 ampliado: mucho más suave que ruido a la resolución del modelo
+    inicial = recreacion.instantaneas[0].astype(float)
+    assert np.abs(np.diff(inicial, axis=1)).mean() < 0.5 * np.abs(np.diff(imagenes(3).astype(float), axis=1)).mean()
+
+
+def test_los_reinicios_los_elige_la_red_que_genera():
+    # 2 reinicios de 3 personajes: el reinicio k del personaje i está en k·3 + i
+    p_objetivo = np.array([0.1, 0.9, 0.4,
+                           0.5, 0.2, 0.3])
+    assert list(R.indices_elegidos(p_objetivo, 3, 2)) == [3, 1, 2]
+
+    class RedFija:
+        clases = ["bart_simpson", "homer_simpson"]
+
+        def probabilidades(self, imagenes):
+            # Reconoce a Homer cuanto más clara es la imagen y a Bart cuanto más oscura
+            brillo = imagenes.reshape(len(imagenes), -1).mean(axis=1) / 255.0
+            return np.stack([1 - brillo, brillo], axis=1)
+
+    oscura, clara = np.zeros((ALTO, ANCHO, 3), np.uint8), np.full((ALTO, ANCHO, 3), 255, np.uint8)
+    # Reinicio 0: Bart claro, Homer oscuro (mal); reinicio 1: Bart oscuro, Homer claro (bien)
+    final = np.stack([clara, oscura, oscura, clara])
+    recreacion = R.Recreacion(final, {0: final.copy(), 5: final.copy()})
+    elegida = R.elegir_reinicios(recreacion, RedFija(), ["bart_simpson", "homer_simpson"], 2)
+    np.testing.assert_array_equal(elegida.final, np.stack([oscura, clara]))
+    assert sorted(elegida.instantaneas) == [0, 5] and elegida.instantaneas[0].shape == (2, ALTO, ANCHO, 3)
+    # Con un solo reinicio no cambia nada
+    assert R.elegir_reinicios(recreacion, RedFija(), ["bart_simpson"] * 4, 1) is recreacion
+
+
+def test_main_usa_los_hiperparametros_de_cada_red(tmp_path, monkeypatch):
+    """El MLP genera con HIPER_MLP (reinicios incluidos) y el JSON lo registra."""
+    import json
+
+    clases = ["bart_simpson", "homer_simpson", "lisa_simpson"]
+    modelos = {"cnn": cnn_minima(), "mlp": mlp_minimo()}
+
+    def resolver(especificacion, _usar_cpu):
+        metadatos = {"clases": clases, "alto": ALTO, "ancho": ANCHO}
+        ruta = tmp_path / "modelos" / f"{especificacion.identificador}.keras"
+        return R.Red(especificacion, ruta, modelos[especificacion.identificador], metadatos, "cpu", "0" * 64), []
+
+    monkeypatch.setattr(R, "resolver", resolver)
+    salida = tmp_path / "salida"
+    resultado = R.main(["--modelos", "cnn,mlp", "--generadores", "mlp", "--pasos", "3", "--semilla", "1",
+                        "--salida", str(salida), "--cpu"])
+    assert resultado["hiperparametros"]["mlp"]["reinicios"] == R.HIPER_MLP.reinicios
+    assert resultado["hiperparametros"]["mlp"]["pasos"] == 3
+    registro = json.loads((salida / "mlp" / "recreacion.json").read_text(encoding="utf-8"))
+    assert registro["hiperparametros"]["lote"] == len(clases) * R.HIPER_MLP.reinicios
+    assert registro["matriz"]["mlp"]["n"] == len(clases)
+    assert "posicion_media" in registro["matriz"]["cnn"]

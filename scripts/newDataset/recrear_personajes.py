@@ -68,7 +68,7 @@ import os
 import random
 import sys
 import time
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass, field, replace
 from datetime import datetime
 from pathlib import Path
 
@@ -107,39 +107,8 @@ CORRELACION_DEPENDIENTE = 0.9
 COLOR_ACIERTO = "#1b7f3b"
 COLOR_ERROR = "#c0392b"
 COLUMNAS_LAMINA = 8
-
-
-@dataclass(frozen=True)
-class Especificacion:
-    """Un modelo que se puede usar: dónde buscarlo, en orden, y dónde dejar sus salidas."""
-
-    identificador: str
-    nombre: str
-    corto: str
-    # Cómo se nombra la red dentro de una frase, en los títulos de las figuras
-    en_frase: str
-    candidatos: tuple
-    salida: Path
-    # Metadatos (clases y resolución) que se usan si el .keras no tiene su .json al lado: el modelo final del
-    # mismo notebook, con las mismas clases en el mismo orden
-    metadatos_alternativos: tuple = ()
-
-
-ESPECIFICACIONES = {
-    "cnn": Especificacion(
-        "cnn", "CNN, fotograma completo", "CNN fotograma", "la CNN de fotograma completo",
-        (MODELOS_CNN / "cnn_final.keras",), SALIDA_CNN,
-    ),
-    "cnn_recortes": Especificacion(
-        "cnn_recortes", "CNN, recortes", "CNN recortes", "la CNN de recortes",
-        (MODELOS_CNN / "cajas" / "cnn_final.keras", MODELOS_CNN / "cajas" / "maestra_recortes.keras"), SALIDA_CNN,
-    ),
-    "mlp": Especificacion(
-        "mlp", "MLP, píxeles", "MLP píxeles", "el MLP de píxeles",
-        (MODELOS_MLP / "mlp_r1.keras", MODELOS_MLP / "cajas" / "mlp_r1.keras", MODELOS_MLP / "mlp_final.keras"),
-        SALIDA_MLP, ("mlp_final.json",),
-    ),
-}
+# Épsilon de la BatchNorm de Keras: evita dividir por una varianza guardada nula (una neurona que nunca se activó)
+EPSILON_BN = 1e-3
 
 
 @dataclass
@@ -157,6 +126,93 @@ class Hiperparametros:
     multiplicador_primera_bn: float = 10.0
     beta1: float = 0.5
     beta2: float = 0.9
+    # Agregados para el MLP. Con estos valores por defecto la recreación es exactamente la de antes, y la caché de
+    # las CNN sigue valiendo (ver clave_hiper)
+    # Volteo horizontal al azar en cada paso
+    volteo: bool = True
+    # BatchNorm en unidades de la varianza guardada: cada neurona pesa lo mismo, sea cual sea su escala
+    bn_normalizada: bool = False
+    # Resoluciones por las que pasa la imagen, de la más gruesa a la final (octavas); vacía, solo la del modelo
+    escalas: tuple = ()
+    # Imágenes por personaje en el lote: queda la que la red que genera reconoce con más probabilidad
+    reinicios: int = 1
+
+
+# Los campos que tenía Hiperparametros antes de los agregados para el MLP: siempre entran en la clave de la caché
+CAMPOS_ORIGINALES = ("pasos", "lr", "alfa_bn", "alfa_tv", "alfa_l2", "desplazamiento", "multiplicador_primera_bn",
+                     "beta1", "beta2")
+
+# El MLP recibe la imagen aplanada: un peso por píxel y por canal, sin noción de vecindad ni de traslación.
+# Con los hiperparámetros de la CNN reconocía 30 de sus 64 recreaciones (probabilidad media 0,18). Barrido del
+# 09-11-2026 (scripts/newDataset/barrido_recreacion.py, 16 personajes de ajuste, 2000 pasos, 4 reinicios, 36
+# configuraciones): con todas el MLP reconoce a los 16, y ninguna saca a las CNN del azar (posición media del
+# personaje entre 28,7 y 39,1; al azar 32,5 ± 4,6 con 16 personajes; top-1 0 de 16 en todas). Como las diferencias
+# para las CNN son ruido, decide la confianza del propio MLP: esta es la segunda en posición para las CNN (29,4;
+# la primera, 28,7, con α_bn 0,1 y desplazamiento 4) y el MLP la reconoce con 0,99 en vez de 0,76
+HIPER_MLP = Hiperparametros(
+    pasos=3000,
+    # Sin desplazamiento ni volteo: el MLP no es invariante a la traslación. Con los ±16 píxeles de la CNN cada
+    # paso optimizaba otra alineación y se juzgaba sin desplazar
+    desplazamiento=0,
+    volteo=False,
+    # Sin el término de BatchNorm. Sin normalizar aportaba 39,4 de los 43,8 de la pérdida y oscilaba entre 1.000 y
+    # 100.000 de un paso a otro; normalizado, en el barrido 0,01 y 0,1 dejan al MLP menos seguro (0,58 a 0,95) sin
+    # acercar las recreaciones a las CNN. Queda normalizado por si se vuelve a subir α_bn
+    alfa_bn=0.0,
+    bn_normalizada=True,
+    # De 8 × 8 a 32 × 32, y de ahí ampliada a 128: lo que separa a los personajes para el MLP es la distribución del
+    # color en el encuadre, no el detalle
+    escalas=(8, 16, 32),
+    reinicios=4,
+)
+# El MLP robusto se entrenó con desplazamientos y volteos: los de la recreación son los mismos que vio
+HIPER_MLP_ROBUSTO = Hiperparametros(
+    pasos=3000,
+    desplazamiento=4,
+    volteo=True,
+    bn_normalizada=True,
+    escalas=(16, 32, 64, 128),
+    reinicios=4,
+)
+
+
+@dataclass(frozen=True)
+class Especificacion:
+    """Un modelo que se puede usar: dónde buscarlo, en orden, y dónde dejar sus salidas."""
+
+    identificador: str
+    nombre: str
+    corto: str
+    # Cómo se nombra la red dentro de una frase, en los títulos de las figuras
+    en_frase: str
+    candidatos: tuple
+    salida: Path
+    # Metadatos (clases y resolución) que se usan si el .keras no tiene su .json al lado: el modelo final del
+    # mismo notebook, con las mismas clases en el mismo orden
+    metadatos_alternativos: tuple = ()
+    # Los hiperparámetros con que recrea esta red; los flags de la línea de comandos los sobrescriben
+    hiper: Hiperparametros = field(default_factory=Hiperparametros)
+
+
+ESPECIFICACIONES = {
+    "cnn": Especificacion(
+        "cnn", "CNN, fotograma completo", "CNN fotograma", "la CNN de fotograma completo",
+        (MODELOS_CNN / "cnn_final.keras",), SALIDA_CNN,
+    ),
+    "cnn_recortes": Especificacion(
+        "cnn_recortes", "CNN, recortes", "CNN recortes", "la CNN de recortes",
+        (MODELOS_CNN / "cajas" / "cnn_final.keras", MODELOS_CNN / "cajas" / "maestra_recortes.keras"), SALIDA_CNN,
+    ),
+    "mlp": Especificacion(
+        "mlp", "MLP, píxeles", "MLP píxeles", "el MLP de píxeles",
+        (MODELOS_MLP / "mlp_r1.keras", MODELOS_MLP / "cajas" / "mlp_r1.keras", MODELOS_MLP / "mlp_final.keras"),
+        SALIDA_MLP, ("mlp_final.json",), HIPER_MLP,
+    ),
+    "mlp_robusto": Especificacion(
+        "mlp_robusto", "MLP robusto, píxeles", "MLP robusto", "el MLP robusto de píxeles",
+        (MODELOS_MLP / "mlp_r1_robusto.keras",), SALIDA_MLP, ("mlp_final.json",), HIPER_MLP_ROBUSTO,
+    ),
+}
 
 
 # --- Modelos ---------------------------------------------------------------------------------------------
@@ -361,14 +417,24 @@ def recorrer(modelo, x):
     raise ValueError(f"{modelo.name} no tiene una capa llamada 'salida'.")
 
 
-def perdida_bn(estadisticas: list, multiplicador_primera: float = 10.0):
-    """Σ ‖μ − moving_mean‖₂ + ‖σ² − moving_variance‖₂, con la primera BatchNorm multiplicada."""
+def perdida_bn(estadisticas: list, multiplicador_primera: float = 10.0, normalizada: bool = False):
+    """Σ ‖μ − moving_mean‖₂ + ‖σ² − moving_variance‖₂, con la primera BatchNorm multiplicada.
+
+    Normalizada, cada diferencia se mide en unidades de lo que la capa guardó:
+    Σ ‖(μ − moving_mean) / √(moving_variance + ε)‖₂ + ‖(σ² − moving_variance) / (moving_variance + ε)‖₂. Así cada
+    neurona pesa lo mismo sea cual sea su escala; en el MLP, cuyas activaciones llegan a miles, el término sin
+    normalizar ahoga a la entropía cruzada."""
     import torch
 
     total = 0.0
     for posicion, estadistica in enumerate(estadisticas):
-        termino = (torch.linalg.vector_norm(estadistica.media - estadistica.media_bn)
-                   + torch.linalg.vector_norm(estadistica.varianza - estadistica.varianza_bn))
+        if normalizada:
+            escala = estadistica.varianza_bn + EPSILON_BN
+            termino = (torch.linalg.vector_norm((estadistica.media - estadistica.media_bn) / torch.sqrt(escala))
+                       + torch.linalg.vector_norm((estadistica.varianza - estadistica.varianza_bn) / escala))
+        else:
+            termino = (torch.linalg.vector_norm(estadistica.media - estadistica.media_bn)
+                       + torch.linalg.vector_norm(estadistica.varianza - estadistica.varianza_bn))
         total = total + (multiplicador_primera if posicion == 0 else 1.0) * termino
     return total
 
@@ -398,7 +464,7 @@ def perdida(logits, objetivos, estadisticas, x, hiper: Hiperparametros):
 
     partes = {
         "entropia": torch.nn.functional.cross_entropy(logits, objetivos),
-        "bn": perdida_bn(estadisticas, hiper.multiplicador_primera_bn),
+        "bn": perdida_bn(estadisticas, hiper.multiplicador_primera_bn, hiper.bn_normalizada),
         "tv": variacion_total(x),
         "l2": norma_l2(x),
     }
@@ -428,50 +494,109 @@ class Recreacion:
     desde_cache: bool = False
 
 
+def etapas(hiper: Hiperparametros, tamano: tuple) -> list:
+    """[(alto, ancho, pasos)] de cada etapa de la recreación. Sin escalas, una sola etapa a la resolución del modelo.
+    Con escalas (alturas de menor a mayor), una etapa por escala y los pasos repartidos por igual; el resto va a la
+    última. Si la última escala es menor que la del modelo, la imagen final se amplía desde ella. Las escalas
+    mayores que la altura del modelo no se usan; si no queda ninguna, es una sola etapa."""
+    alto, ancho = tamano
+    lados = [int(lado) for lado in hiper.escalas]
+    if lados != sorted(lados) or any(lado < 1 for lado in lados):
+        raise ValueError(f"escalas debe ir de menor a mayor y ser positivas: {hiper.escalas}")
+    lados = [lado for lado in lados if lado <= alto]
+    if not lados:
+        return [(alto, ancho, hiper.pasos)]
+    if hiper.pasos < len(lados):
+        raise ValueError(f"{hiper.pasos} pasos no alcanzan para {len(lados)} escalas")
+    base = hiper.pasos // len(lados)
+    pasos = [base] * (len(lados) - 1) + [hiper.pasos - base * (len(lados) - 1)]
+    return [(lado, max(1, round(ancho * lado / alto)), p) for lado, p in zip(lados, pasos)]
+
+
+def ampliar(z, tamano: tuple):
+    """Un lote (n, alto, ancho, 3) llevado a `tamano` con interpolación bilineal; si ya lo tiene, el mismo tensor.
+    Es una combinación convexa de píxeles: lo que está en [0, 1] sigue en [0, 1]."""
+    import torch
+
+    if tuple(z.shape[1:3]) == tuple(tamano):
+        return z
+    return torch.nn.functional.interpolate(z.permute(0, 3, 1, 2), size=tuple(tamano), mode="bilinear",
+                                           align_corners=False).permute(0, 2, 3, 1)
+
+
 def recrear(modelo, objetivos, tamano, hiper: Hiperparametros, semilla: int, dispositivo: str, avance=None):
     """Un lote de len(objetivos) imágenes desde ruido, una por clase objetivo.
 
     Adam con betas (beta1, beta2) y tasa coseno. En cada paso el lote se desplaza hasta `desplazamiento` píxeles
-    y se voltea al azar; después del paso, los píxeles se recortan a [0, 1]. Guarda una instantánea en los pasos
-    de PASOS_INSTANTANEAS y en el último.
+    y, si `volteo`, se voltea al azar; después del paso, los píxeles se recortan a [0, 1]. Con `escalas`, se
+    optimiza primero una imagen pequeña que se amplía a la resolución del modelo, y en cada etapa se amplía la
+    anterior y se reinician Adam y su tasa coseno: lo grueso se fija antes que el detalle. Guarda una instantánea
+    en los pasos de PASOS_INSTANTANEAS y en el último.
     """
     import torch
 
-    alto, ancho = tamano
     generador = torch.Generator().manual_seed(int(semilla))
     azar = random.Random(int(semilla))
-    x = torch.rand((len(objetivos), alto, ancho, 3), generator=generador).to(dispositivo).requires_grad_(True)
+    plan = etapas(hiper, tamano)
+    z = torch.rand((len(objetivos), plan[0][0], plan[0][1], 3), generator=generador).to(dispositivo)
+    z.requires_grad_(True)
     objetivo = torch.as_tensor(np.asarray(objetivos), dtype=torch.long, device=dispositivo)
-    optimizador = torch.optim.Adam([x], lr=hiper.lr, betas=(hiper.beta1, hiper.beta2), eps=1e-8)
     pasos_instantaneas = sorted({p for p in PASOS_INSTANTANEAS if p < hiper.pasos} | {hiper.pasos})
     instantaneas, historial = {}, []
     inicio = time.perf_counter()
-    for paso in range(hiper.pasos + 1):
-        if paso in pasos_instantaneas:
-            instantaneas[paso] = cuantizar(x)
-        if paso == hiper.pasos:
-            break
-        for grupo in optimizador.param_groups:
-            grupo["lr"] = tasa_coseno(paso, hiper.pasos, hiper.lr)
-        movida = x
-        if hiper.desplazamiento:
-            movida = torch.roll(movida, shifts=(azar.randint(-hiper.desplazamiento, hiper.desplazamiento),
-                                                azar.randint(-hiper.desplazamiento, hiper.desplazamiento)), dims=(1, 2))
-        if azar.random() < 0.5:
-            movida = movida.flip(2)
-        logits, estadisticas = recorrer(modelo, movida)
-        total, partes = perdida(logits, objetivo, estadisticas, movida, hiper)
-        optimizador.zero_grad(set_to_none=True)
-        total.backward()
-        optimizador.step()
-        with torch.no_grad():
-            x.clamp_(0, 1)
-        if paso % 50 == 0 or paso == hiper.pasos - 1:
-            historial.append({"paso": paso, "total": round(total.item(), 5),
-                              **{k: round(float(v.detach() if hasattr(v, "detach") else v), 5) for k, v in partes.items()}})
-            if avance is not None:
-                avance(paso, historial[-1])
+    paso = 0
+    for numero, (alto_etapa, ancho_etapa, pasos_etapa) in enumerate(plan):
+        if numero > 0:
+            with torch.no_grad():
+                z = ampliar(z, (alto_etapa, ancho_etapa)).clamp(0, 1).contiguous()
+            z.requires_grad_(True)
+        optimizador = torch.optim.Adam([z], lr=hiper.lr, betas=(hiper.beta1, hiper.beta2), eps=1e-8)
+        for paso_etapa in range(pasos_etapa):
+            if paso in pasos_instantaneas:
+                instantaneas[paso] = cuantizar(ampliar(z, tamano))
+            for grupo in optimizador.param_groups:
+                grupo["lr"] = tasa_coseno(paso_etapa, pasos_etapa, hiper.lr)
+            movida = ampliar(z, tamano)
+            if hiper.desplazamiento:
+                movida = torch.roll(movida, shifts=(azar.randint(-hiper.desplazamiento, hiper.desplazamiento),
+                                                    azar.randint(-hiper.desplazamiento, hiper.desplazamiento)),
+                                    dims=(1, 2))
+            if hiper.volteo and azar.random() < 0.5:
+                movida = movida.flip(2)
+            logits, estadisticas = recorrer(modelo, movida)
+            total, partes = perdida(logits, objetivo, estadisticas, movida, hiper)
+            optimizador.zero_grad(set_to_none=True)
+            total.backward()
+            optimizador.step()
+            with torch.no_grad():
+                z.clamp_(0, 1)
+            if paso % 50 == 0 or paso == hiper.pasos - 1:
+                historial.append({"paso": paso, "total": round(total.item(), 5),
+                                  **{k: round(float(v.detach() if hasattr(v, "detach") else v), 5)
+                                     for k, v in partes.items()}})
+                if avance is not None:
+                    avance(paso, historial[-1])
+            paso += 1
+    instantaneas[hiper.pasos] = cuantizar(ampliar(z, tamano))
     return Recreacion(instantaneas[hiper.pasos], instantaneas, historial, round(time.perf_counter() - inicio, 1))
+
+
+def indices_elegidos(p_objetivo: np.ndarray, n_personajes: int, reinicios: int) -> np.ndarray:
+    """Con un lote de reinicios × n_personajes recreaciones (el reinicio k del personaje i en k·n + i), el índice
+    de la que la red asigna más probabilidad a su personaje, uno por personaje."""
+    p = np.asarray(p_objetivo).reshape(reinicios, n_personajes)
+    return p.argmax(axis=0) * n_personajes + np.arange(n_personajes)
+
+
+def elegir_reinicios(recreacion: Recreacion, red, personajes: list, reinicios: int) -> Recreacion:
+    """Se queda, de cada personaje, con el reinicio que mejor reconoce la red que lo generó. Solo esa red decide: si
+    eligieran las otras, la prueba cruzada dejaría de ser independiente."""
+    if reinicios <= 1:
+        return recreacion
+    p_objetivo = juzgar(red, recreacion.final, list(personajes) * reinicios)["p_objetivo"]
+    indices = indices_elegidos(p_objetivo, len(personajes), reinicios)
+    return Recreacion(recreacion.final[indices], {paso: lote[indices] for paso, lote in recreacion.instantaneas.items()},
+                      recreacion.historial, recreacion.segundos, recreacion.desde_cache)
 
 
 # --- Juicio de las recreaciones --------------------------------------------------------------------------
@@ -499,6 +624,9 @@ def fila_matriz(juicio: dict) -> dict:
         "top3": int((posicion <= 3).sum()),
         "n": int(len(posicion)),
         "confianza": round(float(np.mean(juicio["p_objetivo"])), 4),
+        # En qué posición pone la red al personaje, en promedio (1 = siempre su predicción; al azar, la del medio).
+        # Se mueve antes que el top-1: muestra si una recreación se acerca a su personaje aunque todavía no gane
+        "posicion_media": round(float(np.mean(posicion)), 2),
     }
 
 
@@ -647,8 +775,17 @@ def evolucion(generadores: list, nombres: dict, personajes: list, recreaciones: 
 
 # --- Caché -----------------------------------------------------------------------------------------------
 
+def clave_hiper(hiper: Hiperparametros) -> dict:
+    """Los hiperparámetros que identifican una recreación en la caché: los originales siempre y los agregados
+    después solo si no tienen su valor por defecto. Con los valores de siempre la clave es la misma que antes de
+    agregarlos, así que las recreaciones de las CNN que ya estaban en caché siguen valiendo."""
+    por_defecto = asdict(Hiperparametros())
+    return {campo: valor for campo, valor in asdict(hiper).items()
+            if campo in CAMPOS_ORIGINALES or valor != por_defecto[campo]}
+
+
 def ruta_cache(red: Red, personajes: list, hiper: Hiperparametros, semilla: int) -> Path:
-    clave = json.dumps({"modelo": red.sha256, "personajes": personajes, "hiper": asdict(hiper), "semilla": semilla,
+    clave = json.dumps({"modelo": red.sha256, "personajes": personajes, "hiper": clave_hiper(hiper), "semilla": semilla,
                         "instantaneas": PASOS_INSTANTANEAS, "version": VERSION_CACHE}, sort_keys=True)
     digesto = hashlib.sha256(clave.encode("utf-8")).hexdigest()[:16]
     return red.ruta.parent / CARPETA_CACHE / f"{red.ruta.stem}_{digesto}.npz"
@@ -679,6 +816,27 @@ def _lista(texto: str) -> list:
     return [parte.strip() for parte in texto.split(",") if parte.strip()]
 
 
+def _escalas(texto: str) -> tuple:
+    """'16,32,64,128' -> (16, 32, 64, 128); 'ninguna' o '' -> (), una sola etapa a la resolución del modelo."""
+    if texto.strip().lower() in ("", "ninguna"):
+        return ()
+    return tuple(int(parte) for parte in _lista(texto))
+
+
+# Los flags que sobrescriben los hiperparámetros de cada red: campo de Hiperparametros -> flag
+FLAGS_HIPER = {
+    "pasos": "--pasos", "lr": "--lr", "alfa_bn": "--alfa-bn", "alfa_tv": "--alfa-tv", "alfa_l2": "--alfa-l2",
+    "desplazamiento": "--desplazamiento", "volteo": "--volteo", "bn_normalizada": "--bn-normalizada",
+    "escalas": "--escalas", "reinicios": "--reinicios",
+}
+
+
+def hiper_de(especificacion: Especificacion, args) -> Hiperparametros:
+    """Los hiperparámetros de una red con los flags que se pasaron explícitamente encima."""
+    cambios = {campo: getattr(args, campo) for campo in FLAGS_HIPER if getattr(args, campo, None) is not None}
+    return replace(especificacion.hiper, **cambios)
+
+
 def leer_argumentos(argv=None):
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--modelos", type=_lista, default=list(ESPECIFICACIONES),
@@ -686,20 +844,28 @@ def leer_argumentos(argv=None):
     parser.add_argument("--generadores", type=_lista,
                         help="cuáles de --modelos recrean personajes, separados por comas (por defecto, todos); los "
                              "demás solo juzgan las recreaciones")
-    parser.add_argument("--pasos", type=int, default=Hiperparametros.pasos, help="pasos de Adam (%(default)s)")
     parser.add_argument("--personajes", type=_lista, help="solo estos personajes, separados por comas")
     parser.add_argument("--semilla", type=int, help="semilla del ruido inicial y del desplazamiento; si falta, se "
                         "sortea y se guarda en el JSON")
     parser.add_argument("--cpu", action="store_true", help="usa la CPU aunque haya GPU")
     parser.add_argument("--salida", type=Path, help="carpeta para todas las salidas (por defecto, la de cada red)")
     parser.add_argument("--rehacer", action="store_true", help="recalcula aunque esté en la caché")
-    parser.add_argument("--lr", type=float, default=Hiperparametros.lr, help="tasa de Adam (%(default)s)")
-    parser.add_argument("--alfa-bn", type=float, default=Hiperparametros.alfa_bn, help="peso de BatchNorm (%(default)s)")
-    parser.add_argument("--alfa-tv", type=float, default=Hiperparametros.alfa_tv,
-                        help="peso de la variación total (%(default)s)")
-    parser.add_argument("--alfa-l2", type=float, default=Hiperparametros.alfa_l2, help="peso de L2 (%(default)s)")
-    parser.add_argument("--desplazamiento", type=int, default=Hiperparametros.desplazamiento,
-                        help="desplazamiento máximo en píxeles en cada paso (%(default)s)")
+    parser.add_argument("--sin-cache", action="store_true", help="ni lee ni escribe la caché (para los barridos)")
+    hiper = parser.add_argument_group(
+        "hiperparámetros", "Cada red tiene los suyos (CNN: Hiperparametros(); MLP: HIPER_MLP; MLP robusto: "
+        "HIPER_MLP_ROBUSTO). Un flag explícito los reemplaza en todas las redes que generan.")
+    hiper.add_argument("--pasos", type=int, help="pasos de Adam")
+    hiper.add_argument("--lr", type=float, help="tasa de Adam")
+    hiper.add_argument("--alfa-bn", type=float, help="peso de BatchNorm")
+    hiper.add_argument("--alfa-tv", type=float, help="peso de la variación total")
+    hiper.add_argument("--alfa-l2", type=float, help="peso de L2")
+    hiper.add_argument("--desplazamiento", type=int, help="desplazamiento máximo en píxeles en cada paso")
+    hiper.add_argument("--volteo", action=argparse.BooleanOptionalAction, help="volteo horizontal al azar en cada paso")
+    hiper.add_argument("--bn-normalizada", action=argparse.BooleanOptionalAction,
+                       help="BatchNorm en unidades de la varianza guardada")
+    hiper.add_argument("--escalas", type=_escalas, help="resoluciones de menor a mayor, separadas por comas "
+                       "(16,32,64,128), o 'ninguna' para optimizar solo a la del modelo")
+    hiper.add_argument("--reinicios", type=int, help="imágenes por personaje; queda la que mejor reconoce su red")
     argumentos = parser.parse_args(argv)
     desconocidos = sorted(set(argumentos.modelos) - set(ESPECIFICACIONES))
     if desconocidos:
@@ -711,8 +877,10 @@ def leer_argumentos(argv=None):
         parser.error(f"--generadores incluye {', '.join(fuera)}, que no está en --modelos ({','.join(argumentos.modelos)})")
     if not argumentos.generadores:
         parser.error("--generadores necesita al menos una red")
-    if argumentos.pasos < 1:
+    if argumentos.pasos is not None and argumentos.pasos < 1:
         parser.error("--pasos debe ser al menos 1")
+    if argumentos.reinicios is not None and argumentos.reinicios < 1:
+        parser.error("--reinicios debe ser al menos 1")
     return argumentos
 
 
@@ -736,8 +904,6 @@ def carpeta_comun(generadores: list, salida: Path | None = None) -> Path:
 def main(argv=None) -> dict:
     """Recrea, juzga y guarda. Devuelve un resumen que los notebooks muestran como tabla."""
     args = leer_argumentos(argv)
-    hiper = Hiperparametros(pasos=args.pasos, lr=args.lr, alfa_bn=args.alfa_bn, alfa_tv=args.alfa_tv,
-                            alfa_l2=args.alfa_l2, desplazamiento=args.desplazamiento)
     redes, avisos = [], []
     for identificador in args.modelos:
         red, mensajes = resolver(ESPECIFICACIONES[identificador], args.cpu)
@@ -773,23 +939,33 @@ def main(argv=None) -> dict:
     print(f"Generan: {', '.join(r.identificador for r in generadores)}"
           + (f" | solo juzgan: {', '.join(r.identificador for r in redes if r.identificador not in ids_generadores)}"
              if len(generadores) < len(redes) else ""))
-    print(f"{len(personajes)} personajes, {hiper.pasos} pasos, semilla {semilla}{' (sorteada)' if semilla_sorteada else ''}")
+    print(f"{len(personajes)} personajes, semilla {semilla}{' (sorteada)' if semilla_sorteada else ''}")
+    # Cada red que genera con sus hiperparámetros, y encima los flags que se pasaron
+    hipers = {red.identificador: hiper_de(red.especificacion, args) for red in generadores}
+    for red in generadores:
+        h = hipers[red.identificador]
+        print(f"  {red.identificador:<13} {h.pasos} pasos, lr {h.lr}, α_bn {h.alfa_bn}"
+              f"{' (normalizada)' if h.bn_normalizada else ''}, α_tv {h.alfa_tv}, desplazamiento {h.desplazamiento}, "
+              f"volteo {'sí' if h.volteo else 'no'}, escalas {list(h.escalas) or 'ninguna'}, reinicios {h.reinicios}")
 
     # 1. Recreaciones de las redes que generan, desde la caché si ya se calcularon con todo igual
     recreaciones = {}
     for red in generadores:
+        hiper = hipers[red.identificador]
         cache = ruta_cache(red, personajes, hiper, semilla)
-        recreacion = None if (args.rehacer or semilla_sorteada) else leer_cache(cache)
+        recreacion = None if (args.rehacer or args.sin_cache or semilla_sorteada) else leer_cache(cache)
         if recreacion is None:
-            objetivos = [red.clases.index(p) for p in personajes]
+            # Con reinicios, el lote tiene reinicios × personajes: el reinicio k del personaje i en k·n + i
+            objetivos = [red.clases.index(p) for p in personajes] * hiper.reinicios
 
-            def avance(paso, partes, red=red):
+            def avance(paso, partes, red=red, hiper=hiper):
                 if paso % 500 == 0 or paso == hiper.pasos - 1:
                     print(f"  {red.identificador:<13} paso {paso + 1:>5}/{hiper.pasos}  pérdida {partes['total']:.3f}  "
                           f"(entropía {partes['entropia']:.3f}, BN {partes['bn']:.2f}, TV {partes['tv']:.1f})")
 
             recreacion = recrear(red.modelo, objetivos, red.tamano, hiper, semilla, red.dispositivo, avance)
-            if not semilla_sorteada:
+            recreacion = elegir_reinicios(recreacion, red, personajes, hiper.reinicios)
+            if not (semilla_sorteada or args.sin_cache):
                 escribir_cache(cache, recreacion)
         else:
             print(f"  {red.identificador:<13} desde la caché ({_relativa(cache)})")
@@ -850,8 +1026,8 @@ def main(argv=None) -> dict:
             "jueces": [{"id": r.identificador, "nombre": r.especificacion.nombre, "ruta": _relativa(r.ruta),
                         "sha256": r.sha256} for r in redes],
             "tecnica": "DeepInversion (Yin et al., 2020)",
-            "hiperparametros": {**asdict(hiper), "lote": len(personajes), "optimizador": "Adam, tasa coseno",
-                                "instantaneas": sorted(recreaciones[g].instantaneas)},
+            "hiperparametros": {**asdict(hipers[g]), "lote": len(personajes) * hipers[g].reinicios,
+                                "optimizador": "Adam, tasa coseno", "instantaneas": sorted(recreaciones[g].instantaneas)},
             "semilla": semilla,
             "semilla_sorteada": semilla_sorteada,
             "segundos": recreaciones[g].segundos,
@@ -880,11 +1056,11 @@ def main(argv=None) -> dict:
     for red in generadores:
         g = red.identificador
         print(f"RECREACION_MODELO generador={g} sha256={red.sha256} segundos={recreaciones[g].segundos:.1f} "
-              f"semilla={semilla} pasos={hiper.pasos} personajes={len(personajes)}")
+              f"semilla={semilla} pasos={hipers[g].pasos} personajes={len(personajes)}")
     for g in matriz:
         for j, fila in matriz[g].items():
             print(f"RECREACION generador={g} juez={j} top1={fila['top1']}/{fila['n']} top3={fila['top3']}/{fila['n']} "
-                  f"confianza={fila['confianza']:.3f}")
+                  f"confianza={fila['confianza']:.3f} posicion_media={fila['posicion_media']:.2f}")
     for g, filas in avance_por_paso.items():
         for fila in filas:
             print(f"RECREACION_PASO generador={g} paso={fila['paso']} top1={fila['top1']}/{fila['n']} "
@@ -899,7 +1075,7 @@ def main(argv=None) -> dict:
         "avisos": avisos + avisos_clases,
         "personajes": personajes,
         "semilla": semilla,
-        "hiperparametros": asdict(hiper),
+        "hiperparametros": {g: asdict(h) for g, h in hipers.items()},
         "matriz": matriz,
         "instantaneas": avance_por_paso,
         "correlaciones": correlaciones,
