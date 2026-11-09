@@ -1,6 +1,6 @@
 # Dependencias adicionales de los notebooks de PMC/notebooks/newDataset.
 #
-# Se instalan encima de requirements.txt (CPU) o de requirements-gpu-windows.txt (GPU):
+# Se instalan encima de requirements-gpu-windows.txt:
 #   .venv-gpu\Scripts\python.exe -m pip install -r requirements-newDataset.txt
 #
 # scikit-image calcula los descriptores de color (HSV, Lab) y de textura (LBP, Gabor, HOG)

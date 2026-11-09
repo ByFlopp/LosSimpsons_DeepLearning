@@ -2,6 +2,9 @@
 
 Evaluación Parcial 2 · Técnicas Avanzadas de Machine Learning
 
+> Este informe describe las corridas de octubre, con la imagen completa y a tres resoluciones. El proyecto
+> trabaja ahora solo a 128 × 128 en la GPU: el informe se rehace con la corrida a 128 × 128 con cajas.
+
 ## Resumen
 
 | Tema | Lo importante | Dónde |
@@ -24,9 +27,8 @@ Evaluación Parcial 2 · Técnicas Avanzadas de Machine Learning
 | Tipo de proyecto | Clasificación supervisada de imágenes RGB mediante una red neuronal convolucional (CNN), comparada con el Perceptrón Multicapa (MLP) de la Evaluación Parcial 1. |
 | Unidad de predicción | Una imagen recibe una sola etiqueta entre 64 personajes. |
 | Implementación evaluada | `CNN/notebooks/newDataset/LosSimpsons_GPU_4060M.ipynb`: GPU en Windows nativo, Keras 3 sobre PyTorch, con las salidas de la corrida a 128 × 128 del 19-10-2026. |
-| Implementación en CPU | `CNN/notebooks/newDataset/LosSimpsonsCNN.ipynb`: el mismo proceso en la CPU, a 64 × 64. No se ha ejecutado: una corrida completa tomaría más de quince horas. |
 | MLP de la comparación | `PMC/notebooks/newDataset/`: el MLP reentrenado sobre el mismo dataset, con el mismo proceso. |
-| Evidencia de ejecución | Salidas guardadas del notebook de GPU; resúmenes de las corridas en `CNN/resultados/newDataset/GPU/` (32 × 32, 64 × 64 y 128 × 128) y `PMC/resultados/newDataset/`. |
+| Evidencia de ejecución | Salidas guardadas del notebook de GPU; resúmenes de las corridas en `CNN/resultados/newDataset/GPU/` (128 × 128; los de 32 × 32 y 64 × 64, en el commit `87aa0f4`) y `PMC/resultados/newDataset/`. |
 | Framework | Keras 3.15.1 sobre PyTorch 2.14.0 (CUDA 13.0), Python 3.13, NVIDIA GeForce RTX 4060 Laptop de 8 GB. |
 | Integrantes | Vincent Farenden Cerón; Rodrigo Ignacio Martínez Becker; Iván Manuel Pavón Barría; Diego Ignacio Peña y Lillo Luhrs. |
 | Profesor | Francisco Javier Jerez Salazar. |
@@ -87,8 +89,8 @@ Razones del cambio:
    escena y evaluar con justicia las imágenes con varios personajes.
 
 **Trazabilidad.** El trabajo de la EP1 se conserva en `PMC/notebooks/oldDataset/`, `PMC/docs/oldDataset/Informe.md`
-y `PMC/resultados/oldDataset/`; su MLP final (E2, 51.002.393 parámetros) alcanzó una accuracy de test de 0,529
-en CPU y 0,517 en GPU sobre 25 personajes. Para comparar con la CNN, el MLP se volvió a entrenar sobre el dataset
+y `PMC/resultados/oldDataset/`; su MLP final (E2, 51.002.393 parámetros) alcanzó una accuracy de test de 0,517
+en la GPU sobre 25 personajes. Para comparar con la CNN, el MLP se volvió a entrenar sobre el dataset
 nuevo con el mismo proceso (`PMC/notebooks/newDataset/`). Las cifras de la EP1 no se comparan con las de la EP2:
 miden otros personajes sobre otra partición.
 
@@ -447,9 +449,8 @@ CNN/docs/EP2_TLY1102_Instrucciones.docx       # encargo de la evaluación
 CNN/docs/newDataset/Informe.md                # este informe
 CNN/docs/newDataset/figuras/                  # figuras del informe, tomadas de las salidas del notebook
 CNN/notebooks/newDataset/LosSimpsons_GPU_4060M.ipynb   # notebook evaluado, con salidas
-CNN/notebooks/newDataset/LosSimpsonsCNN.ipynb          # mismo proceso en CPU, sin ejecutar
 CNN/notebooks/newDataset/README.md
-CNN/resultados/newDataset/GPU/rendimiento_gpu_{32x32,64x64,128x128}.json
+CNN/resultados/newDataset/GPU/rendimiento_gpu_128x128.json
 CNN/scripts/newDataset/generar_presentacion.py         # genera la presentación
 CNN/scripts/newDataset/predecir_imagen.py              # clasifica imágenes con el modelo final
 CNN/presentacion_resultados_CNN.html
@@ -483,7 +484,7 @@ la corrida. Las diferencias afectan a unas
 pocas imágenes con probabilidades casi empatadas y no cambian ninguna conclusión, pero quien quiera
 reproducir las cifras exactas debe evaluar con `torch.backends.cudnn.benchmark = False` y
 `torch.backends.cudnn.deterministic = True`.
-Las salidas de 64 × 64 están en el commit `6db8274`, y de la corrida a 32 × 32 queda solo su resumen JSON.
+Las salidas de 64 × 64 están en el commit `6db8274`, y los resúmenes JSON de 32 × 32 y 64 × 64, en el commit `87aa0f4`.
 
 ## 16. Conclusiones
 

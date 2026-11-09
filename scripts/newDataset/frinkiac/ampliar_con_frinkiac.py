@@ -7,7 +7,7 @@ La forma normal de usarlo es `pnpm frinkiac` desde la raíz del repo, que ejecut
 todo el proceso de una vez, reanudable. Por defecto todo queda en una carpeta junto al dataset (nunca
 dentro), por ejemplo:
 
-    simpsons_dataset/
+    Desktop/
     ├── simpsons_dataset/            el dataset: no se toca hasta ejecutar 'exportar'
     └── frinkiac_ampliacion/
         ├── por_revisar/<personaje>/ aquí se revisa a mano
@@ -16,7 +16,9 @@ dentro), por ejemplo:
 
 Revisión: en por_revisar/<personaje>/ se borran las imágenes en las que el personaje no aparece y, al
 terminar esa carpeta, también su _PENDIENTE.txt. El siguiente `pnpm frinkiac` aplica las carpetas
-terminadas, repone las rechazadas y deja listas en por_revisar/ las nuevas.
+terminadas, repone las rechazadas y deja listas en por_revisar/ las nuevas. Para revisar menos,
+`pnpm frinkiac clasificar` (clasificar_con_cnn.py) separa antes por_revisar/ con la CNN en seguras,
+dudosas y ruido; solo se revisan las dudosas y el paso 4 traslada la decisión (clasificacion.py).
 
 Subcomandos:
     flujo             todo lo de abajo en orden (es lo que corre `pnpm frinkiac`)
@@ -53,6 +55,7 @@ from pathlib import Path
 import boto3
 
 import aviso_github
+import clasificacion
 import guiones as G
 import inventario as inv
 from almacen import (CONFIG_BOTO, Almacen, AlmacenLocal, Candado, CandadoOcupado, CerrojoLocal, Conflicto,
@@ -412,6 +415,7 @@ def _recolectar(args, datos: Path, cerrojo: CerrojoLocal, parada: threading.Even
         cerrojo.liberar()
         return SALIDA_OCUPADO
     recolector = None
+    estado = None
     try:
         if not es_local(args):
             VigiaSpot(parada).start()
@@ -472,6 +476,8 @@ def _recolectar(args, datos: Path, cerrojo: CerrojoLocal, parada: threading.Even
     finally:
         if recolector is not None:
             recolector.respaldar(forzar=True)
+        if estado is not None:
+            estado.cerrar()  # deja la base consolidada y sin archivos abiertos
         candado.liberar()
         cerrojo.liberar()
 
@@ -644,6 +650,63 @@ def cmd_exportar(args) -> int:
     return 0
 
 
+# --- limpiar ----------------------------------------------------------------------------------------------------
+
+# Lo único que el script crea en la carpeta de la ampliación; lo demás que haya ahí no se toca
+GENERADO = ("staging", "final", "revision", "control", "inputs", "estado", "por_revisar", clasificacion.CARPETA,
+            ".datos", ".meta", "LEEME.txt")
+
+
+def cmd_limpiar(args) -> int:
+    """Borra todo lo que generó la ampliación local para empezar de cero: imágenes recolectadas,
+    revisiones, base interna y caché. Nunca toca el dataset ni archivos que no creó el script."""
+    if not es_local(args):
+        if args.bucket:
+            sys.exit("limpiar solo borra la carpeta local. Para S3: aws s3 rm --recursive "
+                     f"s3://{args.bucket}/{args.prefijo} (el bucket tiene versionado)")
+        args.local = str(LOCAL_POR_DEFECTO)
+    crear_almacen(args)  # valida que la carpeta no esté dentro del dataset
+    raiz = Path(args.local).resolve()
+    if not raiz.is_dir():
+        print(f"No hay nada que limpiar: {raiz} no existe.")
+        return 0
+    cerrojo = CerrojoLocal(raiz / ".datos" / "proceso.lock")
+    if (raiz / ".datos").is_dir():
+        try:
+            cerrojo.adquirir()
+        except CandadoOcupado:
+            sys.exit("Hay una recolección en curso en esta carpeta: detenla con Ctrl+C y vuelve a intentarlo.")
+    try:
+        objetivos = [raiz / nombre for nombre in GENERADO if (raiz / nombre).exists()]
+        if not objetivos:
+            print(f"No hay nada que limpiar en {raiz}.")
+            return 0
+        imagenes = sum(1 for o in objetivos if o.is_dir() for _ in o.rglob("*.jpg"))
+        tamano = sum(f.stat().st_size for o in objetivos for f in ([o] if o.is_file() else o.rglob("*")) if f.is_file())
+        print(f"Se borrará de {raiz}:")
+        for objetivo in objetivos:
+            print(f"  {objetivo.name}")
+        print(f"({imagenes} imágenes, {tamano / 2**20:.0f} MB). El dataset no se toca.")
+        if not args.si:
+            respuesta = input("Escribe 'si' para confirmar: ").strip().lower()
+            if respuesta not in ("si", "sí"):
+                print("Cancelado: no se borró nada.")
+                return 0
+    finally:
+        cerrojo.liberar()
+    for objetivo in objetivos:
+        if objetivo.is_dir():
+            shutil.rmtree(objetivo)
+        else:
+            objetivo.unlink()
+    restantes = list(raiz.iterdir())
+    if not restantes:
+        raiz.rmdir()
+    print("Listo: la próxima ejecución de 'pnpm frinkiac' parte de cero"
+          + (f" (se conservaron {len(restantes)} archivos que no creó el script)." if restantes else "."))
+    return 0
+
+
 # --- flujo (pnpm frinkiac) -----------------------------------------------------------------------------------------
 
 LEEME = """Ampliación del dataset con Frinkiac (scripts/newDataset/frinkiac)
@@ -651,11 +714,16 @@ LEEME = """Ampliación del dataset con Frinkiac (scripts/newDataset/frinkiac)
 por_revisar/<personaje>/   AQUÍ SE REVISA: borra las imágenes en las que el personaje no aparece y,
                            al terminar la carpeta, borra su _PENDIENTE.txt. Luego vuelve a ejecutar
                            'pnpm frinkiac'.
+clasificacion/             o, para revisar menos, 'pnpm frinkiac clasificar': la CNN separa por_revisar
+                           en seguras/, dudosas/ y ruido/, y solo se revisan las dudosas (ver su LEEME).
 final/<personaje>/         aprobadas que completan las 1000 originales. 'pnpm frinkiac exportar' las
                            copia al dataset (sin sobrescribir nada).
-staging/<personaje>/       todas las imágenes nuevas, también las rechazadas. No se borra nada.
+staging/<personaje>/       todas las imágenes nuevas, también las rechazadas. NO la borres a mano: es
+                           la copia de referencia; si falta, el script vuelve a descargarlo todo.
 revision/                  decisiones de la revisión.
 control/, estado/, inputs/ y las carpetas ocultas: uso interno del script; no las modifiques.
+
+Para empezar de cero: 'pnpm frinkiac limpiar' (borra solo lo que creó el script).
 
 Nada de esto toca el dataset hasta que ejecutes 'pnpm frinkiac exportar'.
 """
@@ -719,6 +787,15 @@ def cmd_flujo(args) -> int:
               f"\"{g.lineas}\"'): {', '.join(sin_lineas)}")
 
     _paso(4, "Revisiones terminadas")
+    for s in clasificacion.sincronizar(revision_base):
+        if s.estado == "trasladada":
+            print(f"  {s.personaje}: clasificación de la CNN lista ({s.aprobadas} seguras o dudosas que quedan, "
+                  f"{s.rechazadas} de ruido o borradas)")
+        elif s.estado == "dudosas_pendientes":
+            print(f"  {s.personaje}: faltan revisar {s.faltan} dudosas en {clasificacion.CARPETA}/"
+                  f"{clasificacion.DUDOSAS}/{s.personaje}/ (al terminar, borra su {MARCA_PENDIENTE})")
+        else:
+            print(f"  {s.personaje}: {s.faltan} imágenes nuevas sin clasificar; ejecuta 'pnpm frinkiac clasificar'")
     aplicadas = 0
     if revision_base.is_dir():
         for carpeta in sorted(p for p in revision_base.iterdir() if p.is_dir() and not p.name.startswith(".")):
@@ -768,6 +845,11 @@ def cmd_flujo(args) -> int:
             cuantas = len(list((revision_base / personaje).glob("*.jpg")))
             print(f"  {personaje}: {cuantas} imágenes")
         print(f"Borra las imágenes malas y el {MARCA_PENDIENTE} de cada carpeta terminada; luego 'pnpm frinkiac'.")
+        sin_clasificar = sum(c["sin_clasificar"] for c in clasificacion.resumen(revision_base).values())
+        if sin_clasificar:
+            print(f"Para revisar menos: 'pnpm frinkiac clasificar' separa con la CNN las {sin_clasificar} sin "
+                  f"clasificar en seguras, dudosas y ruido ({clasificacion.raiz_de(revision_base)}); solo se "
+                  "revisan las dudosas.")
     if completos:
         print(f"{len(completos)} personaje(s) completos en {almacen.ubicacion(almacen.clave('final'))}. "
               "Para copiarlos al dataset: 'pnpm frinkiac exportar'.")
@@ -858,6 +940,10 @@ def construir_parser() -> argparse.ArgumentParser:
     p = con_dataset(con_almacen(sub.add_parser("exportar", help="copia final/ al dataset sin sobrescribir")))
     p.add_argument("--personajes", type=lista)
     p.set_defaults(funcion=cmd_exportar)
+
+    p = con_dataset(con_almacen(sub.add_parser("limpiar", help="borra lo generado para empezar de cero")))
+    p.add_argument("--si", action="store_true", help="no pide confirmación")
+    p.set_defaults(funcion=cmd_limpiar)
     return parser
 
 

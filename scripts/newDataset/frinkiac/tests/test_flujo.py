@@ -126,3 +126,25 @@ def test_sin_guiones_ni_kaggle_usa_tidytuesday_y_avisa(tmp_path, monkeypatch):
     (vacia / G.LINEAS).write_bytes(lineas.read_bytes())
     (vacia / G.EPISODIOS).write_bytes(episodios.read_bytes())
     assert G.obtener(tmp_path / "copia", [vacia]).completo
+
+
+def test_limpiar_borra_solo_lo_generado(entorno):
+    comando, dataset, ampliacion = entorno
+    assert main(comando) == 0
+    antes = sorted(p.name for p in (dataset / "louie").iterdir())
+    (ampliacion / "notas_mias.txt").write_text("no es del script")
+    # con una recolección en curso no borra nada
+    from almacen import CerrojoLocal
+    en_curso = CerrojoLocal(ampliacion / ".datos" / "proceso.lock")
+    en_curso.adquirir()
+    try:
+        assert main(["limpiar", "--local", str(ampliacion), "--dataset", str(dataset), "--si"]) == 2
+    finally:
+        en_curso.liberar()
+    assert (ampliacion / "staging").exists()
+    assert main(["limpiar", "--local", str(ampliacion), "--dataset", str(dataset), "--si"]) == 0
+    assert sorted(p.name for p in ampliacion.iterdir()) == ["notas_mias.txt"]
+    assert sorted(p.name for p in (dataset / "louie").iterdir()) == antes  # el dataset intacto
+    # parte de cero: vuelve a recolectar todo
+    assert main(comando) == 0
+    assert len(list((ampliacion / "staging" / "louie").glob("*.jpg"))) == 6

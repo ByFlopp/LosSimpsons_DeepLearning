@@ -6,7 +6,7 @@ Uso, desde la raíz del repositorio:
     .venv-gpu/Scripts/python.exe CNN/scripts/newDataset/predecir_imagen.py imagen.jpg --json
 
 Usa el modelo final que guarda el notebook (cnn_final.keras) y su cnn_final.json, que trae la resolución y el
-orden de las clases. Por defecto lo busca en models_gpu/newDataset/ y, si no está, en models/newDataset/.
+orden de las clases. Por defecto lo busca en models_gpu/newDataset/.
 
 El pre-procesamiento es el mismo del notebook: la imagen se convierte a RGB, se redimensiona con interpolación
 bilineal al tamaño del modelo y entra en uint8; el escalado a [0, 1] lo hace la capa Rescaling del modelo.
@@ -23,7 +23,7 @@ import sys
 from pathlib import Path
 
 RAIZ = Path(__file__).resolve().parents[3]
-MODELOS = (RAIZ / "CNN/models_gpu/newDataset/cnn_final.keras", RAIZ / "CNN/models/newDataset/cnn_final.keras")
+MODELOS = (RAIZ / "CNN/models_gpu/newDataset/cnn_final.keras",)
 # Bajo esta confianza la predicción se marca para revisión humana
 UMBRAL_REVISION = 0.50
 

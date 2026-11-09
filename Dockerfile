@@ -1,10 +1,8 @@
-# Entorno de los notebooks de PMC/notebooks/newDataset y CNN/notebooks/newDataset (CPU y GPU)
+# Entorno de los notebooks de GPU de PMC/notebooks/newDataset y CNN/notebooks/newDataset, a 128 x 128,
 # en un solo contenedor Linux.
 #
 # - GPU: Keras 3 sobre PyTorch con CUDA 13.0. El wheel de torch trae sus propias
 #   bibliotecas CUDA; el contenedor solo necesita el driver NVIDIA del host.
-# - CPU: el mismo Keras 3 sobre PyTorch, sin TensorFlow. El notebook oculta la GPU
-#   (CUDA_VISIBLE_DEVICES=-1) desde su primera celda, y su kernel la oculta también.
 # - Descriptores de color y textura del MLP: scikit-image (requirements-newDataset.txt).
 #
 # Cada notebook abre con su kernel, registrado con el mismo nombre que guarda en
@@ -29,17 +27,13 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 # torch va en su propia capa: son ~3 GB y no cambian al tocar los requirements.
 RUN pip install torch==2.14.0 --index-url https://download.pytorch.org/whl/cu130
 
-COPY requirements.txt requirements-gpu-windows.txt requirements-newDataset.txt /tmp/requirements/
+COPY requirements-gpu-windows.txt requirements-newDataset.txt /tmp/requirements/
 RUN pip install -r /tmp/requirements/requirements-gpu-windows.txt \
-                -r /tmp/requirements/requirements.txt \
                 -r /tmp/requirements/requirements-newDataset.txt \
  && rm -rf /tmp/requirements
 
 RUN python -m ipykernel install --name simpsons-gpu-win \
-        --display-name "Python 3.13 (Simpsons GPU Docker)" --env KERAS_BACKEND torch \
- && python -m ipykernel install --name python313-global \
-        --display-name "Python 3.13 (Simpsons CPU Docker)" --env KERAS_BACKEND torch \
-        --env KERAS_TORCH_DEVICE cpu --env CUDA_VISIBLE_DEVICES -1
+        --display-name "Python 3.13 (Simpsons GPU Docker)" --env KERAS_BACKEND torch
 
 RUN useradd --create-home --uid 1000 simpsons
 USER simpsons

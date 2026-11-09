@@ -2,7 +2,7 @@
 #
 # El dataset (una carpeta por personaje) se monta en solo lectura desde la ruta de
 # SIMPSONS_DATASET_HOST, que se define en un archivo .env junto a este (ver .env.example):
-#   SIMPSONS_DATASET_HOST=C:/Users/<usuario>/Desktop/simpsons_dataset/simpsons_dataset
+#   SIMPSONS_DATASET_HOST=C:/Users/<usuario>/Desktop/simpsons_dataset
 #
 # El script de alteraciones escribe en el dataset, así que no se ejecuta en este servicio;
 # se ejecuta en el host o con la misma imagen y el dataset montado con escritura

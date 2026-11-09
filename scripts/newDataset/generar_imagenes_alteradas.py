@@ -48,7 +48,7 @@ estaba antes de la primera ejecución. La carpeta de revisión solo se vacía si
 el script (_generado_por_script.txt).
 
 La ruta del dataset sale de --dataset, de la variable SIMPSONS_DATASET o, si no hay ninguna,
-de ~/Desktop/simpsons_dataset/simpsons_dataset. La carpeta de revisión sale de --revision o, si no
+de ~/Desktop/simpsons_dataset. La carpeta de revisión sale de --revision o, si no
 se indica, es gemelas_por_revisar junto a la carpeta del dataset.
 """
 
@@ -87,7 +87,7 @@ UMBRAL = 0.90
 UMBRAL_GEMELAS = 0.90
 SEMILLA = 42
 CALIDAD = 92
-RUTA_POR_DEFECTO = Path.home() / "Desktop" / "simpsons_dataset" / "simpsons_dataset"
+RUTA_POR_DEFECTO = Path.home() / "Desktop" / "simpsons_dataset"
 # Carpeta de revisión de las gemelas, junto a la del dataset (nunca dentro: cada subcarpeta del
 # dataset se toma como un personaje)
 NOMBRE_REVISION = "gemelas_por_revisar"
@@ -121,12 +121,9 @@ OPCIONES_GUARDADO = {"JPEG": {"quality": CALIDAD}, "WEBP": {"quality": CALIDAD}}
 
 # --- Giro --------------------------------------------------------------------------------
 
-def girar(imagen: Image.Image, rng: np.random.Generator) -> tuple[Image.Image, float]:
-    """Gira la imagen entre ROTACION_MINIMA y ROTACION_MAXIMA grados y recorta el mayor rectángulo
-    centrado que no tiene esquinas vacías, devuelto al tamaño original: la variante no gana bordes
-    negros que el modelo pudiera aprender, a cambio de acercar un poco el encuadre."""
-    angulo = float(rng.uniform(ROTACION_MINIMA, ROTACION_MAXIMA)) * float(rng.choice((-1.0, 1.0)))
-    ancho, alto = imagen.size
+def recorte_del_giro(ancho: int, alto: int, angulo: float) -> tuple[int, int, int, int] | None:
+    """Mayor rectángulo centrado sin esquinas vacías de una imagen de ancho x alto girada `angulo`
+    grados, como caja (x1, y1, x2, y2) de PIL. None si la imagen es tan chica que no cabe ninguno."""
     radianes = math.radians(abs(angulo))
     coseno, seno = math.cos(radianes), math.sin(radianes)
     # Un rectángulo centrado (s * ancho, s * alto) cabe en la imagen girada si, girado de vuelta,
@@ -137,10 +134,86 @@ def girar(imagen: Image.Image, rng: np.random.Generator) -> tuple[Image.Image, f
     # Un píxel más de margen: el borde del recorte mezclaría el relleno negro al interpolar
     caja = (math.ceil(margen_x) + 1, math.ceil(margen_y) + 1,
             math.floor(ancho - margen_x) - 1, math.floor(alto - margen_y) - 1)
+    if caja[2] <= caja[0] or caja[3] <= caja[1]:
+        return None
+    return caja
+
+
+def girar(imagen: Image.Image, rng: np.random.Generator) -> tuple[Image.Image, float]:
+    """Gira la imagen entre ROTACION_MINIMA y ROTACION_MAXIMA grados y recorta el mayor rectángulo
+    centrado que no tiene esquinas vacías, devuelto al tamaño original: la variante no gana bordes
+    negros que el modelo pudiera aprender, a cambio de acercar un poco el encuadre."""
+    angulo = float(rng.uniform(ROTACION_MINIMA, ROTACION_MAXIMA)) * float(rng.choice((-1.0, 1.0)))
+    ancho, alto = imagen.size
+    caja = recorte_del_giro(ancho, alto, angulo)
     girada = imagen.rotate(angulo, resample=Image.Resampling.BICUBIC)
-    if caja[2] <= caja[0] or caja[3] <= caja[1]:  # imagen diminuta: no hay recorte posible
+    if caja is None:  # imagen diminuta: no hay recorte posible
         return girada, angulo
     return girada.crop(caja).resize((ancho, alto), Image.Resampling.BICUBIC), angulo
+
+
+def _recortar_poligono(puntos: list[tuple[float, float]], ancho: float,
+                       alto: float) -> list[tuple[float, float]]:
+    """Parte de un polígono convexo que queda dentro de [0, ancho] x [0, alto] (Sutherland-Hodgman)."""
+    def cruce_x(limite):
+        return lambda p, q: (limite, p[1] + (limite - p[0]) / (q[0] - p[0]) * (q[1] - p[1]))
+
+    def cruce_y(limite):
+        return lambda p, q: (p[0] + (limite - p[1]) / (q[1] - p[1]) * (q[0] - p[0]), limite)
+
+    bordes = (
+        (lambda p: p[0] >= 0, cruce_x(0.0)),
+        (lambda p: p[0] <= ancho, cruce_x(float(ancho))),
+        (lambda p: p[1] >= 0, cruce_y(0.0)),
+        (lambda p: p[1] <= alto, cruce_y(float(alto))),
+    )
+    for dentro, cruce in bordes:
+        entrada, puntos = puntos, []
+        for i, actual in enumerate(entrada):
+            previo = entrada[i - 1]
+            if dentro(actual):
+                if not dentro(previo):
+                    puntos.append(cruce(previo, actual))
+                puntos.append(actual)
+            elif dentro(previo):
+                puntos.append(cruce(previo, actual))
+        if not puntos:
+            break
+    return puntos
+
+
+def caja_tras_giro(caja: tuple[float, float, float, float], ancho: int, alto: int,
+                   angulo: float) -> tuple[float, float, float, float] | None:
+    """Lleva una caja (x1, y1, x2, y2) de la original a la variante que genera girar() con ese ángulo.
+    Gira sus cuatro esquinas alrededor del centro como Image.rotate (antihorario con el ángulo
+    positivo), aplica el recorte de recorte_del_giro y la escala que devuelve la imagen a ancho x
+    alto. La caja girada es un rombo: se recorta contra la variante y se devuelve la caja que envuelve
+    lo que queda visible, o None si queda fuera. detectar_cajas.py la usa para que las variantes no
+    tengan que pasar otra vez por el detector."""
+    radianes = math.radians(angulo)
+    coseno, seno = math.cos(radianes), math.sin(radianes)
+    centro_x, centro_y = ancho / 2, alto / 2
+    recorte = recorte_del_giro(ancho, alto, angulo)
+    if recorte is None:
+        desde_x, desde_y, escala_x, escala_y = 0.0, 0.0, 1.0, 1.0
+    else:
+        desde_x, desde_y = recorte[0], recorte[1]
+        escala_x, escala_y = ancho / (recorte[2] - recorte[0]), alto / (recorte[3] - recorte[1])
+    x1, y1, x2, y2 = caja
+    # Esquinas en orden (el polígono se recorta como tal), llevadas a coordenadas de la variante
+    esquinas = [
+        ((centro_x + coseno * (x - centro_x) + seno * (y - centro_y) - desde_x) * escala_x,
+         (centro_y - seno * (x - centro_x) + coseno * (y - centro_y) - desde_y) * escala_y)
+        for x, y in ((x1, y1), (x2, y1), (x2, y2), (x1, y2))
+    ]
+    visible = _recortar_poligono(esquinas, ancho, alto)
+    if not visible:
+        return None
+    xs, ys = [x for x, _ in visible], [y for _, y in visible]
+    nueva = (min(xs), min(ys), max(xs), max(ys))
+    if nueva[2] - nueva[0] < 1 or nueva[3] - nueva[1] < 1:
+        return None
+    return nueva
 
 
 # --- Cambios de color --------------------------------------------------------------------

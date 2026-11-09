@@ -5,6 +5,8 @@
 //   pnpm frinkiac --sin-issue         lo mismo, sin publicar el issue en GitHub
 //   pnpm frinkiac estado              avance por personaje
 //   pnpm frinkiac exportar            copia las aprobadas de final/ al dataset
+//   pnpm frinkiac limpiar             borra lo generado (no el dataset) para empezar de cero
+//   pnpm frinkiac clasificar          la CNN separa por_revisar en seguras, dudosas y ruido (usa .venv-gpu)
 //   pnpm frinkiac <subcomando> ...    cualquier subcomando de ampliar_con_frinkiac.py
 //   pnpm frinkiac pruebas             pruebas automáticas
 //
@@ -24,8 +26,10 @@ const venv = join(raiz, ".venv-frinkiac");
 const esWindows = process.platform === "win32";
 const pythonVenv = join(venv, esWindows ? join("Scripts", "python.exe") : join("bin", "python"));
 const script = join(aqui, "ampliar_con_frinkiac.py");
+// La CNN corre en el entorno del proyecto (Keras sobre PyTorch con CUDA), no en .venv-frinkiac
+const pythonGpu = join(raiz, ".venv-gpu", esWindows ? join("Scripts", "python.exe") : join("bin", "python"));
 const SUBCOMANDOS = new Set(["flujo", "inventario", "mapear", "recolectar", "estado", "revisar", "aplicar-revision",
-  "exportar"]);
+  "exportar", "limpiar"]);
 // Códigos de ampliar_con_frinkiac.py que no se reintentan: terminó, falta configurar algo, detenido a
 // pedido, otro proceso está recolectando
 const NO_REINTENTAR = new Set([0, 2, 3, 5]);
@@ -77,9 +81,9 @@ process.on("SIGINT", () => {
   if (!hijo) process.exit(3);
 });
 
-function ejecutar(argumentos) {
+function ejecutar(argumentos, python = pythonVenv) {
   return new Promise((listo) => {
-    hijo = spawn(pythonVenv, argumentos, {
+    hijo = spawn(python, argumentos, {
       cwd: raiz,
       stdio: "inherit",
       env: { ...process.env, PYTHONUTF8: "1", PYTHONUNBUFFERED: "1" },
@@ -99,6 +103,14 @@ async function principal() {
     asegurarEntorno(join(aqui, "requirements-frinkiac-pruebas.txt"));
     process.exit(await ejecutar(["-m", "pytest", join(aqui, "tests"), "-q", "-p", "no:cacheprovider",
       ...argumentos.slice(1)]));
+  }
+  if (argumentos[0] === "clasificar") {
+    if (!existsSync(pythonGpu)) {
+      console.error(`No se encontró ${pythonGpu}. La clasificación usa el entorno de la CNN: créalo con `
+        + "requirements-gpu-windows.txt (pasos en PMC/notebooks/oldDataset/README_GPU.md).");
+      process.exit(2);
+    }
+    process.exit(await ejecutar([join(aqui, "clasificar_con_cnn.py"), ...argumentos.slice(1)], pythonGpu));
   }
   asegurarEntorno(join(aqui, "requirements-frinkiac.txt"));
   const subcomando = SUBCOMANDOS.has(argumentos[0]) ? argumentos[0] : "flujo";

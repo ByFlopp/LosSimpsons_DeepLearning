@@ -266,18 +266,15 @@ no mantiene la tarjeta más ocupada, sino que desperdicia menos tiempo en cada p
 utilización solo se dispara al 97 % cuando el lote sube a 512, porque entonces cada paso
 trae trabajo suficiente para que la GPU no se quede sin nada que hacer entre lanzamientos.
 
-Las corridas reales del notebook confirman ese comportamiento. Estas cifras sí salen de
-`PMC/resultados/oldDataset/GPU/rendimiento_gpu_<resolución>.json`, con el bucle propio a batch 128:
+La corrida real del notebook lo confirma. Estas cifras sí salen de
+`PMC/resultados/oldDataset/GPU/rendimiento_gpu_128x128.json`, con el bucle propio a batch 128:
 
 | Resolución | s/época (benchmark) | utilización GPU | potencia |
 | --- | ---: | ---: | ---: |
-| 32 × 32 | 0,57 | 29,6 % | 10,8 W |
-| 64 × 64 | 0,59 | 30,9 % | 18,5 W |
 | 128 × 128 | 0,89 | 59,7 % | 52,6 W |
 
-Cuanto más pequeña es la entrada, menos trabajo hay por paso y más se nota la sobrecarga: a
-32 × 32 la tarjeta pasa cerca del 70 % del tiempo esperando, y el consumo se queda en 10,8 W
-de los 80 W disponibles.
+A batch 128 la tarjeta pasa cerca del 40 % del tiempo esperando y consume 52,6 W de los 80 W
+disponibles.
 
 Estas medias se toman sobre una ventana de al menos cuatro segundos, muestreando cada 50 ms
 (unas 45 lecturas por medición). No es un detalle menor: con el muestreo anterior, de 250 ms
@@ -311,21 +308,9 @@ TensorFlow de 2,86 a 0,87 s/época.
 ### El tamaño de lote es la palanca que queda
 
 La celda de rendimiento del notebook mide el barrido completo en cada corrida y lo guarda en
-`escalado_batch_imagenes_por_segundo`. Imágenes por segundo, con el bucle propio:
-
-| batch | 32 × 32 | 64 × 64 | 128 × 128 |
-| ---: | ---: | ---: | ---: |
-| 128 | 22.256 | 20.857 | 15.015 |
-| 256 | 44.912 | 41.778 | 27.671 |
-| 512 | 87.243 | 80.900 | 48.775 |
-| 1.024 | 172.412 | 146.455 | 63.048 |
-| 2.048 | **354.971** | **237.912** | **70.444** |
-
-De batch 128 a 2.048 el rendimiento se multiplica por 15,9 en 32 × 32 y por 4,7 en
-128 × 128. La diferencia entre columnas es esperable: con la entrada más grande cada paso ya
-trae bastante trabajo, así que queda menos sobrecarga que recuperar.
-
-La utilización acompaña. A 128 × 128, medida en la misma corrida:
+`escalado_batch_imagenes_por_segundo`. De batch 128 a 2.048 el rendimiento se multiplica por 4,7: con
+la entrada de 49.152 valores cada paso ya trae bastante trabajo, así que queda poca sobrecarga que
+recuperar. La utilización acompaña, medida en la misma corrida:
 
 | batch | s/época | img/s | utilización GPU | potencia |
 | ---: | ---: | ---: | ---: | ---: |
@@ -338,8 +323,8 @@ La utilización acompaña. A 128 × 128, medida en la misma corrida:
 A partir de batch 1.024 la tarjeta llega al límite de potencia de 80 W: ahí ya no queda
 sobrecarga que recuperar, y es el hardware el que manda.
 
-El notebook entrena a **batch 128** porque es el valor con el que se comparan las corridas
-de CPU y GPU en el informe, no porque sea el más rápido. El barrido se mide y se guarda para
+El notebook entrena a **batch 128** porque es el valor del diseño experimental, no porque
+sea el más rápido. El barrido se mide y se guarda para
 poder citarlo sin cambiar la configuración del estudio.
 
 ---

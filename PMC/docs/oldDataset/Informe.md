@@ -6,11 +6,11 @@
 |---|---|
 | Tipo de proyecto | Clasificación supervisada de imágenes RGB mediante un Perceptrón Multicapa (MLP). |
 | Unidad de predicción | Una imagen recibe una sola etiqueta entre 25 personajes. |
-| Implementaciones | `PMC/notebooks/oldDataset/LosSimpsonsPMC.ipynb` (CPU/Windows, TensorFlow) y `PMC/notebooks/oldDataset/LosSimpsons_GPU_4060M.ipynb` (GPU/Windows nativo, Keras 3 sobre PyTorch). |
-| Evidencia de ejecución | Ambos notebooks conservan sus salidas; los resúmenes de rendimiento están en `PMC/resultados/oldDataset/CPU/` y `PMC/resultados/oldDataset/GPU/`. |
+| Implementación | `PMC/notebooks/oldDataset/LosSimpsons_GPU_4060M.ipynb`: GPU NVIDIA GeForce RTX 4060 Laptop en Windows nativo, Keras 3 sobre PyTorch, a 128 × 128. |
+| Evidencia de ejecución | El notebook conserva sus salidas; el resumen de rendimiento está en `PMC/resultados/oldDataset/GPU/rendimiento_gpu_128x128.json`. |
 | Integrantes | Vincent Farenden Cerón; Rodrigo Ignacio Martínez Becker; Iván Manuel Pavón Barría; Diego Ignacio Peña y Lillo Luhrs. |
 
-Este informe describe el estado que realmente está implementado. Las métricas, configuraciones y conclusiones se separan por entorno cuando las corridas no produjeron el mismo modelo final.
+Este informe describe el estado que realmente está implementado: la corrida en la GPU a 128 × 128.
 
 ## 2. Problema, contexto y alcance
 
@@ -133,7 +133,7 @@ La preparación se ejecuta en este orden:
 7. El conjunto opuesto (`test` cuando se entrena con `train`) queda reservado para la evaluación final.
 8. Se calculan `class_weight` solo desde `y_train`; esta decisión evita que las clases abundantes dominen la pérdida.
 
-La resolución 128×128 es la configuración que aparece en el código y en las salidas guardadas de ambos notebooks. No se presenta 64×64 como la resolución usada para las métricas de este informe.
+La resolución 128×128 es la configuración que aparece en el código y en las salidas guardadas del notebook.
 
 ## 6. Metodología CRISP-DM aplicada
 
@@ -194,41 +194,32 @@ Cada experimento cambia una variable respecto del modelo base, conservando semil
 
 El criterio de selección es F1 macro de validación. En caso de un empate práctico, el notebook documenta preferir el modelo con menos parámetros.
 
-## 8. Resultados de las corridas guardadas
+## 8. Resultados de la corrida guardada
 
-Las dos ejecuciones usan la misma resolución, la misma división de datos y seleccionaron la misma arquitectura final (E2), de modo que las métricas de calidad son comparables entre sí. No lo son los tiempos: cada una corre sobre un framework distinto (§8.1).
+| Métrica | GPU / Windows nativo, 128×128 |
+|---|---:|
+| Configuración seleccionada | E2: `1024 → 512 → 256` |
+| Parámetros del modelo final | 51.002.393 |
+| Accuracy de test | 0,5166 |
+| Top-3 accuracy de test | 0,7181 |
+| F1 macro de test | 0,4885 |
+| F1 ponderado de test | 0,5150 |
+| Pérdida de test | 1,8089 |
 
-| Métrica | CPU / Windows | GPU / Windows nativo |
-|---|---:|---:|
-| Configuración seleccionada | E2: `1024 → 512 → 256` | E2: `1024 → 512 → 256` |
-| Parámetros del modelo final | 51.002.393 | 51.002.393 |
-| Accuracy de test | 0,5286 | 0,5166 |
-| Top-3 accuracy de test | 0,7318 | 0,7181 |
-| F1 macro de test | 0,5092 | 0,4885 |
-| F1 ponderado de test | 0,5331 | 0,5150 |
-| Pérdida de test | 1,7217 | 1,8089 |
-
-La ejecución CPU superó la referencia aleatoria por un factor aproximado de 13,2 y la de clase mayoritaria por 4,6. La ejecución GPU las superó aproximadamente por 12,9 y 4,5, respectivamente. Ambas quedan en la misma banda de calidad, lo esperable cuando solo cambia el dispositivo. Esto muestra que el modelo aprende patrones por encima de las referencias simples, pero no garantiza rendimiento homogéneo para todos los personajes.
+La corrida superó la referencia aleatoria por un factor aproximado de 12,9 y la de clase mayoritaria por 4,5. Esto muestra que el modelo aprende patrones por encima de las referencias simples, pero no garantiza rendimiento homogéneo para todos los personajes.
 
 ### 8.1 Rendimiento computacional registrado
 
-Los resultados JSON indican que, para 128×128:
+El resumen JSON de la corrida registra:
 
-| Medición | CPU | GPU |
-|---|---:|---:|
-| Duración total de la corrida | 44:40 | 4:48 |
-| Segundos por época (medio) | 15,93 | 0,92 |
-| Benchmark segundos por época | 16,49 | 0,89 |
-| Épocas totales entrenadas | 147 | 226 |
-| Inferencia sobre 3.937 imágenes | 1,41 s | 0,06 s |
-| Imágenes por segundo en inferencia | 2.799,4 | 70.862,5 |
-
-**Advertencia sobre esta comparación.** Las dos corridas no usan el mismo framework: CPU
-sobre TensorFlow 2.21 y GPU sobre Keras 3 con backend PyTorch. La diferencia de tiempos
-mezcla, por tanto, hardware y framework, y no debe leerse como una medida limpia de la
-ganancia del hardware. La celda de rendimiento del notebook lo advierte de forma explícita
-cuando detecta frameworks distintos. Para una comparación de igual a igual habría que
-volver a ejecutar el notebook de CPU con el mismo bucle de entrenamiento.
+| Medición | GPU |
+|---|---:|
+| Duración total de la corrida | 4:48 |
+| Segundos por época (medio) | 0,92 |
+| Benchmark segundos por época | 0,89 |
+| Épocas totales entrenadas | 226 |
+| Inferencia sobre 3.937 imágenes | 0,06 s |
+| Imágenes por segundo en inferencia | 70.862,5 |
 
 ### 8.2 Sobre el aprovechamiento de la GPU
 
@@ -253,8 +244,7 @@ concluir si una implementación aprovecha el hardware.
 
 **El tamaño de lote es la palanca que queda.** A batch 128 el trabajo de cada paso es
 demasiado pequeño para saturar la tarjeta: la corrida a 128×128 registra un 59,7 % de
-utilización media, y a 32×32 solo un 29,6 %, porque la entrada más pequeña deja aún menos
-trabajo por paso. Manteniendo todo lo demás igual:
+utilización media. Manteniendo todo lo demás igual:
 
 | Tamaño de lote | Imágenes por segundo | Utilización GPU | Potencia |
 |---:|---:|---:|---:|
@@ -267,8 +257,7 @@ trabajo por paso. Manteniendo todo lo demás igual:
 Multiplicar el lote por dieciséis multiplica el rendimiento por 4,7 y lleva la utilización
 del 61,9 % al 96,6 %; a partir de batch 1.024 la tarjeta alcanza su límite de potencia de
 80 W, señal de que ya no queda sobrecarga que recuperar. El estudio se mantiene en **batch
-128** porque es el valor con el que se comparan las corridas de CPU y GPU, no porque sea el
-más rápido. La tabla se mide y se guarda en el JSON de resultados para poder citarla sin
+128** porque es el valor de su diseño experimental, no porque sea el más rápido. La tabla se mide y se guarda en el JSON de resultados para poder citarla sin
 alterar el diseño experimental.
 
 Una advertencia metodológica sobre estas cifras de utilización: se promedian sobre una
@@ -312,16 +301,15 @@ Las explicaciones documentadas se sustentan en el tipo de datos y la arquitectur
 - Semilla fija y experimentos de un factor por vez.
 - Métricas variadas e interpretación del desbalance.
 - Auditoría visual de predicciones, errores y saliencia.
-- Medición separada de CPU y GPU mediante archivos JSON.
+- Medición del rendimiento en la GPU mediante un archivo JSON.
 
 ### Limitaciones
 
 - El MLP aplanado no conserva estructura espacial ni reutiliza patrones locales.
 - El número de parámetros es muy alto respecto de las imágenes de entrenamiento.
 - La clase minoritaria tiene pocas observaciones y el uso de `class_weight` no crea nueva variedad visual.
-- La ruta del dataset está codificada de forma absoluta en ambos notebooks.
+- La ruta del dataset está codificada de forma absoluta en el notebook.
 - El dataset no está presente en el árbol actual, por lo que no se puede reentrenar desde un clon limpio sin descargarlo y configurar la ruta.
-- Las corridas CPU y GPU se ejecutan sobre frameworks distintos (TensorFlow y PyTorch); sus métricas de calidad son comparables, pero sus tiempos mezclan hardware y framework.
 
 ### Mejoras propuestas por el proyecto
 
@@ -350,25 +338,21 @@ Por estos motivos, el resultado se presenta como ejercicio académico y no como 
 ### 12.1 Archivos principales
 
 ```text
-requirements.txt
+requirements-gpu-windows.txt
 PMC/README.md
-PMC/notebooks/oldDataset/LosSimpsonsPMC.ipynb
 PMC/notebooks/oldDataset/LosSimpsons_GPU_4060M.ipynb
 PMC/notebooks/oldDataset/README_GPU.md
-PMC/resultados/oldDataset/CPU/rendimiento_cpu_*.json
-PMC/resultados/oldDataset/GPU/rendimiento_gpu_*.json
-PMC/models/oldDataset/.gitkeep
+PMC/resultados/oldDataset/GPU/rendimiento_gpu_128x128.json
 PMC/images/
 PMC/docs/oldDataset/Informe.md
 ```
 
 ### 12.2 Requisitos de ejecución
 
-1. Crear un entorno Python e instalar `requirements.txt`.
+1. Crear el entorno `.venv-gpu` según `requirements-gpu-windows.txt` y `PMC/notebooks/oldDataset/README_GPU.md`.
 2. Descargar el dataset desde la fuente citada y mantener la estructura `train/<clase>` y `test/<clase>`.
 3. Configurar `DATASET_BASE` en la primera celda del notebook con la ubicación real del dataset.
-4. Ejecutar las celdas en orden.
-5. Para GPU, seguir `PMC/notebooks/oldDataset/README_GPU.md`, que documenta el entorno de Windows nativo con PyTorch y la verificación de que la tarjeta se está usando.
+4. Abrir el notebook con `PMC/scripts/oldDataset/ejecutar_notebook_gpu.ps1`, que verifica que PyTorch ve la tarjeta, y ejecutar las celdas en orden.
 
 ### 12.3 Estado de reproducibilidad
 

@@ -7,16 +7,11 @@ cambia el modelo.
 
 | Notebook | Entorno | Resolución de trabajo |
 |---|---|---|
-| [LosSimpsons_GPU_4060M.ipynb](LosSimpsons_GPU_4060M.ipynb) | GPU: Keras 3 sobre PyTorch, en Windows nativo o en Docker | 128 × 128 (también se corrió a 32 × 32 y 64 × 64) |
-| [LosSimpsonsCNN.ipynb](LosSimpsonsCNN.ipynb) | CPU: Keras 3 sobre PyTorch con la GPU oculta, en el mismo `.venv-gpu` o en Docker | 64 × 64 (aún sin ejecutar completo) |
-
-Los dos siguen el mismo proceso, con el mismo framework y el mismo bucle de entrenamiento; solo cambia el
-dispositivo. El de CPU no usa TensorFlow: su primera celda fija `KERAS_BACKEND=torch` y oculta la GPU
-(`CUDA_VISIBLE_DEVICES=-1`) antes de importar PyTorch y Keras.
+| [LosSimpsons_GPU_4060M.ipynb](LosSimpsons_GPU_4060M.ipynb) | GPU RTX 4060 Laptop: Keras 3 sobre PyTorch, en Windows nativo o en Docker | 128 × 128 |
 
 ## Qué es igual que en el MLP
 
-Las celdas que no dependen del modelo son copia literal de las del notebook del MLP del mismo dispositivo:
+Las celdas que no dependen del modelo son copia literal de las del notebook de GPU del MLP:
 
 - **Partición propia, con todo el dataset.** Las originales de cada personaje se reparten 70 % / 20 % / 10 %
   (entrenamiento, validación y test), estratificadas, con semilla 42 y sin tope por personaje.
@@ -35,8 +30,7 @@ Las celdas que no dependen del modelo son copia literal de las del notebook del 
 
 ## Qué cambia
 
-1. **La entrada.** La CNN recibe la imagen de alto × ancho × 3 como tensor —128 × 128 × 3 en la corrida
-   guardada—, sin aplanarla y sin descriptores de color y textura. El escalado a [0, 1] lo hace una capa
+1. **La entrada.** La CNN recibe la imagen de alto × ancho × 3 como tensor —128 × 128 × 3—, sin aplanarla y sin descriptores de color y textura. El escalado a [0, 1] lo hace una capa
    `Rescaling` dentro del modelo.
 2. **El modelo base.** Cuatro bloques convolucionales de 32, 64, 128 y 256 filtros de 3 × 3, cada uno con
    `BatchNormalization`, ReLU y `MaxPooling2D` de 2 × 2; pooling global; cabeza densa de 256 neuronas con
@@ -49,8 +43,8 @@ Las celdas que no dependen del modelo son copia literal de las del notebook del 
 4. **El análisis.** Fundamentos de la convolución con filtros aplicados a mano; mapas de activación de la red
    entrenada en una imagen y en cuatro imágenes de test (Homero, Marge, Bart y Lisa); Grad-CAM de casos
    concretos, de una imagen por personaje, el mapa medio de cada personaje y el del test completo; las métricas
-   con el criterio de acierto del proyecto y con el estricto; y una comparación con la corrida del MLP del
-   mismo entorno y la misma resolución: desempeño, parámetros, tiempos, capacidad de generalización y
+   con el criterio de acierto del proyecto y con el estricto; y una comparación con la corrida del MLP en la
+   GPU a 128 × 128: desempeño, parámetros, tiempos, capacidad de generalización y
    ventajas y desventajas de cada arquitectura.
 5. **El contexto.** Una introducción que ubica cada punto de la pauta de la EP2 en el notebook, por qué se
    dejó el dataset de la EP1 y una sección de impacto ético: derechos de autor de las imágenes, sesgo por el
@@ -60,14 +54,14 @@ Cuatro celdas del notebook de GPU se agregaron el 20-10-2026, después de la cor
 con el criterio estricto, los mapas de activación de cuatro imágenes, el mapa de activación de cada clase y la
 capacidad de generalización. Se ejecutaron con el modelo final que guardó esa corrida (`cnn_final.keras`),
 sobre la misma partición y sin reentrenar, con los algoritmos deterministas de cuDNN: así sus predicciones son
-exactamente las de la corrida. En el notebook de CPU esas celdas están, pero todavía sin salidas.
+exactamente las de la corrida.
 
 ## Cómo ejecutarlo
 
 Desde la raíz del repositorio:
 
 1. **El dataset y sus imágenes alteradas.** Son los mismos del MLP: deja el dataset en
-   `~/Desktop/simpsons_dataset/simpsons_dataset` (o define `SIMPSONS_DATASET`) y genera las alteradas,
+   `~/Desktop/simpsons_dataset` (o define `SIMPSONS_DATASET`) y genera las alteradas,
    parecidas y gemelas con el script compartido. Los detalles están en la
    [guía del dataset nuevo](../../../PMC/notebooks/newDataset/README.md#paso-1-colocar-el-dataset).
 
@@ -81,10 +75,7 @@ Desde la raíz del repositorio:
    .\CNN\scripts\newDataset\ejecutar_notebook_gpu.ps1
    ```
 
-3. **En Windows, en la CPU.** Abre `LosSimpsonsCNN.ipynb` con el kernel de `.venv-gpu` y ejecútalo desde la
-   primera celda, que deja Keras sobre PyTorch y oculta la GPU antes de importar nada.
-
-4. **En Docker.** `docker compose up --build` desde la raíz, y en <http://localhost:8888> entra en
+3. **En Docker.** `docker compose up --build` desde la raíz, y en <http://localhost:8888> entra en
    `CNN/notebooks/newDataset/`.
 
 ### Tiempos de referencia
@@ -92,53 +83,42 @@ Desde la raíz del repositorio:
 Medido en este equipo (Intel Core i7-13620H y NVIDIA GeForce RTX 4060 Laptop, conectado a la corriente) con
 la CNN base y el bucle de entrenamiento del notebook:
 
-| Resolución | Segundos por época en GPU (benchmark) | Corrida completa en GPU | Segundos por época en CPU |
-|---|---:|---:|---:|
-| 32 × 32 | 5,3 | 59 min 03 s | ≈ 32 |
-| 64 × 64 | 9,8 | 1 h 44 min 33 s | ≈ 130 |
-| 128 × 128 | 37,1 | 5 h 08 min 56 s | — |
+| Resolución | Segundos por época en GPU (benchmark) | Corrida completa en GPU |
+|---|---:|---:|
+| 128 × 128 | 37,1 | 5 h 08 min 56 s |
 
-Una corrida completa entrena el modelo base y hasta catorce configuraciones: 536 épocas a 32 × 32, 515 a
-64 × 64 y 445 a 128 × 128, donde E2 y E5 no caben en la GPU. En la CPU, a 64 × 64, tomaría más de quince
-horas; a 32 × 32, unas cuatro.
+Una corrida completa entrena el modelo base y hasta catorce configuraciones: 445 épocas a 128 × 128, donde
+E2 y E5 no caben en la GPU.
 
-## Resultados de las corridas del 19-10-2026
+## Resultados de la corrida del 19-10-2026
 
-El notebook de GPU se ejecutó completo con el dataset real (64 personajes, 40.123 originales) a tres
-resoluciones. Sus salidas guardadas son las de la corrida a 128 × 128; las de 64 × 64 quedaron en el commit
-`6db8274`, y de la de 32 × 32 solo queda su JSON. El de CPU no se ha ejecutado completo.
+El notebook de GPU se ejecutó completo con el dataset real (64 personajes, 40.123 originales) a 128 × 128,
+con la imagen completa. Sus salidas guardadas son las de esa corrida.
 
 | Corrida | Configuración final | Accuracy | Estricta | Top-3 | F1 macro | Duración |
 |---|---|---:|---:|---:|---:|---:|
-| GPU 32 × 32 | E2 - 2 convoluciones por bloque | 0,786 | 0,732 | 0,887 | 0,741 | 59 min 03 s |
-| GPU 64 × 64 | E2 - 2 convoluciones por bloque | 0,830 | 0,777 | 0,932 | 0,788 | 1 h 44 min 33 s |
 | GPU 128 × 128 | Base - 1 convolución por bloque | **0,847** | **0,797** | **0,937** | **0,810** | 5 h 08 min 56 s |
 
-- **Experimentos.** A 32 × 32 y 64 × 64 gana E2 (a 64 × 64, F1 macro de validación de 0,717 frente a 0,692 de
-  la base). A 128 × 128 E2 y E5 no caben en la GPU y ninguna variante supera a la base (0,734; la segunda,
-  S2, queda a 0,6 puntos), así que C1 no se entrena. Las caídas más grandes a 128 × 128 son las de la tasa de
-  aprendizaje `1e-4` (E4, −24,1 puntos), tanh (E3, −21,0) y la escala de grises (R1, −11,3, frente a −19,7
-  a 64 × 64).
-- **Frente al MLP** de la misma resolución y dispositivo, la accuracy sube entre 24,5 y 28,0 puntos y el F1
-  macro entre 22,7 y 26,6. A 128 × 128, frente a C1 (solo color): accuracy +26,1, estricta +25,8, top-3 +18,7
-  y F1 macro +25,1.
-- **Costo.** Cargar las imágenes toma de 2,6 a 10,5 minutos y entrenar, de 53,7 a 290,5: entre el 91 y el
-  94 % de cada corrida. La GPU trabaja el 36,5 % del tiempo a 32 × 32, el 90,7 % a 64 × 64 y el 98,8 % a
-  128 × 128. A 64 × 64 un batch mayor casi no acelera (de 3.530 a 3.782 imágenes por segundo a batch 512), y a
-  128 × 128 ya no cabe más que batch 128.
+- **Experimentos.** E2 y E5 no caben en la GPU y ninguna variante supera a la base (0,734 de F1 macro de
+  validación; la segunda, S2, queda a 0,6 puntos), así que C1 no se entrena. Las caídas más grandes son las de
+  la tasa de aprendizaje `1e-4` (E4, −24,1 puntos), tanh (E3, −21,0) y la escala de grises (R1, −11,3).
+- **Frente al MLP** en la GPU a 128 × 128, frente a C1 (solo color): accuracy +26,1, estricta +25,8, top-3
+  +18,7 y F1 macro +25,1.
+- **Costo.** Cargar las imágenes toma 10,5 minutos y entrenar, 290,5: el 94 % de la corrida. La GPU trabaja el
+  98,8 % del tiempo y ya no cabe más que batch 128.
 
-La [presentación de resultados](../../presentacion_resultados_CNN.html) reúne estas cifras con las figuras del
-notebook y la comparación con el MLP.
+La [presentación de resultados](../../presentacion_resultados_CNN.html) todavía muestra las tres corridas de
+octubre; se rehace con la corrida a 128 × 128 con cajas.
 
 ## Dónde quedan los resultados
 
 | Qué | Dónde |
 |---|---|
-| Modelos `.keras` y `cnn_final.json` | `CNN/models_gpu/newDataset/` (GPU) y `CNN/models/newDataset/` (CPU), ignorados por Git |
-| Resumen de rendimiento de cada corrida | `CNN/resultados/newDataset/<CPU\|GPU>/rendimiento_<entorno>_<resolución>.json` |
+| Modelos `.keras` y `cnn_final.json` | `CNN/models_gpu/newDataset/` (con cajas, en `cajas/`), ignorados por Git |
+| Resumen de rendimiento de cada corrida | `CNN/resultados/newDataset/GPU/rendimiento_gpu_128x128.json` (con la imagen completa) y `CNN/resultados/newDataset/cajas/GPU/rendimiento_gpu_128x128.json` (con cajas) |
 | Presentación de resultados | `CNN/presentacion_resultados_CNN.html`, generada con `CNN/scripts/newDataset/generar_presentacion.py` |
 
 El JSON tiene las mismas claves que el del MLP, más `modelo` y `arquitectura_final`; así la última sección de
 cada notebook puede comparar las dos redes. `cnn_final.json` guarda la resolución y el orden de las clases
-del modelo final —hoy, el de la corrida a 128 × 128—; la sección «Probar el modelo con una imagen cualquiera»
+del modelo final; la sección «Probar el modelo con una imagen cualquiera»
 lo usa para clasificar imágenes nuevas sin volver a entrenar.

@@ -3,8 +3,17 @@
 Esta carpeta contiene una **red neuronal convolucional (CNN)** que identifica qué personaje de Los Simpson
 aparece en una imagen RGB. Usa el dataset nuevo —64 personajes, una carpeta por personaje— y el mismo proceso
 de entrenamiento y evaluación que el Perceptrón Multicapa de [`../PMC/`](../PMC/): la misma partición, las
-mismas imágenes alteradas y parecidas, las mismas etiquetas de escena, los mismos pesos por clase, el mismo
-bucle de entrenamiento, el mismo criterio de acierto y los mismos KPIs. Cambia el modelo.
+mismas imágenes alteradas y parecidas, la misma caja alrededor de cada personaje, los mismos pesos por clase,
+el mismo bucle de entrenamiento, el mismo criterio de acierto y los mismos KPIs. Cambia el modelo. Todo se
+entrena y se evalúa a **128 × 128 en la GPU** (NVIDIA GeForce RTX 4060 Laptop).
+
+> **Cada personaje en su caja (desde el 07-11-2026).** El notebook de GPU ya no recibe el fotograma completo,
+> sino el recorte de la caja del personaje de la carpeta, que pone
+> [`scripts/newDataset/detectar_cajas.py`](../scripts/newDataset/detectar_cajas.py) sin anotar nada a mano
+> (Grounding DINO encuentra a los personajes y una CNN les pone nombre). Una predicción acierta solo si nombra
+> a ese personaje, y una sección nueva muestra cada caja de un fotograma con su nombre y su confianza
+> (`Jasper Beardly · 92 %`). Los modelos van a `models_gpu/newDataset/cajas/` y los resultados a
+> `resultados/newDataset/cajas/GPU/`. Las cifras de este documento son de la corrida con la imagen completa.
 
 > Las rutas de este documento son relativas a la carpeta `CNN/`, salvo las del script del dataset, los
 > `requirements` y el entorno `.venv-gpu`, que están en la raíz del repositorio. Los comandos se ejecutan
@@ -21,7 +30,8 @@ errores, costo por resolución, la comparación con el MLP —con su capacidad d
 desventajas de cada arquitectura—, las mejoras por regularización y el impacto ético, con anexos de tablas
 completas. Es un solo archivo:
 descárgalo y ábrelo en el navegador (GitHub solo muestra su código). El botón **Presentar** muestra una
-diapositiva a la vez en pantalla completa; las flechas avanzan y `Esc` sale.
+diapositiva a la vez en pantalla completa; las flechas avanzan y `Esc` sale. Todavía muestra las tres corridas
+de octubre (32, 64 y 128 píxeles): se rehace con la corrida a 128 × 128 con cajas.
 
 **Informe técnico.** [docs/newDataset/Informe.md](docs/newDataset/Informe.md) documenta la Evaluación Parcial 2:
 el cambio de dataset respecto de la EP1, la preparación de los datos, el diseño y el entrenamiento de la CNN,
@@ -29,54 +39,38 @@ los experimentos, las métricas con el criterio del proyecto y con el estricto, 
 comparación con el MLP, el impacto ético y las conclusiones. El encargo de la evaluación está en
 [docs/EP2_TLY1102_Instrucciones.docx](docs/EP2_TLY1102_Instrucciones.docx).
 
-## Resultados de las corridas del 19-10-2026
+## Resultados de la corrida del 19-10-2026
 
-El notebook de GPU se ejecutó completo a tres resoluciones en el mismo equipo que las corridas del MLP (Intel
-Core i7-13620H y NVIDIA GeForce RTX 4060 Laptop). La accuracy usa el criterio de acierto del proyecto; la
-estricta solo acepta el personaje de la carpeta. Las salidas guardadas en el notebook son las de la corrida a
-128 × 128.
+El notebook de GPU se ejecutó completo a 128 × 128, con la imagen completa, en el mismo equipo que la corrida
+del MLP (Intel Core i7-13620H y NVIDIA GeForce RTX 4060 Laptop). La accuracy usa el criterio de acierto de
+entonces; la estricta solo acepta el personaje de la carpeta y es la comparable con las corridas con cajas.
 
 | Corrida | Configuración final | Accuracy | Estricta | Top-3 | F1 macro | Duración |
 |---|---|---:|---:|---:|---:|---:|
-| GPU 32 × 32 | E2 - 2 convoluciones por bloque | 0,786 | 0,732 | 0,887 | 0,741 | 59 min 03 s |
-| GPU 64 × 64 | E2 - 2 convoluciones por bloque | 0,830 | 0,777 | 0,932 | 0,788 | 1 h 44 min 33 s |
 | GPU 128 × 128 | Base - 1 convolución por bloque | **0,847** | **0,797** | **0,937** | **0,810** | 5 h 08 min 56 s |
 
-Frente al MLP de la misma resolución, también en GPU (diferencias en puntos):
+Frente al MLP, también en GPU a 128 × 128 (diferencias en puntos):
 
-| Resolución | Accuracy MLP | Accuracy CNN | Diferencia | F1 macro MLP | F1 macro CNN | Diferencia | Entrenamiento MLP → CNN |
-|---|---:|---:|---:|---:|---:|---:|---:|
-| 32 × 32 | 0,541 | 0,786 | +24,5 | 0,515 | 0,741 | +22,7 | 15,6 → 53,7 min |
-| 64 × 64 | 0,550 | 0,830 | +28,0 | 0,522 | 0,788 | +26,6 | 17,1 → 95,6 min |
-| 128 × 128 | 0,586 | **0,847** | +26,1 | 0,559 | **0,810** | +25,1 | 15,9 → 290,5 min |
+| Accuracy MLP | Accuracy CNN | Diferencia | F1 macro MLP | F1 macro CNN | Diferencia | Entrenamiento MLP → CNN |
+|---:|---:|---:|---:|---:|---:|---:|
+| 0,586 | **0,847** | +26,1 | 0,559 | **0,810** | +25,1 | 15,9 → 290,5 min |
 
 - **La forma es lo que le faltaba al MLP.** Con el mismo proceso y los mismos datos, la CNN sube la accuracy
-  entre 24,5 y 28,0 puntos y el F1 macro entre 22,7 y 26,6 a cada resolución. Homero, Marge, Bart y Lisa, que
-  el MLP confundía por la piel amarilla compartida, pasan de un F1 de 0,35 a 0,67 (MLP a 64 × 64) a uno de
-  0,81 a 0,89 (CNN a 128 × 128), y ningún personaje queda por debajo de 0,30.
-- **Más resolución ayuda, cada vez menos.** De 32 × 32 a 64 × 64 la accuracy sube 4,5 puntos; de 64 × 64 a
-  128 × 128, 1,7 más, a cambio de triplicar la duración de la corrida.
-- **Gana una configuración distinta según la resolución.** A 32 × 32 y 64 × 64 gana E2, con dos convoluciones
-  por bloque. A 128 × 128 E2 y E5 (batch 512) no caben en los 8 GB de la GPU, ninguna variante supera a la base
-  (la segunda, S2, queda a 0,6 puntos de F1 macro de validación) y gana el modelo base, con 473.120
-  parámetros: poco más de un tercio de los de E2. Ni a 64 × 64 ni a 128 × 128 hay dos factores que superen a
-  la base, así que C1 no se entrena.
-- **El color sigue importando, menos que en el MLP.** En escala de grises (R1) la misma red pierde 11,3 puntos
-  de F1 macro de validación a 128 × 128 y 19,7 a 64 × 64: con más resolución la forma suple parte del color, y
-  aun así la red sin color supera al MLP con solo color.
-- **Los cinco KPIs se cumplen en las tres corridas**, incluido el de costo: 5.326 imágenes por segundo de
-  extremo a extremo a 64 × 64 y 3.085 a 128 × 128, frente a 1.285–1.557 del MLP, que debe calcular sus
-  descriptores en la CPU.
-- **La GPU trabaja de verdad.** Entrenar es entre el 91 y el 94 % de cada corrida, y la tarjeta está ocupada
-  el 36,5 % del tiempo a 32 × 32, el 90,7 % a 64 × 64 y el 98,8 % a 128 × 128 (el MLP, entre el 22,5 y el
-  33,7 %).
+  26,1 puntos y el F1 macro 25,1. Homero, Marge, Bart y Lisa, que el MLP confundía por la piel amarilla
+  compartida, llegan a un F1 de 0,81 a 0,89, y ningún personaje queda por debajo de 0,30.
+- **Gana el modelo base.** E2 (dos convoluciones por bloque) y E5 (batch 512) no caben en los 8 GB de la GPU,
+  ninguna variante supera a la base (la segunda, S2, queda a 0,6 puntos de F1 macro de validación) y C1 no se
+  entrena. El modelo final tiene 473.120 parámetros.
+- **El color sigue importando.** En escala de grises (R1) la misma red pierde 11,3 puntos de F1 macro de
+  validación: la forma suple parte del color, pero no todo.
+- **Los cinco KPIs se cumplen**, incluido el de costo: 3.085 imágenes por segundo de extremo a extremo.
+- **La GPU trabaja de verdad.** Entrenar es el 94 % de la corrida, y la tarjeta está ocupada el 98,8 % del
+  tiempo (el MLP, el 33,7 %).
 - **La accuracy es una cota inferior.** Grad-CAM se concentra en las cabezas de los personajes, y casi todos los
   errores con confianza alta nombran a un personaje que sí está en la imagen, pero que la escena del episodio y
   las gemelas no detectaron.
-- **La corrida de CPU está pendiente.** El notebook de CPU sigue el mismo proceso a 64 × 64, pero cada época
-  le cuesta unos 130 s frente a 10 s en la GPU: una corrida completa tomaría más de quince horas.
 
-Las lecturas completas, con las cifras de cada sección, están en el notebook de GPU y en la presentación.
+Las lecturas completas, con las cifras de cada sección, están en el notebook de GPU.
 
 ## Cómo procesa una imagen
 
@@ -90,12 +84,9 @@ flowchart LR
     F --> G[Softmax<br/>64 probabilidades]
 ```
 
-Las corridas a 32 × 32 y 64 × 64 usan la misma red con la imagen más chica: los filtros de 3 × 3 tienen los
-mismos pesos a cualquier resolución, pero cada uno recorre más posiciones cuanto mayor es la imagen.
-
 | Elemento | MLP (`PMC/`) | CNN (esta carpeta) |
 |---|---|---|
-| Entrada | 2.462 descriptores de color y textura (o 370 de solo color) | La imagen de 128 × 128 × 3 (también 32 y 64), sin aplanar |
+| Entrada | 2.462 descriptores de color y textura (o 370 de solo color) | La imagen de 128 × 128 × 3, sin aplanar |
 | Características | Elegidas a mano: histogramas HSV y Lab, LBP, Gabor, HOG | Aprendidas: filtros de 3 × 3 que recorren la imagen |
 | Modelo base | Dos capas densas (512, 256) | Cuatro bloques convolucionales (32, 64, 128, 256 filtros), pooling global y una capa densa de 256 |
 | Análisis de la decisión | Importancia por permutación de cada bloque de descriptores | Grad-CAM sobre la imagen, también uno por personaje |
@@ -137,23 +128,14 @@ Los pasos completos están en [notebooks/newDataset/README.md](notebooks/newData
    .\CNN\scripts\newDataset\ejecutar_notebook_gpu.ps1
    ```
 
-   El de CPU, [LosSimpsonsCNN.ipynb](notebooks/newDataset/LosSimpsonsCNN.ipynb), se abre en el mismo
-   `.venv-gpu` y oculta la GPU desde su primera celda. En la GPU una corrida completa tarda una hora a
-   32 × 32, una hora y tres cuartos a 64 × 64 y unas cinco horas a 128 × 128; en la CPU, a 64 × 64, más de
-   quince horas.
+   Una corrida completa a 128 × 128 tarda unas cinco horas. Guarda su resumen en
+   `resultados/newDataset/cajas/GPU/rendimiento_gpu_128x128.json`, con el mismo formato que el MLP, y sus
+   modelos en `models_gpu/newDataset/cajas/`.
 
-   Cada corrida guarda su resumen en `resultados/newDataset/<CPU|GPU>/rendimiento_<entorno>_<resolución>.json`,
-   con el mismo formato que el MLP, y sus modelos en `models_gpu/newDataset/` (GPU) o `models/newDataset/` (CPU).
-
-3. Regenera la presentación cuando cambien los resultados:
-
-   ```powershell
-   .\.venv-gpu\Scripts\python.exe CNN\scripts\newDataset\generar_presentacion.py
-   ```
-
-   Las cifras y las figuras salen de los JSON de `resultados/newDataset/` y de las salidas del notebook (las de
-   la corrida a 64 × 64 se leen del commit `6db8274`). Los textos están en el script: si cambian los hechos que
-   describen —qué configuración gana, qué no cabe en la GPU—, se detiene y pide revisarlos.
+3. La presentación se rehace después de la corrida a 128 × 128 con cajas. Su generador,
+   `CNN/scripts/newDataset/generar_presentacion.py`, todavía lee las tres corridas de octubre, incluidos los
+   JSON de 32 × 32 y 64 × 64 que ya no están en el repositorio, así que hay que adaptarlo a una sola corrida
+   antes de volver a ejecutarlo.
 
 4. Clasifica cualquier imagen con el modelo final, sin abrir el notebook:
 
@@ -163,8 +145,8 @@ Los pasos completos están en [notebooks/newDataset/README.md](notebooks/newData
 
    Muestra las cinco candidatas más probables (`--top` cambia cuántas) y, si la imagen está en una carpeta con
    el nombre de un personaje, si el modelo acertó. Acepta varias imágenes a la vez, `--json` para leer el
-   resultado desde otro programa y `--cpu` para no usar la GPU. Usa `models_gpu/newDataset/cnn_final.keras` (o
-   el de `models/newDataset/`) con el pre-procesamiento del notebook. La red siempre nombra a alguno de sus 64
+   resultado desde otro programa y `--cpu` para no usar la GPU. Usa `models_gpu/newDataset/cnn_final.keras` con el
+   pre-procesamiento del notebook. La red siempre nombra a alguno de sus 64
    personajes, así que bajo un 50 % de confianza avisa que conviene revisar la imagen a mano.
 
 ## Estructura de la carpeta
@@ -173,12 +155,11 @@ Los pasos completos están en [notebooks/newDataset/README.md](notebooks/newData
 CNN/
 ├── notebooks/newDataset/
 │   ├── LosSimpsons_GPU_4060M.ipynb   # CNN en GPU: experimentos, evaluación, Grad-CAM y rendimiento
-│   ├── LosSimpsonsCNN.ipynb          # Mismo proceso en CPU, con Keras 3 sobre PyTorch y la GPU oculta
 │   └── README.md                     # Qué cambia respecto del MLP, ejecución y tiempos
-├── models/newDataset/                # Modelos .keras de la corrida en CPU, ignorados por Git
 ├── models_gpu/newDataset/            # Modelos de la corrida en GPU, ignorados por Git
 ├── resultados/newDataset/
-│   └── GPU/                          # rendimiento_gpu_<resolucion>.json; CPU/ aparece al ejecutar ese notebook
+│   ├── GPU/                          # rendimiento_gpu_128x128.json, la corrida con la imagen completa
+│   └── cajas/GPU/                    # El de la corrida con cajas, al ejecutar el notebook
 ├── scripts/newDataset/
 │   ├── ejecutar_notebook_gpu.ps1     # Comprueba el entorno y abre el notebook de GPU
 │   ├── generar_presentacion.py       # Genera presentacion_resultados_CNN.html

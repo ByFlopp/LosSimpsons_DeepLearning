@@ -13,6 +13,7 @@ pnpm frinkiac                # todo el flujo; se puede detener con Ctrl+C y reto
 pnpm frinkiac --sin-issue    # igual, pero sin publicar el issue en GitHub
 pnpm frinkiac estado         # avance por personaje
 pnpm frinkiac exportar       # copia las aprobadas al dataset (sin sobrescribir nada)
+pnpm frinkiac clasificar     # la CNN separa por_revisar en seguras, dudosas y ruido
 pnpm frinkiac:pruebas        # pruebas automáticas
 ```
 
@@ -21,7 +22,7 @@ La primera vez crea el entorno `.venv-frinkiac` e instala las dependencias. Si l
 Todo queda **junto al dataset, en una carpeta aparte**. El dataset no se toca hasta que ejecutes `exportar`:
 
 ```
-C:\Users\<usuario>\Desktop\simpsons_dataset\
+C:\Users\<usuario>\Desktop\
 ├── simpsons_dataset\               el dataset
 └── frinkiac_ampliacion\
     ├── LEEME.txt
@@ -59,6 +60,38 @@ En `por_revisar\<personaje>\`:
    - al llegar a 1000, el personaje pasa a `final\`.
 
 Si borras todas las imágenes de una carpeta grande, el script lo trata como un posible accidente y no lo aplica hasta que ejecutes `pnpm frinkiac --forzar`.
+
+### Revisar menos: `pnpm frinkiac clasificar`
+
+La CNN final del proyecto ([CNN/](../../../CNN/README.md)) separa las imágenes de `por_revisar` en tres grupos. Solo hay que revisar a mano uno de ellos. Corre en el entorno `.venv-gpu` (en la RTX 4060 tarda unos 2,5 minutos para 27.000 imágenes) y solo clasifica lo nuevo, así que se puede repetir sin problema.
+
+```
+frinkiac_ampliacion\clasificacion\
+├── seguras\<personaje>\    la CNN reconoce al personaje: se aprueban
+├── dudosas\<personaje>\    AQUÍ SE REVISA
+├── ruido\<personaje>\      la CNN no lo ve: se rechazan
+└── _registro.csv           grupo y probabilidades de cada imagen
+```
+
+1. Ejecuta `pnpm frinkiac clasificar`.
+2. En `dudosas\<personaje>\`, borra las imágenes en las que el personaje **no** aparece. Al terminar, borra su `_PENDIENTE.txt`.
+3. Opcional: si en `ruido\` hay alguna que sí sirve, muévela a `seguras\`. Si en `seguras\` hay un error, bórralo.
+4. Ejecuta `pnpm frinkiac`. Por cada personaje listo:
+   - lo que quedó en `seguras\` y `dudosas\` se aprueba;
+   - lo de `ruido\` y lo borrado se rechaza y se repone, como en la revisión a mano.
+5. Las imágenes repuestas llegan a `por_revisar`: vuelve al paso 1.
+
+Las carpetas tienen enlaces duros a las de `por_revisar`, sin copias ni espacio extra. Borrar en ellas no borra nada de `staging\`. Un personaje no se aplica mientras tenga dudosas sin revisar o imágenes nuevas sin clasificar. Si terminas un personaje a mano en `por_revisar` (borrando su `_PENDIENTE.txt`), la clasificación no lo toca.
+
+Cómo decide. Cada fotograma se mira en 4 vistas: completo y recortes cuadrados a la izquierda, al centro y a la derecha. En un plano ancho, el personaje suele ocupar solo una parte. Con *p* la probabilidad que la CNN da al personaje de la carpeta:
+
+| Grupo | Regla | Muestra de 30 revisada a ojo (nov. 2026) |
+|---|---|---|
+| segura | *p* ≥ 0,80 en el fotograma completo, o ≥ 0,90 en algún recorte | 29 de 30 y 30 de 30 correctas |
+| dudosa | el resto | entre 0,2 y 0,8, el personaje aparece en ~25 de 30; entre 0,05 y 0,2, en ~1 de 3 |
+| ruido | *p* < 0,05 en las 4 vistas | en ~4 de 30 aparece, casi siempre pequeño o al fondo |
+
+En la primera recolección quedaron 3.876 seguras (14 %), 9.956 dudosas (37 %) y 13.015 de ruido (49 %). Los umbrales se cambian con `--umbral-segura`, `--umbral-recorte` y `--umbral-ruido`. La CNN reconoce poco a algunos personajes (`dolph_starbeam`, `kearney_zzyzwicz`, `maude_flanders`, `rod_flanders`, `todd_flanders`, `helen_lovejoy`): casi no tienen seguras y su revisión recae en las dudosas.
 
 Con todo completo:
 1. Ejecuta `pnpm frinkiac exportar`.
