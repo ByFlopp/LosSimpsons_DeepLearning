@@ -14,7 +14,7 @@
       "id": "cnn",
       "nombre": "CNN, fotograma completo",
       "ruta": "CNN/models_gpu/newDataset/cnn_final.keras",
-      "sha256": "7f4bca484677caecdfebab75d441020974e98085e025f3c4537f7368c9270867"
+      "sha256": "0eb0b2488c7738cd83d2b180ccd3880a0d8f46330bd36c3c485704cc85477c43"
     },
     {
       "id": "cnn_recortes",
@@ -40,6 +40,10 @@
     "multiplicador_primera_bn": 10.0,
     "beta1": 0.5,
     "beta2": 0.9,
+    "volteo": true,
+    "bn_normalizada": false,
+    "escalas": [],
+    "reinicios": 1,
     "lote": 64,
     "optimizador": "Adam, tasa coseno",
     "instantaneas": [
@@ -55,34 +59,37 @@
   "segundos": 104.5,
   "desde_cache": true,
   "dispositivo": "cuda",
-  "fecha": "2026-11-09 17:36:57",
+  "fecha": "2026-11-14 06:53:53",
   "azar": 0.0156,
   "matriz": {
     "cnn": {
-      "top1": 64,
-      "top3": 64,
+      "top1": 52,
+      "top3": 62,
       "n": 64,
-      "confianza": 0.9976
+      "confianza": 0.5516,
+      "posicion_media": 1.47
     },
     "cnn_recortes": {
       "top1": 64,
       "top3": 64,
       "n": 64,
-      "confianza": 0.9986
+      "confianza": 0.9986,
+      "posicion_media": 1.0
     },
     "mlp": {
       "top1": 0,
       "top3": 4,
       "n": 64,
-      "confianza": 0.0176
+      "confianza": 0.0176,
+      "posicion_media": 28.97
     }
   },
   "correlacion_pesos": [
     {
       "a": "cnn",
       "b": "cnn_recortes",
-      "correlacion": 0.9994,
-      "independientes": false
+      "correlacion": 0.1363,
+      "independientes": true
     }
   ],
   "instantaneas": [
@@ -92,7 +99,8 @@
       "top3": 4,
       "n": 64,
       "confianza": 0.0215,
-      "confianza_prediccion": 0.7579,
+      "posicion_media": 31.94,
+      "confianza_prediccion": 0.7578,
       "mas_nombrado": "sideshow_mel",
       "veces_mas_nombrado": 63
     },
@@ -101,7 +109,8 @@
       "top1": 62,
       "top3": 63,
       "n": 64,
-      "confianza": 0.9222,
+      "confianza": 0.9221,
+      "posicion_media": 1.11,
       "confianza_prediccion": 0.9265,
       "mas_nombrado": "cletus_spuckler",
       "veces_mas_nombrado": 2
@@ -112,6 +121,7 @@
       "top3": 64,
       "n": 64,
       "confianza": 0.9899,
+      "posicion_media": 1.0,
       "confianza_prediccion": 0.9899,
       "mas_nombrado": "abraham_grampa_simpson",
       "veces_mas_nombrado": 1
@@ -122,6 +132,7 @@
       "top3": 64,
       "n": 64,
       "confianza": 0.998,
+      "posicion_media": 1.0,
       "confianza_prediccion": 0.998,
       "mas_nombrado": "abraham_grampa_simpson",
       "veces_mas_nombrado": 1
@@ -132,6 +143,7 @@
       "top3": 64,
       "n": 64,
       "confianza": 0.9986,
+      "posicion_media": 1.0,
       "confianza_prediccion": 0.9986,
       "mas_nombrado": "abraham_grampa_simpson",
       "veces_mas_nombrado": 1
@@ -474,10 +486,10 @@
       "jueces": {
         "cnn": {
           "prediccion": "abraham_grampa_simpson",
-          "confianza": 0.9984,
-          "p_objetivo": 0.9984,
+          "confianza": 0.9202,
+          "p_objetivo": 0.9202,
           "posicion": 1,
-          "rotulo": "Abraham Grampa Simpson · 100 %"
+          "rotulo": "Abraham Grampa Simpson · 92 %"
         },
         "cnn_recortes": {
           "prediccion": "abraham_grampa_simpson",
@@ -501,10 +513,10 @@
       "jueces": {
         "cnn": {
           "prediccion": "agnes_skinner",
-          "confianza": 0.9984,
-          "p_objetivo": 0.9984,
+          "confianza": 0.5638,
+          "p_objetivo": 0.5638,
           "posicion": 1,
-          "rotulo": "Agnes Skinner · 100 %"
+          "rotulo": "Agnes Skinner · 56 %"
         },
         "cnn_recortes": {
           "prediccion": "agnes_skinner",
@@ -515,7 +527,7 @@
         },
         "mlp": {
           "prediccion": "principal_skinner",
-          "confianza": 0.194,
+          "confianza": 0.1941,
           "p_objetivo": 0.0082,
           "posicion": 25,
           "rotulo": "Principal Skinner · 19 %"
@@ -528,10 +540,10 @@
       "jueces": {
         "cnn": {
           "prediccion": "apu_nahasapeemapetilon",
-          "confianza": 0.9981,
-          "p_objetivo": 0.9981,
+          "confianza": 0.8618,
+          "p_objetivo": 0.8618,
           "posicion": 1,
-          "rotulo": "Apu Nahasapeemapetilon · 100 %"
+          "rotulo": "Apu Nahasapeemapetilon · 86 %"
         },
         "cnn_recortes": {
           "prediccion": "apu_nahasapeemapetilon",
@@ -542,8 +554,8 @@
         },
         "mlp": {
           "prediccion": "dr_julius_hibbert",
-          "confianza": 0.1279,
-          "p_objetivo": 0.0482,
+          "confianza": 0.1278,
+          "p_objetivo": 0.0483,
           "posicion": 7,
           "rotulo": "Dr. Julius Hibbert · 13 %"
         }
@@ -555,10 +567,10 @@
       "jueces": {
         "cnn": {
           "prediccion": "barney_gumble",
-          "confianza": 0.9982,
-          "p_objetivo": 0.9982,
+          "confianza": 0.626,
+          "p_objetivo": 0.626,
           "posicion": 1,
-          "rotulo": "Barney Gumble · 100 %"
+          "rotulo": "Barney Gumble · 63 %"
         },
         "cnn_recortes": {
           "prediccion": "barney_gumble",
@@ -582,10 +594,10 @@
       "jueces": {
         "cnn": {
           "prediccion": "bart_simpson",
-          "confianza": 0.9996,
-          "p_objetivo": 0.9996,
+          "confianza": 0.8097,
+          "p_objetivo": 0.8097,
           "posicion": 1,
-          "rotulo": "Bart Simpson · 100 %"
+          "rotulo": "Bart Simpson · 81 %"
         },
         "cnn_recortes": {
           "prediccion": "bart_simpson",
@@ -596,7 +608,7 @@
         },
         "mlp": {
           "prediccion": "chief_wiggum",
-          "confianza": 0.2084,
+          "confianza": 0.2083,
           "p_objetivo": 0.0026,
           "posicion": 45,
           "rotulo": "Chief Wiggum · 21 %"
@@ -609,10 +621,10 @@
       "jueces": {
         "cnn": {
           "prediccion": "captain_horatio_mccallister",
-          "confianza": 0.9989,
-          "p_objetivo": 0.9989,
+          "confianza": 0.7973,
+          "p_objetivo": 0.7973,
           "posicion": 1,
-          "rotulo": "Captain Horatio McCallister · 100 %"
+          "rotulo": "Captain Horatio McCallister · 80 %"
         },
         "cnn_recortes": {
           "prediccion": "captain_horatio_mccallister",
@@ -623,7 +635,7 @@
         },
         "mlp": {
           "prediccion": "patty_bouvier",
-          "confianza": 0.1088,
+          "confianza": 0.1089,
           "p_objetivo": 0.0015,
           "posicion": 57,
           "rotulo": "Patty Bouvier · 11 %"
@@ -636,10 +648,10 @@
       "jueces": {
         "cnn": {
           "prediccion": "carl_carlson",
-          "confianza": 0.9954,
-          "p_objetivo": 0.9954,
+          "confianza": 0.9217,
+          "p_objetivo": 0.9217,
           "posicion": 1,
-          "rotulo": "Carl Carlson · 100 %"
+          "rotulo": "Carl Carlson · 92 %"
         },
         "cnn_recortes": {
           "prediccion": "carl_carlson",
@@ -663,10 +675,10 @@
       "jueces": {
         "cnn": {
           "prediccion": "charles_montgomery_burns",
-          "confianza": 0.999,
-          "p_objetivo": 0.999,
+          "confianza": 0.8001,
+          "p_objetivo": 0.8001,
           "posicion": 1,
-          "rotulo": "Charles Montgomery Burns · 100 %"
+          "rotulo": "Charles Montgomery Burns · 80 %"
         },
         "cnn_recortes": {
           "prediccion": "charles_montgomery_burns",
@@ -690,10 +702,10 @@
       "jueces": {
         "cnn": {
           "prediccion": "chief_wiggum",
-          "confianza": 0.999,
-          "p_objetivo": 0.999,
+          "confianza": 0.6235,
+          "p_objetivo": 0.6235,
           "posicion": 1,
-          "rotulo": "Chief Wiggum · 100 %"
+          "rotulo": "Chief Wiggum · 62 %"
         },
         "cnn_recortes": {
           "prediccion": "chief_wiggum",
@@ -704,7 +716,7 @@
         },
         "mlp": {
           "prediccion": "apu_nahasapeemapetilon",
-          "confianza": 0.2189,
+          "confianza": 0.2188,
           "p_objetivo": 0.0628,
           "posicion": 5,
           "rotulo": "Apu Nahasapeemapetilon · 22 %"
@@ -717,10 +729,10 @@
       "jueces": {
         "cnn": {
           "prediccion": "cletus_spuckler",
-          "confianza": 0.9984,
-          "p_objetivo": 0.9984,
+          "confianza": 0.8459,
+          "p_objetivo": 0.8459,
           "posicion": 1,
-          "rotulo": "Cletus Spuckler · 100 %"
+          "rotulo": "Cletus Spuckler · 85 %"
         },
         "cnn_recortes": {
           "prediccion": "cletus_spuckler",
@@ -731,9 +743,9 @@
         },
         "mlp": {
           "prediccion": "jimbo_jones",
-          "confianza": 0.2902,
+          "confianza": 0.29,
           "p_objetivo": 0.0018,
-          "posicion": 46,
+          "posicion": 47,
           "rotulo": "Jimbo Jones · 29 %"
         }
       }
@@ -744,10 +756,10 @@
       "jueces": {
         "cnn": {
           "prediccion": "comic_book_guy",
-          "confianza": 0.9998,
-          "p_objetivo": 0.9998,
+          "confianza": 0.4561,
+          "p_objetivo": 0.4561,
           "posicion": 1,
-          "rotulo": "Comic Book Guy · 100 %"
+          "rotulo": "Comic Book Guy · 46 %"
         },
         "cnn_recortes": {
           "prediccion": "comic_book_guy",
@@ -758,7 +770,7 @@
         },
         "mlp": {
           "prediccion": "milhouse_van_houten",
-          "confianza": 0.2533,
+          "confianza": 0.2531,
           "p_objetivo": 0.0138,
           "posicion": 19,
           "rotulo": "Milhouse Van Houten · 25 %"
@@ -771,10 +783,10 @@
       "jueces": {
         "cnn": {
           "prediccion": "disco_stu",
-          "confianza": 0.9978,
-          "p_objetivo": 0.9978,
+          "confianza": 0.7819,
+          "p_objetivo": 0.7819,
           "posicion": 1,
-          "rotulo": "Disco Stu · 100 %"
+          "rotulo": "Disco Stu · 78 %"
         },
         "cnn_recortes": {
           "prediccion": "disco_stu",
@@ -785,7 +797,7 @@
         },
         "mlp": {
           "prediccion": "dr_julius_hibbert",
-          "confianza": 0.3942,
+          "confianza": 0.3943,
           "p_objetivo": 0.0341,
           "posicion": 3,
           "rotulo": "Dr. Julius Hibbert · 39 %"
@@ -797,11 +809,11 @@
       "archivo": "dolph_starbeam.png",
       "jueces": {
         "cnn": {
-          "prediccion": "dolph_starbeam",
-          "confianza": 0.9955,
-          "p_objetivo": 0.9955,
-          "posicion": 1,
-          "rotulo": "Dolph Starbeam · 100 %"
+          "prediccion": "jimbo_jones",
+          "confianza": 0.1237,
+          "p_objetivo": 0.1221,
+          "posicion": 2,
+          "rotulo": "Jimbo Jones · 12 %"
         },
         "cnn_recortes": {
           "prediccion": "dolph_starbeam",
@@ -812,7 +824,7 @@
         },
         "mlp": {
           "prediccion": "principal_skinner",
-          "confianza": 0.1288,
+          "confianza": 0.1289,
           "p_objetivo": 0.0134,
           "posicion": 23,
           "rotulo": "Principal Skinner · 13 %"
@@ -825,10 +837,10 @@
       "jueces": {
         "cnn": {
           "prediccion": "dr_julius_hibbert",
-          "confianza": 0.9991,
-          "p_objetivo": 0.9991,
+          "confianza": 0.6596,
+          "p_objetivo": 0.6596,
           "posicion": 1,
-          "rotulo": "Dr. Julius Hibbert · 100 %"
+          "rotulo": "Dr. Julius Hibbert · 66 %"
         },
         "cnn_recortes": {
           "prediccion": "dr_julius_hibbert",
@@ -839,8 +851,8 @@
         },
         "mlp": {
           "prediccion": "mayor_quimby",
-          "confianza": 0.1285,
-          "p_objetivo": 0.1101,
+          "confianza": 0.1286,
+          "p_objetivo": 0.11,
           "posicion": 3,
           "rotulo": "Mayor Quimby · 13 %"
         }
@@ -852,10 +864,10 @@
       "jueces": {
         "cnn": {
           "prediccion": "dr_nick_riviera",
-          "confianza": 0.9993,
-          "p_objetivo": 0.9993,
+          "confianza": 0.1499,
+          "p_objetivo": 0.1499,
           "posicion": 1,
-          "rotulo": "Dr. Nick Riviera · 100 %"
+          "rotulo": "Dr. Nick Riviera · 15 %"
         },
         "cnn_recortes": {
           "prediccion": "dr_nick_riviera",
@@ -866,7 +878,7 @@
         },
         "mlp": {
           "prediccion": "helen_lovejoy",
-          "confianza": 0.1924,
+          "confianza": 0.1922,
           "p_objetivo": 0.0129,
           "posicion": 20,
           "rotulo": "Helen Lovejoy · 19 %"
@@ -879,10 +891,10 @@
       "jueces": {
         "cnn": {
           "prediccion": "edna_krabappel",
-          "confianza": 0.9978,
-          "p_objetivo": 0.9978,
+          "confianza": 0.5104,
+          "p_objetivo": 0.5104,
           "posicion": 1,
-          "rotulo": "Edna Krabappel · 100 %"
+          "rotulo": "Edna Krabappel · 51 %"
         },
         "cnn_recortes": {
           "prediccion": "edna_krabappel",
@@ -905,11 +917,11 @@
       "archivo": "fat_tony.png",
       "jueces": {
         "cnn": {
-          "prediccion": "fat_tony",
-          "confianza": 0.9994,
-          "p_objetivo": 0.9994,
-          "posicion": 1,
-          "rotulo": "Fat Tony · 100 %"
+          "prediccion": "moe_szyslak",
+          "confianza": 0.3578,
+          "p_objetivo": 0.1577,
+          "posicion": 2,
+          "rotulo": "Moe Szyslak · 36 %"
         },
         "cnn_recortes": {
           "prediccion": "fat_tony",
@@ -920,7 +932,7 @@
         },
         "mlp": {
           "prediccion": "chief_wiggum",
-          "confianza": 0.3253,
+          "confianza": 0.3254,
           "p_objetivo": 0.0223,
           "posicion": 8,
           "rotulo": "Chief Wiggum · 33 %"
@@ -933,10 +945,10 @@
       "jueces": {
         "cnn": {
           "prediccion": "gary_chalmers",
-          "confianza": 0.9984,
-          "p_objetivo": 0.9984,
+          "confianza": 0.4208,
+          "p_objetivo": 0.4208,
           "posicion": 1,
-          "rotulo": "Gary Chalmers · 100 %"
+          "rotulo": "Gary Chalmers · 42 %"
         },
         "cnn_recortes": {
           "prediccion": "gary_chalmers",
@@ -947,8 +959,8 @@
         },
         "mlp": {
           "prediccion": "mayor_quimby",
-          "confianza": 0.2343,
-          "p_objetivo": 0.0182,
+          "confianza": 0.2342,
+          "p_objetivo": 0.0183,
           "posicion": 16,
           "rotulo": "Mayor Quimby · 23 %"
         }
@@ -960,10 +972,10 @@
       "jueces": {
         "cnn": {
           "prediccion": "gil",
-          "confianza": 0.9966,
-          "p_objetivo": 0.9966,
+          "confianza": 0.546,
+          "p_objetivo": 0.546,
           "posicion": 1,
-          "rotulo": "Gil · 100 %"
+          "rotulo": "Gil · 55 %"
         },
         "cnn_recortes": {
           "prediccion": "gil",
@@ -977,7 +989,7 @@
           "confianza": 0.055,
           "p_objetivo": 0.0395,
           "posicion": 6,
-          "rotulo": "Carl Carlson · 5 %"
+          "rotulo": "Carl Carlson · 6 %"
         }
       }
     },
@@ -987,10 +999,10 @@
       "jueces": {
         "cnn": {
           "prediccion": "groundskeeper_willie",
-          "confianza": 0.9987,
-          "p_objetivo": 0.9987,
+          "confianza": 0.9353,
+          "p_objetivo": 0.9353,
           "posicion": 1,
-          "rotulo": "Groundskeeper Willie · 100 %"
+          "rotulo": "Groundskeeper Willie · 94 %"
         },
         "cnn_recortes": {
           "prediccion": "groundskeeper_willie",
@@ -1001,8 +1013,8 @@
         },
         "mlp": {
           "prediccion": "fat_tony",
-          "confianza": 0.2757,
-          "p_objetivo": 0.0223,
+          "confianza": 0.2758,
+          "p_objetivo": 0.0222,
           "posicion": 6,
           "rotulo": "Fat Tony · 28 %"
         }
@@ -1014,10 +1026,10 @@
       "jueces": {
         "cnn": {
           "prediccion": "helen_lovejoy",
-          "confianza": 0.9886,
-          "p_objetivo": 0.9886,
+          "confianza": 0.737,
+          "p_objetivo": 0.737,
           "posicion": 1,
-          "rotulo": "Helen Lovejoy · 99 %"
+          "rotulo": "Helen Lovejoy · 74 %"
         },
         "cnn_recortes": {
           "prediccion": "helen_lovejoy",
@@ -1040,11 +1052,11 @@
       "archivo": "herb_powell.png",
       "jueces": {
         "cnn": {
-          "prediccion": "herb_powell",
-          "confianza": 0.9937,
-          "p_objetivo": 0.9937,
-          "posicion": 1,
-          "rotulo": "Herb Powell · 99 %"
+          "prediccion": "homer_simpson",
+          "confianza": 0.876,
+          "p_objetivo": 0.0379,
+          "posicion": 2,
+          "rotulo": "Homer Simpson · 88 %"
         },
         "cnn_recortes": {
           "prediccion": "herb_powell",
@@ -1068,10 +1080,10 @@
       "jueces": {
         "cnn": {
           "prediccion": "homer_simpson",
-          "confianza": 0.9988,
-          "p_objetivo": 0.9988,
+          "confianza": 0.46,
+          "p_objetivo": 0.46,
           "posicion": 1,
-          "rotulo": "Homer Simpson · 100 %"
+          "rotulo": "Homer Simpson · 46 %"
         },
         "cnn_recortes": {
           "prediccion": "homer_simpson",
@@ -1094,11 +1106,11 @@
       "archivo": "jasper_beardly.png",
       "jueces": {
         "cnn": {
-          "prediccion": "jasper_beardly",
-          "confianza": 0.998,
-          "p_objetivo": 0.998,
-          "posicion": 1,
-          "rotulo": "Jasper Beardly · 100 %"
+          "prediccion": "moe_szyslak",
+          "confianza": 0.3334,
+          "p_objetivo": 0.2625,
+          "posicion": 2,
+          "rotulo": "Moe Szyslak · 33 %"
         },
         "cnn_recortes": {
           "prediccion": "jasper_beardly",
@@ -1122,10 +1134,10 @@
       "jueces": {
         "cnn": {
           "prediccion": "jimbo_jones",
-          "confianza": 0.9983,
-          "p_objetivo": 0.9983,
+          "confianza": 0.1107,
+          "p_objetivo": 0.1107,
           "posicion": 1,
-          "rotulo": "Jimbo Jones · 100 %"
+          "rotulo": "Jimbo Jones · 11 %"
         },
         "cnn_recortes": {
           "prediccion": "jimbo_jones",
@@ -1136,7 +1148,7 @@
         },
         "mlp": {
           "prediccion": "carl_carlson",
-          "confianza": 0.2448,
+          "confianza": 0.2449,
           "p_objetivo": 0.0019,
           "posicion": 48,
           "rotulo": "Carl Carlson · 24 %"
@@ -1148,11 +1160,11 @@
       "archivo": "judge_snyder.png",
       "jueces": {
         "cnn": {
-          "prediccion": "judge_snyder",
-          "confianza": 0.9979,
-          "p_objetivo": 0.9979,
-          "posicion": 1,
-          "rotulo": "Judge Snyder · 100 %"
+          "prediccion": "lou",
+          "confianza": 0.2184,
+          "p_objetivo": 0.0156,
+          "posicion": 15,
+          "rotulo": "Lou · 22 %"
         },
         "cnn_recortes": {
           "prediccion": "judge_snyder",
@@ -1176,10 +1188,10 @@
       "jueces": {
         "cnn": {
           "prediccion": "kang_kodos",
-          "confianza": 0.9928,
-          "p_objetivo": 0.9928,
+          "confianza": 0.1906,
+          "p_objetivo": 0.1906,
           "posicion": 1,
-          "rotulo": "Kang y Kodos · 99 %"
+          "rotulo": "Kang y Kodos · 19 %"
         },
         "cnn_recortes": {
           "prediccion": "kang_kodos",
@@ -1190,7 +1202,7 @@
         },
         "mlp": {
           "prediccion": "judge_snyder",
-          "confianza": 0.2561,
+          "confianza": 0.2562,
           "p_objetivo": 0.0013,
           "posicion": 54,
           "rotulo": "Judge Snyder · 26 %"
@@ -1202,11 +1214,11 @@
       "archivo": "kearney_zzyzwicz.png",
       "jueces": {
         "cnn": {
-          "prediccion": "kearney_zzyzwicz",
-          "confianza": 0.999,
-          "p_objetivo": 0.999,
-          "posicion": 1,
-          "rotulo": "Kearney Zzyzwicz · 100 %"
+          "prediccion": "barney_gumble",
+          "confianza": 0.0895,
+          "p_objetivo": 0.0676,
+          "posicion": 2,
+          "rotulo": "Barney Gumble · 9 %"
         },
         "cnn_recortes": {
           "prediccion": "kearney_zzyzwicz",
@@ -1217,8 +1229,8 @@
         },
         "mlp": {
           "prediccion": "dolph_starbeam",
-          "confianza": 0.1444,
-          "p_objetivo": 0.0642,
+          "confianza": 0.1443,
+          "p_objetivo": 0.0641,
           "posicion": 3,
           "rotulo": "Dolph Starbeam · 14 %"
         }
@@ -1230,10 +1242,10 @@
       "jueces": {
         "cnn": {
           "prediccion": "kent_brockman",
-          "confianza": 0.999,
-          "p_objetivo": 0.999,
+          "confianza": 0.81,
+          "p_objetivo": 0.81,
           "posicion": 1,
-          "rotulo": "Kent Brockman · 100 %"
+          "rotulo": "Kent Brockman · 81 %"
         },
         "cnn_recortes": {
           "prediccion": "kent_brockman",
@@ -1257,10 +1269,10 @@
       "jueces": {
         "cnn": {
           "prediccion": "kirk_van_houten",
-          "confianza": 0.9968,
-          "p_objetivo": 0.9968,
+          "confianza": 0.1066,
+          "p_objetivo": 0.1066,
           "posicion": 1,
-          "rotulo": "Kirk Van Houten · 100 %"
+          "rotulo": "Kirk Van Houten · 11 %"
         },
         "cnn_recortes": {
           "prediccion": "kirk_van_houten",
@@ -1271,7 +1283,7 @@
         },
         "mlp": {
           "prediccion": "ned_flanders",
-          "confianza": 0.2542,
+          "confianza": 0.2543,
           "p_objetivo": 0.0032,
           "posicion": 39,
           "rotulo": "Ned Flanders · 25 %"
@@ -1284,10 +1296,10 @@
       "jueces": {
         "cnn": {
           "prediccion": "krusty_the_clown",
-          "confianza": 0.9992,
-          "p_objetivo": 0.9992,
+          "confianza": 0.9896,
+          "p_objetivo": 0.9896,
           "posicion": 1,
-          "rotulo": "Krusty the Clown · 100 %"
+          "rotulo": "Krusty the Clown · 99 %"
         },
         "cnn_recortes": {
           "prediccion": "krusty_the_clown",
@@ -1298,7 +1310,7 @@
         },
         "mlp": {
           "prediccion": "agnes_skinner",
-          "confianza": 0.1426,
+          "confianza": 0.1427,
           "p_objetivo": 0.002,
           "posicion": 56,
           "rotulo": "Agnes Skinner · 14 %"
@@ -1311,10 +1323,10 @@
       "jueces": {
         "cnn": {
           "prediccion": "lenny_leonard",
-          "confianza": 0.9994,
-          "p_objetivo": 0.9994,
+          "confianza": 0.82,
+          "p_objetivo": 0.82,
           "posicion": 1,
-          "rotulo": "Lenny Leonard · 100 %"
+          "rotulo": "Lenny Leonard · 82 %"
         },
         "cnn_recortes": {
           "prediccion": "lenny_leonard",
@@ -1325,7 +1337,7 @@
         },
         "mlp": {
           "prediccion": "chief_wiggum",
-          "confianza": 0.2261,
+          "confianza": 0.226,
           "p_objetivo": 0.023,
           "posicion": 8,
           "rotulo": "Chief Wiggum · 23 %"
@@ -1338,10 +1350,10 @@
       "jueces": {
         "cnn": {
           "prediccion": "lionel_hutz",
-          "confianza": 0.998,
-          "p_objetivo": 0.998,
+          "confianza": 0.9693,
+          "p_objetivo": 0.9693,
           "posicion": 1,
-          "rotulo": "Lionel Hutz · 100 %"
+          "rotulo": "Lionel Hutz · 97 %"
         },
         "cnn_recortes": {
           "prediccion": "lionel_hutz",
@@ -1352,7 +1364,7 @@
         },
         "mlp": {
           "prediccion": "dr_julius_hibbert",
-          "confianza": 0.2797,
+          "confianza": 0.2798,
           "p_objetivo": 0.0104,
           "posicion": 21,
           "rotulo": "Dr. Julius Hibbert · 28 %"
@@ -1365,10 +1377,10 @@
       "jueces": {
         "cnn": {
           "prediccion": "lisa_simpson",
-          "confianza": 0.9989,
-          "p_objetivo": 0.9989,
+          "confianza": 0.9773,
+          "p_objetivo": 0.9773,
           "posicion": 1,
-          "rotulo": "Lisa Simpson · 100 %"
+          "rotulo": "Lisa Simpson · 98 %"
         },
         "cnn_recortes": {
           "prediccion": "lisa_simpson",
@@ -1392,10 +1404,10 @@
       "jueces": {
         "cnn": {
           "prediccion": "lou",
-          "confianza": 0.9972,
-          "p_objetivo": 0.9972,
+          "confianza": 0.5793,
+          "p_objetivo": 0.5793,
           "posicion": 1,
-          "rotulo": "Lou · 100 %"
+          "rotulo": "Lou · 58 %"
         },
         "cnn_recortes": {
           "prediccion": "lou",
@@ -1406,7 +1418,7 @@
         },
         "mlp": {
           "prediccion": "apu_nahasapeemapetilon",
-          "confianza": 0.1478,
+          "confianza": 0.1477,
           "p_objetivo": 0.0518,
           "posicion": 7,
           "rotulo": "Apu Nahasapeemapetilon · 15 %"
@@ -1419,10 +1431,10 @@
       "jueces": {
         "cnn": {
           "prediccion": "louie",
-          "confianza": 0.9907,
-          "p_objetivo": 0.9907,
+          "confianza": 0.1732,
+          "p_objetivo": 0.1732,
           "posicion": 1,
-          "rotulo": "Louie · 99 %"
+          "rotulo": "Louie · 17 %"
         },
         "cnn_recortes": {
           "prediccion": "louie",
@@ -1446,10 +1458,10 @@
       "jueces": {
         "cnn": {
           "prediccion": "maggie_simpson",
-          "confianza": 0.9959,
-          "p_objetivo": 0.9959,
+          "confianza": 0.4141,
+          "p_objetivo": 0.4141,
           "posicion": 1,
-          "rotulo": "Maggie Simpson · 100 %"
+          "rotulo": "Maggie Simpson · 41 %"
         },
         "cnn_recortes": {
           "prediccion": "maggie_simpson",
@@ -1473,10 +1485,10 @@
       "jueces": {
         "cnn": {
           "prediccion": "manjula_nahasapeemapetilon",
-          "confianza": 0.9986,
-          "p_objetivo": 0.9986,
+          "confianza": 0.3719,
+          "p_objetivo": 0.3719,
           "posicion": 1,
-          "rotulo": "Manjula Nahasapeemapetilon · 100 %"
+          "rotulo": "Manjula Nahasapeemapetilon · 37 %"
         },
         "cnn_recortes": {
           "prediccion": "manjula_nahasapeemapetilon",
@@ -1499,11 +1511,11 @@
       "archivo": "marge_simpson.png",
       "jueces": {
         "cnn": {
-          "prediccion": "marge_simpson",
-          "confianza": 0.9945,
-          "p_objetivo": 0.9945,
-          "posicion": 1,
-          "rotulo": "Marge Simpson · 99 %"
+          "prediccion": "lisa_simpson",
+          "confianza": 0.3231,
+          "p_objetivo": 0.2958,
+          "posicion": 2,
+          "rotulo": "Lisa Simpson · 32 %"
         },
         "cnn_recortes": {
           "prediccion": "marge_simpson",
@@ -1514,7 +1526,7 @@
         },
         "mlp": {
           "prediccion": "cletus_spuckler",
-          "confianza": 0.122,
+          "confianza": 0.1219,
           "p_objetivo": 0.0042,
           "posicion": 46,
           "rotulo": "Cletus Spuckler · 12 %"
@@ -1527,10 +1539,10 @@
       "jueces": {
         "cnn": {
           "prediccion": "martin_prince",
-          "confianza": 0.9988,
-          "p_objetivo": 0.9988,
+          "confianza": 0.7819,
+          "p_objetivo": 0.7819,
           "posicion": 1,
-          "rotulo": "Martin Prince · 100 %"
+          "rotulo": "Martin Prince · 78 %"
         },
         "cnn_recortes": {
           "prediccion": "martin_prince",
@@ -1553,11 +1565,11 @@
       "archivo": "maude_flanders.png",
       "jueces": {
         "cnn": {
-          "prediccion": "maude_flanders",
-          "confianza": 0.9985,
-          "p_objetivo": 0.9985,
-          "posicion": 1,
-          "rotulo": "Maude Flanders · 100 %"
+          "prediccion": "helen_lovejoy",
+          "confianza": 0.2173,
+          "p_objetivo": 0.1826,
+          "posicion": 2,
+          "rotulo": "Helen Lovejoy · 22 %"
         },
         "cnn_recortes": {
           "prediccion": "maude_flanders",
@@ -1568,7 +1580,7 @@
         },
         "mlp": {
           "prediccion": "apu_nahasapeemapetilon",
-          "confianza": 0.1023,
+          "confianza": 0.1022,
           "p_objetivo": 0.0084,
           "posicion": 28,
           "rotulo": "Apu Nahasapeemapetilon · 10 %"
@@ -1581,10 +1593,10 @@
       "jueces": {
         "cnn": {
           "prediccion": "mayor_quimby",
-          "confianza": 0.9987,
-          "p_objetivo": 0.9987,
+          "confianza": 0.7136,
+          "p_objetivo": 0.7136,
           "posicion": 1,
-          "rotulo": "Mayor Quimby · 100 %"
+          "rotulo": "Mayor Quimby · 71 %"
         },
         "cnn_recortes": {
           "prediccion": "mayor_quimby",
@@ -1595,7 +1607,7 @@
         },
         "mlp": {
           "prediccion": "judge_snyder",
-          "confianza": 0.1739,
+          "confianza": 0.1737,
           "p_objetivo": 0.0365,
           "posicion": 7,
           "rotulo": "Judge Snyder · 17 %"
@@ -1608,10 +1620,10 @@
       "jueces": {
         "cnn": {
           "prediccion": "milhouse_van_houten",
-          "confianza": 0.9981,
-          "p_objetivo": 0.9981,
+          "confianza": 0.8404,
+          "p_objetivo": 0.8404,
           "posicion": 1,
-          "rotulo": "Milhouse Van Houten · 100 %"
+          "rotulo": "Milhouse Van Houten · 84 %"
         },
         "cnn_recortes": {
           "prediccion": "milhouse_van_houten",
@@ -1622,7 +1634,7 @@
         },
         "mlp": {
           "prediccion": "marge_simpson",
-          "confianza": 0.1554,
+          "confianza": 0.1553,
           "p_objetivo": 0.0123,
           "posicion": 17,
           "rotulo": "Marge Simpson · 16 %"
@@ -1635,10 +1647,10 @@
       "jueces": {
         "cnn": {
           "prediccion": "miss_hoover",
-          "confianza": 0.9981,
-          "p_objetivo": 0.9981,
+          "confianza": 0.1418,
+          "p_objetivo": 0.1418,
           "posicion": 1,
-          "rotulo": "Miss Hoover · 100 %"
+          "rotulo": "Miss Hoover · 14 %"
         },
         "cnn_recortes": {
           "prediccion": "miss_hoover",
@@ -1649,7 +1661,7 @@
         },
         "mlp": {
           "prediccion": "ned_flanders",
-          "confianza": 0.1968,
+          "confianza": 0.1969,
           "p_objetivo": 0.0046,
           "posicion": 38,
           "rotulo": "Ned Flanders · 20 %"
@@ -1662,10 +1674,10 @@
       "jueces": {
         "cnn": {
           "prediccion": "moe_szyslak",
-          "confianza": 0.9997,
-          "p_objetivo": 0.9997,
+          "confianza": 0.9795,
+          "p_objetivo": 0.9795,
           "posicion": 1,
-          "rotulo": "Moe Szyslak · 100 %"
+          "rotulo": "Moe Szyslak · 98 %"
         },
         "cnn_recortes": {
           "prediccion": "moe_szyslak",
@@ -1688,11 +1700,11 @@
       "archivo": "mona_simpson.png",
       "jueces": {
         "cnn": {
-          "prediccion": "mona_simpson",
-          "confianza": 0.9964,
-          "p_objetivo": 0.9964,
-          "posicion": 1,
-          "rotulo": "Mona Simpson · 100 %"
+          "prediccion": "lisa_simpson",
+          "confianza": 0.1982,
+          "p_objetivo": 0.0403,
+          "posicion": 6,
+          "rotulo": "Lisa Simpson · 20 %"
         },
         "cnn_recortes": {
           "prediccion": "mona_simpson",
@@ -1716,10 +1728,10 @@
       "jueces": {
         "cnn": {
           "prediccion": "ned_flanders",
-          "confianza": 0.9993,
-          "p_objetivo": 0.9993,
+          "confianza": 0.8661,
+          "p_objetivo": 0.8661,
           "posicion": 1,
-          "rotulo": "Ned Flanders · 100 %"
+          "rotulo": "Ned Flanders · 87 %"
         },
         "cnn_recortes": {
           "prediccion": "ned_flanders",
@@ -1730,7 +1742,7 @@
         },
         "mlp": {
           "prediccion": "apu_nahasapeemapetilon",
-          "confianza": 0.1842,
+          "confianza": 0.1841,
           "p_objetivo": 0.0214,
           "posicion": 11,
           "rotulo": "Apu Nahasapeemapetilon · 18 %"
@@ -1743,10 +1755,10 @@
       "jueces": {
         "cnn": {
           "prediccion": "nelson_muntz",
-          "confianza": 0.9978,
-          "p_objetivo": 0.9978,
+          "confianza": 0.9235,
+          "p_objetivo": 0.9235,
           "posicion": 1,
-          "rotulo": "Nelson Muntz · 100 %"
+          "rotulo": "Nelson Muntz · 92 %"
         },
         "cnn_recortes": {
           "prediccion": "nelson_muntz",
@@ -1757,7 +1769,7 @@
         },
         "mlp": {
           "prediccion": "ned_flanders",
-          "confianza": 0.3629,
+          "confianza": 0.363,
           "p_objetivo": 0.0017,
           "posicion": 45,
           "rotulo": "Ned Flanders · 36 %"
@@ -1770,10 +1782,10 @@
       "jueces": {
         "cnn": {
           "prediccion": "otto_mann",
-          "confianza": 0.9985,
-          "p_objetivo": 0.9985,
+          "confianza": 0.4263,
+          "p_objetivo": 0.4263,
           "posicion": 1,
-          "rotulo": "Otto Mann · 100 %"
+          "rotulo": "Otto Mann · 43 %"
         },
         "cnn_recortes": {
           "prediccion": "otto_mann",
@@ -1784,7 +1796,7 @@
         },
         "mlp": {
           "prediccion": "apu_nahasapeemapetilon",
-          "confianza": 0.3988,
+          "confianza": 0.3989,
           "p_objetivo": 0.0215,
           "posicion": 9,
           "rotulo": "Apu Nahasapeemapetilon · 40 %"
@@ -1797,10 +1809,10 @@
       "jueces": {
         "cnn": {
           "prediccion": "patty_bouvier",
-          "confianza": 0.9964,
-          "p_objetivo": 0.9964,
+          "confianza": 0.4341,
+          "p_objetivo": 0.4341,
           "posicion": 1,
-          "rotulo": "Patty Bouvier · 100 %"
+          "rotulo": "Patty Bouvier · 43 %"
         },
         "cnn_recortes": {
           "prediccion": "patty_bouvier",
@@ -1824,10 +1836,10 @@
       "jueces": {
         "cnn": {
           "prediccion": "principal_skinner",
-          "confianza": 0.9988,
-          "p_objetivo": 0.9988,
+          "confianza": 0.9571,
+          "p_objetivo": 0.9571,
           "posicion": 1,
-          "rotulo": "Principal Skinner · 100 %"
+          "rotulo": "Principal Skinner · 96 %"
         },
         "cnn_recortes": {
           "prediccion": "principal_skinner",
@@ -1838,8 +1850,8 @@
         },
         "mlp": {
           "prediccion": "carl_carlson",
-          "confianza": 0.0928,
-          "p_objetivo": 0.0532,
+          "confianza": 0.0929,
+          "p_objetivo": 0.0531,
           "posicion": 6,
           "rotulo": "Carl Carlson · 9 %"
         }
@@ -1851,10 +1863,10 @@
       "jueces": {
         "cnn": {
           "prediccion": "professor_john_frink",
-          "confianza": 0.9965,
-          "p_objetivo": 0.9965,
+          "confianza": 0.5213,
+          "p_objetivo": 0.5213,
           "posicion": 1,
-          "rotulo": "Professor John Frink · 100 %"
+          "rotulo": "Professor John Frink · 52 %"
         },
         "cnn_recortes": {
           "prediccion": "professor_john_frink",
@@ -1865,7 +1877,7 @@
         },
         "mlp": {
           "prediccion": "cletus_spuckler",
-          "confianza": 0.144,
+          "confianza": 0.1439,
           "p_objetivo": 0.0026,
           "posicion": 47,
           "rotulo": "Cletus Spuckler · 14 %"
@@ -1878,10 +1890,10 @@
       "jueces": {
         "cnn": {
           "prediccion": "rainier_wolfcastle",
-          "confianza": 0.9967,
-          "p_objetivo": 0.9967,
+          "confianza": 0.8496,
+          "p_objetivo": 0.8496,
           "posicion": 1,
-          "rotulo": "Rainier Wolfcastle · 100 %"
+          "rotulo": "Rainier Wolfcastle · 85 %"
         },
         "cnn_recortes": {
           "prediccion": "rainier_wolfcastle",
@@ -1905,10 +1917,10 @@
       "jueces": {
         "cnn": {
           "prediccion": "ralph_wiggum",
-          "confianza": 1.0,
-          "p_objetivo": 1.0,
+          "confianza": 0.9157,
+          "p_objetivo": 0.9157,
           "posicion": 1,
-          "rotulo": "Ralph Wiggum · 100 %"
+          "rotulo": "Ralph Wiggum · 92 %"
         },
         "cnn_recortes": {
           "prediccion": "ralph_wiggum",
@@ -1919,7 +1931,7 @@
         },
         "mlp": {
           "prediccion": "chief_wiggum",
-          "confianza": 0.2514,
+          "confianza": 0.2513,
           "p_objetivo": 0.0146,
           "posicion": 19,
           "rotulo": "Chief Wiggum · 25 %"
@@ -1932,10 +1944,10 @@
       "jueces": {
         "cnn": {
           "prediccion": "rev_timothy_lovejoy",
-          "confianza": 0.9983,
-          "p_objetivo": 0.9983,
+          "confianza": 0.6122,
+          "p_objetivo": 0.6122,
           "posicion": 1,
-          "rotulo": "Rev. Timothy Lovejoy · 100 %"
+          "rotulo": "Rev. Timothy Lovejoy · 61 %"
         },
         "cnn_recortes": {
           "prediccion": "rev_timothy_lovejoy",
@@ -1946,7 +1958,7 @@
         },
         "mlp": {
           "prediccion": "kirk_van_houten",
-          "confianza": 0.2844,
+          "confianza": 0.2845,
           "p_objetivo": 0.0117,
           "posicion": 18,
           "rotulo": "Kirk Van Houten · 28 %"
@@ -1959,10 +1971,10 @@
       "jueces": {
         "cnn": {
           "prediccion": "rich_texan",
-          "confianza": 0.9984,
-          "p_objetivo": 0.9984,
+          "confianza": 0.2131,
+          "p_objetivo": 0.2131,
           "posicion": 1,
-          "rotulo": "Rich Texan · 100 %"
+          "rotulo": "Rich Texan · 21 %"
         },
         "cnn_recortes": {
           "prediccion": "rich_texan",
@@ -1973,7 +1985,7 @@
         },
         "mlp": {
           "prediccion": "milhouse_van_houten",
-          "confianza": 0.105,
+          "confianza": 0.1049,
           "p_objetivo": 0.0017,
           "posicion": 56,
           "rotulo": "Milhouse Van Houten · 10 %"
@@ -1985,11 +1997,11 @@
       "archivo": "rod_flanders.png",
       "jueces": {
         "cnn": {
-          "prediccion": "rod_flanders",
-          "confianza": 0.9914,
-          "p_objetivo": 0.9914,
-          "posicion": 1,
-          "rotulo": "Rod Flanders · 99 %"
+          "prediccion": "barney_gumble",
+          "confianza": 0.3849,
+          "p_objetivo": 0.1387,
+          "posicion": 2,
+          "rotulo": "Barney Gumble · 38 %"
         },
         "cnn_recortes": {
           "prediccion": "rod_flanders",
@@ -2012,11 +2024,11 @@
       "archivo": "selma_bouvier.png",
       "jueces": {
         "cnn": {
-          "prediccion": "selma_bouvier",
-          "confianza": 0.9977,
-          "p_objetivo": 0.9977,
-          "posicion": 1,
-          "rotulo": "Selma Bouvier · 100 %"
+          "prediccion": "patty_bouvier",
+          "confianza": 0.2666,
+          "p_objetivo": 0.1445,
+          "posicion": 3,
+          "rotulo": "Patty Bouvier · 27 %"
         },
         "cnn_recortes": {
           "prediccion": "selma_bouvier",
@@ -2027,7 +2039,7 @@
         },
         "mlp": {
           "prediccion": "marge_simpson",
-          "confianza": 0.1188,
+          "confianza": 0.1187,
           "p_objetivo": 0.0581,
           "posicion": 3,
           "rotulo": "Marge Simpson · 12 %"
@@ -2040,10 +2052,10 @@
       "jueces": {
         "cnn": {
           "prediccion": "sideshow_bob",
-          "confianza": 0.9985,
-          "p_objetivo": 0.9985,
+          "confianza": 0.9786,
+          "p_objetivo": 0.9786,
           "posicion": 1,
-          "rotulo": "Sideshow Bob · 100 %"
+          "rotulo": "Sideshow Bob · 98 %"
         },
         "cnn_recortes": {
           "prediccion": "sideshow_bob",
@@ -2055,7 +2067,7 @@
         "mlp": {
           "prediccion": "dr_julius_hibbert",
           "confianza": 0.4636,
-          "p_objetivo": 0.0234,
+          "p_objetivo": 0.0233,
           "posicion": 5,
           "rotulo": "Dr. Julius Hibbert · 46 %"
         }
@@ -2067,10 +2079,10 @@
       "jueces": {
         "cnn": {
           "prediccion": "sideshow_mel",
-          "confianza": 0.9957,
-          "p_objetivo": 0.9957,
+          "confianza": 0.7848,
+          "p_objetivo": 0.7848,
           "posicion": 1,
-          "rotulo": "Sideshow Mel · 100 %"
+          "rotulo": "Sideshow Mel · 78 %"
         },
         "cnn_recortes": {
           "prediccion": "sideshow_mel",
@@ -2094,10 +2106,10 @@
       "jueces": {
         "cnn": {
           "prediccion": "snake_jailbird",
-          "confianza": 0.9996,
-          "p_objetivo": 0.9996,
+          "confianza": 0.6609,
+          "p_objetivo": 0.6609,
           "posicion": 1,
-          "rotulo": "Snake Jailbird · 100 %"
+          "rotulo": "Snake Jailbird · 66 %"
         },
         "cnn_recortes": {
           "prediccion": "snake_jailbird",
@@ -2108,7 +2120,7 @@
         },
         "mlp": {
           "prediccion": "chief_wiggum",
-          "confianza": 0.2433,
+          "confianza": 0.2432,
           "p_objetivo": 0.0018,
           "posicion": 45,
           "rotulo": "Chief Wiggum · 24 %"
@@ -2121,10 +2133,10 @@
       "jueces": {
         "cnn": {
           "prediccion": "todd_flanders",
-          "confianza": 0.9998,
-          "p_objetivo": 0.9998,
+          "confianza": 0.4919,
+          "p_objetivo": 0.4919,
           "posicion": 1,
-          "rotulo": "Todd Flanders · 100 %"
+          "rotulo": "Todd Flanders · 49 %"
         },
         "cnn_recortes": {
           "prediccion": "todd_flanders",
@@ -2147,11 +2159,11 @@
       "archivo": "troy_mcclure.png",
       "jueces": {
         "cnn": {
-          "prediccion": "troy_mcclure",
-          "confianza": 0.9965,
-          "p_objetivo": 0.9965,
-          "posicion": 1,
-          "rotulo": "Troy Mcclure · 100 %"
+          "prediccion": "sideshow_bob",
+          "confianza": 0.1414,
+          "p_objetivo": 0.102,
+          "posicion": 2,
+          "rotulo": "Sideshow Bob · 14 %"
         },
         "cnn_recortes": {
           "prediccion": "troy_mcclure",
@@ -2175,10 +2187,10 @@
       "jueces": {
         "cnn": {
           "prediccion": "waylon_smithers",
-          "confianza": 0.9979,
-          "p_objetivo": 0.9979,
+          "confianza": 0.7052,
+          "p_objetivo": 0.7052,
           "posicion": 1,
-          "rotulo": "Waylon Smithers · 100 %"
+          "rotulo": "Waylon Smithers · 71 %"
         },
         "cnn_recortes": {
           "prediccion": "waylon_smithers",
@@ -2189,7 +2201,7 @@
         },
         "mlp": {
           "prediccion": "krusty_the_clown",
-          "confianza": 0.2574,
+          "confianza": 0.2575,
           "p_objetivo": 0.0018,
           "posicion": 43,
           "rotulo": "Krusty the Clown · 26 %"

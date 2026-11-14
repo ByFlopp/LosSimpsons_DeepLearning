@@ -1,506 +1,478 @@
-# Informe técnico — Clasificación de personajes de Los Simpson con una red neuronal convolucional
+# Informe técnico — Optimización y auditoría de una red convolucional para reconocer personajes de Los Simpson
 
-Evaluación Parcial 2 · Técnicas Avanzadas de Machine Learning
-
-> Este informe describe las corridas de octubre, con la imagen completa y a tres resoluciones. El proyecto
-> trabaja ahora solo a 128 × 128 en la GPU: el informe se rehace con la corrida a 128 × 128 con cajas.
+Evaluación Parcial 3 · Técnicas Avanzadas de Machine Learning
 
 ## Resumen
 
 | Tema | Lo importante | Dónde |
 |---|---|---|
-| Qué se entrega | Una CNN de cuatro bloques convolucionales (473.120 parámetros) que reconoce a 64 personajes, comparada con el MLP reentrenado sobre el mismo dataset y con el mismo proceso | §6, §10 |
-| Cambio respecto de la EP1 | El dataset pasó de 25 a 64 personajes y de 20.074 a 40.123 imágenes originales, con una partición propia 70/20/10 que filtra los casi duplicados; el trabajo de la EP1 se conserva para la trazabilidad | §2.3 |
-| Resultado | Accuracy de test 0,847 y F1 macro 0,810 (0,797 y 0,738 con el criterio estricto), frente a 0,586 y 0,559 del MLP a la misma resolución: 26 y 25 puntos más. Los cinco KPIs se cumplen con los dos criterios | §9, §10.1 |
-| Todas las métricas para los dos modelos | Precision, recall, F1 macro y ponderado, top-3 y brecha de entrenamiento de las dos redes a 64 × 64, la resolución cuyas salidas guardan los dos notebooks, y de la CNN también a 128 × 128 | §10.2 |
-| Por qué gana la CNN | Reconoce la forma: la familia Simpson pasa de un F1 de 0,35–0,67 en el MLP a 0,81–0,89. En el último bloque cada personaje activa sus propios filtros (correlación de 0,015 entre cuatro personajes), y Grad-CAM muestra que la red mira la cabeza en casi los 64 | §11 |
-| Generalización, con matices | Memoriza menos (brecha de 0,21 frente a 0,47 a 64 × 64) y depende menos de las tomas casi idénticas en las tres resoluciones; pero resiste mejor las imágenes alteradas, y comete menos errores confiados, solo a 128 × 128 | §10.2 |
-| Ventajas y desventajas | La CNN gana en representación y en velocidad de extremo a extremo; el MLP, en costo de entrenamiento (18 veces menor) y en dependencia del número de imágenes por personaje | §10.3 |
-| Mejoras | Transfer learning, aumento de datos en línea y regularizar las capas convolucionales (L2 o AdamW y `SpatialDropout2D`): más Dropout en la cabeza no corrigió el sobreajuste | §14 |
-| Uso responsable | Asistente con revisión humana: se equivoca en el 15 % del test, favorece a los personajes con más imágenes y no debe usarse con fotos de personas | §13 |
-| Reproducibilidad | El modelo guardado reproduce exactamente la evaluación con algoritmos deterministas de cuDNN; con `cudnn.benchmark` varía en unas pocas imágenes | §15.3 |
+| Qué se entrega | El Pipeline Integrado de la EP2, optimizado y auditado: una CNN de cuatro bloques convolucionales (473.120 parámetros) que reconoce a 64 personajes, comparada con un MLP entrenado con las mismas imágenes y el mismo proceso | §4, §13 |
+| Resultado | Accuracy de test 0,747, F1 macro 0,731, top-3 0,891 y ROC-AUC macro 0,986, frente a 0,544, 0,551 y 0,736 del MLP: 20, 18 y 16 puntos más. Los cinco KPIs se cumplen | §10, §13 |
+| Regularización | Se midió cada técnica con y sin ella. El dropout es imprescindible (sin él, −6,0 puntos de F1 y brecha de 0,31); el aumento de datos en línea es la única mejora clara (+1,9 puntos, brecha casi nula); L2 aporta poco (+0,6) y combinarlo con el aumento no suma | §8 |
+| Optimización | Búsqueda por ejes alrededor del modelo base: 15 configuraciones que cambian un factor a la vez, más una combinación. Gana G4, el modelo base con aumento de datos en línea, en los tres criterios de validación | §9 |
+| Auditoría | Métricas por clase, matriz de confusión, ROC-AUC, curvas de aprendizaje, Grad-CAM por predicción y por clase, análisis de errores, de escenas compartidas y de tipos de imagen | §10, §11 |
+| Sesgos | El desbalance (21:1) ya no es lo que más pesa; los personajes que fallan son los que se parecen a otro o salen siempre con él, y hay ruido en las etiquetas: imágenes cuya carpeta no corresponde al personaje que muestran | §12 |
+| Arquitectura seleccionada | La CNN: gana en desempeño, generalización, interpretabilidad y parámetros; el MLP solo en costo de entrenamiento (26 veces menor) | §13 |
+| Uso responsable | Asistente con revisión humana: se equivoca en el 25 % del test, siempre responde algún personaje y no debe usarse con fotos de personas | §12 |
 
 ## 1. Identificación del proyecto
 
 | Elemento | Descripción verificable |
 |---|---|
-| Tipo de proyecto | Clasificación supervisada de imágenes RGB mediante una red neuronal convolucional (CNN), comparada con el Perceptrón Multicapa (MLP) de la Evaluación Parcial 1. |
+| Tipo de proyecto | Clasificación supervisada de imágenes RGB con una red neuronal convolucional (CNN), comparada con un Perceptrón Multicapa (MLP). |
 | Unidad de predicción | Una imagen recibe una sola etiqueta entre 64 personajes. |
-| Implementación evaluada | `CNN/notebooks/newDataset/LosSimpsons_GPU_4060M.ipynb`: GPU en Windows nativo, Keras 3 sobre PyTorch, con las salidas de la corrida a 128 × 128 del 19-10-2026. |
-| MLP de la comparación | `PMC/notebooks/newDataset/`: el MLP reentrenado sobre el mismo dataset, con el mismo proceso. |
-| Evidencia de ejecución | Salidas guardadas del notebook de GPU; resúmenes de las corridas en `CNN/resultados/newDataset/GPU/` (128 × 128; los de 32 × 32 y 64 × 64, en el commit `87aa0f4`) y `PMC/resultados/newDataset/`. |
-| Framework | Keras 3.15.1 sobre PyTorch 2.14.0 (CUDA 13.0), Python 3.13, NVIDIA GeForce RTX 4060 Laptop de 8 GB. |
+| Implementación evaluada | `CNN/notebooks/LosSimpsons_GPU_4060M.ipynb`: Keras 3 sobre PyTorch, en Windows con una GPU NVIDIA GeForce RTX 4060 Laptop de 8 GB; con las salidas de la corrida a 128 × 128 del 13-11-2026. |
+| MLP de la comparación | `PMC/notebooks/LosSimpsons_GPU_4060M.ipynb`: el MLP sobre el mismo dataset y con el mismo proceso, corrida del 09-11-2026. |
+| Evidencia de ejecución | Salidas guardadas de los dos notebooks; resúmenes JSON en `CNN/resultados/newDataset/GPU/` y `PMC/resultados/newDataset/GPU/`. |
+| Framework | Keras 3.15.1 sobre PyTorch 2.14.0 (CUDA 13.0), Python 3.13. |
 | Integrantes | Vincent Farenden Cerón; Rodrigo Ignacio Martínez Becker; Iván Manuel Pavón Barría; Diego Ignacio Peña y Lillo Luhrs. |
 | Profesor | Francisco Javier Jerez Salazar. |
 
-Este informe describe lo que está implementado y ejecutado. Cada cifra sale de las salidas guardadas de los
-notebooks o de los resúmenes JSON de las corridas; cuando una cifra existe solo para otra resolución, se indica.
+Cada cifra de este informe sale de las salidas guardadas de los notebooks o de sus resúmenes JSON.
 
 ## 2. Problema, variante y cambio de dataset
 
 ### 2.1 Problema abordado
 
-El problema es el mismo de la EP1: **clasificación multiclase de etiqueta única**. Dada una imagen RGB de Los
-Simpson, el modelo asigna exactamente uno de 64 personajes. No es detección de objetos: no localiza al
-personaje ni admite varias etiquetas por imagen.
-
-El escenario de uso declarado es un archivo audiovisual que crece más rápido de lo que un equipo puede
-catalogarlo. El modelo propone el personaje de cada imagen y una persona valida: convierte el trabajo de
-*etiquetar* en trabajo de *revisar*. Los casos de uso son la búsqueda por personaje, la pre-clasificación
-asistida, las métricas de presencia en pantalla y el control de uso de marca. No es un encargo de un cliente
-real, así que los KPIs se expresan en cantidades medibles sobre los datos.
+**Clasificación multiclase de etiqueta única**: dada una imagen RGB de Los Simpson, el modelo asigna exactamente uno
+de 64 personajes, con su confianza. El escenario de uso declarado es un archivo audiovisual que crece más rápido de
+lo que un equipo puede catalogarlo: el modelo propone el personaje y una persona valida, así que el trabajo pasa de
+*etiquetar* a *revisar*. No es un encargo de un cliente real, por lo que los KPIs se expresan en cantidades
+medibles sobre los datos.
 
 ### 2.2 Variante del grupo
 
 | Decisión | Valor |
 |---|---|
 | Personajes | 64, una carpeta por personaje; la etiqueta es siempre la carpeta, nunca el nombre del archivo |
-| Imágenes | Todas las originales de cada personaje (40.123), sin tope |
+| Imágenes | Todas las originales de cada personaje (56.676), sin tope |
 | Partición | 70 / 20 / 10 por personaje, estratificada, con semilla 42 |
 | Imágenes alteradas | Una variante (giro de 10 a 20°, cambio de color y filtro de textura) para un cuarto de las imágenes de cada personaje, siempre en el mismo conjunto que su original |
-| Imágenes parecidas | Las 9.041 imágenes casi idénticas a otra del mismo personaje entran con una versión filtrada |
-| Criterio de acierto | Nombrar al personaje de la carpeta o a otro que aparece en la imagen (misma escena a ±3 s, gemela en otra carpeta o misma toma verificada). El criterio estricto, que solo acepta la carpeta, se informa siempre al lado |
-| Resolución | 128 × 128 en la corrida evaluada; también se corrió a 32 × 32 y 64 × 64 |
+| Imágenes parecidas | Las 9.042 imágenes casi idénticas a otra del mismo personaje entran con una versión filtrada |
+| Criterio de acierto | Nombrar al personaje de la carpeta. La accuracy por escena, que también acepta a otro personaje presente, se informa solo como referencia |
+| Resolución | 128 × 128 |
 
 ### 2.3 Cambio de dataset respecto de la EP1 y trazabilidad
 
-La pauta pide reutilizar preferentemente el dataset de la EP1 o justificar el cambio. El dataset cambió:
+La pauta recomienda el dataset de la EP1 y pide, si se modifica la variante, justificarlo y mantener la
+trazabilidad. El dataset es la misma fuente de Kaggle (Los Simpson, `alfaro96`), ampliada por el equipo:
 
-| | EP1 (MLP) | EP2 (MLP reentrenado y CNN) |
+| | EP1 (MLP) | EP2 y EP3 (MLP y CNN) |
 |---|---|---|
-| Fuente | Los Simpson de Kaggle (`alfaro96`), con sus carpetas `train` y `test` | La misma fuente, ampliada por el equipo con más personajes y fotogramas propios |
 | Personajes | 25 | 64 |
-| Imágenes originales | 20.074 (16.137 en `train` y 3.937 en `test`) | 40.123 |
-| Partición | La de Kaggle, de criterio no documentado; `train` se dividió en 12.909 y 3.228 con semilla 42 | Propia: 70 / 20 / 10 estratificada, semilla 42 |
+| Imágenes originales | 20.074 (16.137 en `train` y 3.937 en `test`) | 56.676 |
+| Partición | La de Kaggle, de criterio no documentado | Propia: 70 / 20 / 10 estratificada, semilla 42 |
 | Casi duplicados entre conjuntos | No se verificaban | Filtrados; cada alterada en el conjunto de su original |
-| Información de escena | No | 22.427 de las 50.166 imágenes de trabajo (44,7 %) son fotogramas con episodio e instante |
+| Información de escena | No | 43.138 de las 70.855 imágenes de trabajo (60,9 %) son fotogramas con episodio e instante |
 
-Razones del cambio:
+Razones: un archivo audiovisual también tiene a los personajes secundarios, y con 64 aparecen los que se parecen
+entre sí (Patty y Selma, Carl y Lenny, los Flanders), la prueba más exigente para comparar arquitecturas; una CNN
+aprende sus filtros de los píxeles y necesita más ejemplos; y la partición propia permite auditar que una misma
+escena no caiga en entrenamiento y test.
 
-1. **Más cerca del escenario de uso.** Un archivo audiovisual también tiene a los secundarios, y con 64
-   personajes aparecen los que se parecen entre sí (Patty y Selma, Carl y Lenny, los Flanders): la prueba más
-   exigente para comparar lo que aprende cada arquitectura.
-2. **Más datos para aprender filtros.** Una CNN aprende sus filtros de los píxeles; el dataset nuevo duplica
-   las imágenes originales.
-3. **Una partición auditable.** En la EP1 no se podía comprobar que una misma escena no estuviera en `train` y
-   en `test`. Ahora el notebook reparte cada personaje, filtra los casi duplicados y mantiene cada alterada con
-   su original.
-4. **Escenas compartidas.** Los fotogramas con episodio e instante permiten estimar quién más aparece en cada
-   escena y evaluar con justicia las imágenes con varios personajes.
-
-**Trazabilidad.** El trabajo de la EP1 se conserva en `PMC/notebooks/oldDataset/`, `PMC/docs/oldDataset/Informe.md`
-y `PMC/resultados/oldDataset/`; su MLP final (E2, 51.002.393 parámetros) alcanzó una accuracy de test de 0,517
-en la GPU sobre 25 personajes. Para comparar con la CNN, el MLP se volvió a entrenar sobre el dataset
-nuevo con el mismo proceso (`PMC/notebooks/newDataset/`). Las cifras de la EP1 no se comparan con las de la EP2:
-miden otros personajes sobre otra partición.
+**Trazabilidad.** El trabajo de la EP1 se conserva en `PMC/notebooks/oldDataset/`, `PMC/docs/oldDataset/` y
+`PMC/resultados/oldDataset/`; su MLP final alcanzó 0,517 de accuracy de test sobre 25 personajes. Para la
+comparación de la EP3 el MLP se volvió a entrenar sobre el dataset nuevo con el mismo pipeline que la CNN. Las
+cifras de la EP1 no se comparan con las actuales porque miden otros personajes sobre otra partición.
 
 ### 2.4 Objetivos
 
-**Objetivo general.** Implementar y evaluar una CNN que asigne a cada imagen RGB uno de los 64 personajes,
-mediante un flujo reproducible, y compararla con el MLP en igualdad de condiciones.
+**Objetivo general.** Optimizar y auditar una CNN que asigne a cada imagen uno de los 64 personajes, reutilizando
+el Pipeline Integrado de la EP2, y compararla con el MLP en igualdad de condiciones.
 
-**Objetivos específicos.**
-
-1. Indexar las imágenes y asociar cada una con el personaje de su carpeta.
-2. Repartir cada personaje en entrenamiento, validación y prueba, de forma estratificada y con semilla fija.
-3. Preparar las imágenes para la CNN: RGB, tamaño fijo, tensores sin aplanar, normalización y etiquetas one-hot.
-4. Entrenar un modelo base y compararlo con variantes que cambian un factor a la vez.
-5. Seleccionar la configuración final por F1 macro de validación y medirla una sola vez en test.
-6. Auditar el resultado: métricas por clase, matriz de confusión, errores, mapas de activación, Grad-CAM y
-   comparación con el MLP.
+**Objetivos específicos.** Medir el aporte de cada técnica de regularización; seleccionar la configuración con
+experimentos controlados de un factor a la vez; auditar el modelo con accuracy, precision, recall, F1, ROC-AUC,
+matriz de confusión, curvas de aprendizaje y Grad-CAM; identificar los sesgos del dataset y sus implicancias; y
+justificar la arquitectura seleccionada.
 
 ## 3. KPIs
 
-Los umbrales se fijaron antes de entrenar y son los mismos del MLP, para que las dos redes se midan con la
-misma vara.
+Los umbrales se fijaron antes de entrenar y son los mismos para el MLP y la CNN.
 
-| KPI | Qué mide en el negocio | Métrica técnica | Umbral | CNN a 128 × 128 |
-|---|---|---|---|---|
-| Cobertura de asistencia | Si el catalogador encuentra la respuesta entre tres sugerencias | Top-3 accuracy en test | ≥ 0,70 | 0,937 |
-| Equidad entre personajes | Que el catálogo sirva para todos los personajes | F1 macro en test | ≥ 0,45 | 0,810 |
-| Automatización sin revisión | Imágenes que el sistema resuelve solo | Accuracy en test | ≥ 0,50 | 0,847 |
-| Ventaja sobre el criterio trivial | Información real frente a etiquetar todo como Homero | Accuracy / clase mayoritaria | ≥ 4× | 10,8× |
-| Costo de catalogación | Procesar el archivo en un tiempo razonable | Imágenes por segundo, entrada + red | ≥ 1.000 | 3.085 |
+| KPI | Qué mide en el negocio | Métrica técnica | Umbral | CNN | MLP |
+|---|---|---|---|---:|---:|
+| Cobertura de asistencia | Si el catalogador encuentra la respuesta entre tres sugerencias | Top-3 accuracy en test | ≥ 0,70 | 0,891 | 0,736 |
+| Equidad entre personajes | Que el catálogo sirva para todos los personajes | F1 macro en test | ≥ 0,45 | 0,731 | 0,551 |
+| Automatización sin revisión | Imágenes que el sistema resuelve solo | Accuracy en test | ≥ 0,50 | 0,747 | 0,544 |
+| Ventaja sobre el criterio trivial | Información real frente a etiquetar todo como Homero | Accuracy / clase mayoritaria | ≥ 4× | 13,5× | 9,8× |
+| Costo de catalogación | Procesar el archivo en un tiempo razonable | Imágenes por segundo, entrada + red | ≥ 1.000 | 2.649 | ver §13.1 |
 
-Los cinco se cumplen. Con el criterio estricto también: accuracy 0,797, F1 macro 0,738 y top-3 0,924.
+La CNN cumple los cinco con margen.
 
-## 4. Datos
+## 4. Pipeline Integrado
 
-### 4.1 Fuente y estructura
+La EP3 continúa las actividades anteriores: el pipeline de la EP2 se reutiliza y se extiende con las etapas de
+regularización, optimización y auditoría. El mismo pipeline sirve a las dos redes; solo cambia la función que
+construye el modelo.
 
-El dataset parte de [Los Simpson de Kaggle](https://www.kaggle.com/datasets/alfaro96/los-simpson/data), uno de
-los cuatro autorizados por la pauta, y el equipo lo amplió a 64 personajes con fotogramas propios. Tiene una
-carpeta por personaje y no se versiona en el repositorio; su ruta se fija con la variable `SIMPSONS_DATASET`.
+```text
+Problema y KPIs
+   ↓
+Carga de datos ............ construir_indice(), cargar_y_redimensionar()
+   ↓
+Análisis exploratorio ..... dimensiones, alteradas, parecidas, escenas compartidas y desbalance
+   ↓
+Preprocesamiento .......... partición estratificada, tensor uint8, one-hot, compute_class_weight()
+   ↓
+Construcción del modelo ... construir_cnn(), compilar()
+   ↓
+Entrenamiento ............. entrenar(), _pasada(), a_gpu()
+   ↓
+Regularización ............ Dropout, Batch Normalization, L2, aumentar_lote(), suavizado y parada temprana
+   ↓
+Optimización .............. entrenar_configuracion(), registrar(), cabe_en_la_gpu()
+   ↓
+Evaluación ................ classification_report, confusion_matrix, roc_auc_score
+   ↓
+Auditoría ................. grad_cam(), mostrar_ejemplos(), confusiones, escenas y sesgos
+   ↓
+Reporte final ............. resumen JSON, comparación con el MLP y modelo guardado
+```
 
-### 4.2 Exploración
+**Justificación de la estructura.**
 
-| Hallazgo | Evidencia |
-|---|---|
-| Tamaño | 40.123 originales (unos 2,1 GB), casi todas `.jpg` |
-| Desbalance | De 3.118 imágenes de `homer_simpson` a 94 de `louie`: razón 33:1 |
-| Dimensiones | De 38 × 42 a 2.700 × 3.600 píxeles; mediana 640 × 480 |
-| Casi duplicados | 9.041 imágenes casi idénticas a otra del mismo personaje, en 6.292 grupos |
-| Escenas | 22.427 fotogramas con episodio e instante; 7.533 imágenes con otro personaje presente estimado |
-| Gemelas | 3.326 pares de la misma escena guardada en carpetas de dos personajes |
-| Duplicados exactos | Ninguno: se comprobó byte a byte |
+1. **Una responsabilidad por etapa**, cada una con su comprobación automática o su tabla antes de seguir.
+2. **La partición va antes que los píxeles**: cada personaje se reparte antes de cargar imágenes y cada alterada
+   sigue a su original, de modo que ninguna decisión posterior puede filtrar información del test.
+3. **Las mismas funciones para todas las configuraciones**: `construir_cnn()` y `entrenar()` reciben como
+   parámetros todos los factores que se experimentan, así que la base y cada variante salen del mismo código.
+4. **El mismo pipeline para el MLP y la CNN**, con el mismo formato de resumen: la comparación es cifra a cifra.
+5. **Cada etapa a la vista**: el notebook se ejecuta celda a celda, con texto, tablas y gráficos en cada paso, y
+   lo reutilizable queda en funciones documentadas y en los archivos del modelo final.
 
-### 4.3 Partición
+## 5. Carga de datos y análisis exploratorio
+
+| Hallazgo | Evidencia | Decisión que motiva |
+|---|---|---|
+| Desbalance | De 3.118 imágenes de `homer_simpson` a 151 de `maggie_simpson`: 20,6:1 en el dataset y 21,0:1 en entrenamiento | Pesos por clase, partición estratificada y selección por F1 macro |
+| Tamaños muy distintos | De 28 a 2.700 píxeles de ancho y de 42 a 3.600 de alto, con una mediana de 960 × 720 | Redimensionado de la imagen completa a 128 × 128 |
+| Casi duplicados | 9.042 originales casi idénticas a otra del mismo personaje, en 6.293 grupos (similitud mediana de 0,98) | Versión filtrada en su lugar (similitud mediana de 0,55) |
+| Variantes alteradas | 14.179, una por cada cuarto de las originales | Cada una en el mismo conjunto que su original |
+| Escenas compartidas | 17.022 imágenes (24,0 %) con otro personaje presente; 6.222 pares de gemelas en carpetas distintas | Accuracy por escena de referencia y análisis de los errores que nombran a otro personaje |
+| Parejas en escena | Lou y Wiggum (354 imágenes), Patty y Selma (307), Chalmers y Skinner (276) | Se anticipan como las confusiones más probables |
+| Duplicados exactos | Ninguno, comprobado byte a byte | — |
 
 | Conjunto | Originales | Alteradas | Total |
 |---|---:|---:|---:|
-| Entrenamiento (70 %) | 28.086 | 6.937 | 35.023 |
-| Validación (20 %) | 8.024 | 2.056 | 10.080 |
-| Test (10 %) | 4.013 | 1.050 | 5.063 |
+| Entrenamiento (70 %) | 39.673 | 9.952 | 49.625 |
+| Validación (20 %) | 11.335 | 2.837 | 14.172 |
+| Test (10 %) | 5.668 | 1.390 | 7.058 |
 
-Ninguna imagen ni ninguna de sus variantes aparece en dos conjuntos. Validación y test conservan la
-distribución real; el desbalance de entrenamiento (32:1) se compensa con pesos por clase.
+Ninguna imagen ni ninguna de sus variantes aparece en dos conjuntos, y la desviación de la estratificación es
+menor que un 1 % en todos los personajes.
 
-## 5. Preparación de los datos para la CNN
+## 6. Preprocesamiento
 
-1. Cada imagen se abre, se convierte a RGB y se redimensiona a **128 × 128** con interpolación bilineal.
-2. Las imágenes quedan como un tensor de cuatro dimensiones `(N, 128, 128, 3)` en `uint8`, **sin aplanar**:
-   las capas convolucionales trabajan sobre la vecindad de cada píxel.
-3. El escalado a [0, 1] lo hace la primera capa del modelo (`Rescaling(1/255)`) sobre cada lote, ya en la GPU.
-   En `uint8` el conjunto ocupa 2,30 GB y cabe entero en la VRAM; en `float32` ocuparía 9,19 GB.
-4. Las etiquetas se codifican como índice entero y luego como vector one-hot de 64 posiciones.
-5. Los pesos por clase se calculan solo con entrenamiento: la raíz cuadrada del peso balanceado, reescalada
-   para que el peso medio sea 1 (de 0,49 para Homero a 2,78 para Louie).
+1. Cada imagen se convierte a RGB y se redimensiona a **128 × 128** con interpolación bilineal.
+2. Las imágenes quedan como un tensor `(N, 128, 128, 3)` en `uint8`, **sin aplanar**. En `uint8` ocupan 3,24 GB y
+   caben enteras en la VRAM; en `float32` ocuparían 12,97 GB.
+3. El escalado a [0, 1] lo hace la primera capa del modelo (`Rescaling(1/255)`), ya en la GPU.
+4. Las etiquetas pasan a índice entero y a vector one-hot de 64 posiciones.
+5. Los pesos por clase se calculan solo con entrenamiento: la raíz cuadrada del peso balanceado, reescalada para
+   que el peso medio sea 1 (de 0,55 para Homero a 2,54 para Maggie).
 
-Respecto del MLP cambian dos cosas: la imagen ya no se aplana ni se resume en descriptores de color y textura,
-y la normalización se mueve dentro del modelo. La partición, las alteradas, las parecidas, las etiquetas de
-escena y los pesos son los mismos. Cada paso tiene una celda de comprobación en el notebook.
+Cada paso tiene una celda de comprobación en el notebook.
 
-## 6. Diseño de la red neuronal convolucional
-
-### 6.1 Arquitectura del modelo base
+## 7. Modelo base
 
 | Componente | Configuración |
 |---|---|
 | Entrada | Imagen RGB de 128 × 128 × 3 en `uint8`, escalada a [0, 1] dentro del modelo |
-| Capas convolucionales | 4 bloques, uno por cada 32, 64, 128 y 256 filtros |
-| Tamaño de los filtros | 3 × 3, `padding="same"`, sin sesgo |
-| Cada bloque | `Conv2D` → `BatchNormalization` → ReLU → `MaxPooling2D` de 2 × 2 |
-| Mapa final | 8 × 8 × 256 |
-| Pooling global | `GlobalAveragePooling2D`: un valor por filtro, 256 |
-| Capas densas finales | Dropout 0,3 → densa de 256 con ReLU → BatchNormalization → Dropout 0,3 |
-| Salida | Densa de 64 neuronas con `softmax` |
-| Función de pérdida | Entropía cruzada categórica, con suavizado de etiquetas de 0,1 |
-| Optimizador | Adam, tasa de aprendizaje 0,001 |
-| Batch | 128 |
-| Épocas | Hasta 60, con parada temprana |
+| Bloques convolucionales | 4, de 32, 64, 128 y 256 filtros de 3 × 3; cada uno `Conv2D` → `BatchNormalization` → ReLU → `MaxPooling2D` de 2 × 2 |
+| Cabeza | `GlobalAveragePooling2D` → Dropout 0,3 → densa de 256 con ReLU → BatchNormalization → Dropout 0,3 → densa de 64 con `softmax` |
+| Pérdida y optimizador | Entropía cruzada categórica con suavizado de etiquetas de 0,1; Adam, tasa 0,001; batch 128 |
 | Parámetros | 473.120 (471.648 entrenables); `conv_4` concentra el 62,5 % |
 
-### 6.2 Justificación técnica
+El campo receptivo del último bloque cubre 38 × 38 píxeles, el 30 % del lado de la imagen. A 128 × 128, la primera
+capa densa de 512 neuronas de un MLP sobre los píxeles tendría 25.165.824 pesos; la primera convolución de la CNN
+tiene 864.
 
-| Decisión | Justificación |
-|---|---|
-| Imagen RGB sin aplanar | La convolución aprovecha la vecindad de los píxeles; el color se conserva porque el MLP mostró que distingue a muchos personajes (R1 mide la escala de grises) |
-| Cuatro bloques que duplican los filtros | Con cuatro poolings el mapa pasa de 128 × 128 a 8 × 8 y el campo receptivo del último bloque cubre 38 × 38 píxeles, el 30 % del lado de la imagen; duplicar los filtros compensa la resolución que se pierde |
-| Filtros de 3 × 3 | El menor filtro con centro y vecinos en todas direcciones; dos capas de 3 × 3 ven lo mismo que una de 5 × 5 con menos pesos |
-| Batch Normalization | Estabiliza la escala de las activaciones capa a capa y permite usar la tasa de aprendizaje del MLP |
-| ReLU | No se satura y es barata; tanh (E3) se mide como alternativa |
-| Max pooling de 2 × 2 | Reduce el mapa a un cuarto, da invarianza aproximada a desplazamientos pequeños y abarata las capas siguientes |
-| Pooling global y densa de 256 | Un número por filtro sin importar dónde se activó: la capa densa tiene 65.536 pesos; el aplanado (E7) se compara |
-| Dropout de 0,3 en la cabeza | La parte densa es la que tiende a memorizar; 0,5 se prueba en E6 |
-| Softmax | Distribución de probabilidad que suma 1, para una sola etiqueta por imagen |
-| Adam, 0,001; entropía cruzada con suavizado 0,1; batch 128; pesos raíz | Los mismos del MLP, para que las dos redes se entrenen igual |
+## 8. Entrenamiento y regularización
 
-La ventaja estructural sobre el MLP se cuantifica en el notebook: a 128 × 128, la primera capa densa de 512
-neuronas de un MLP sobre los píxeles tendría 25.165.824 pesos; la primera convolución de la CNN, 864, a
-cualquier resolución.
+### 8.1 Control del entrenamiento
 
-## 7. Entrenamiento
-
-El modelo se define con Keras y se entrena con un bucle escrito sobre PyTorch, porque `model.fit()` devuelve
-el control al intérprete entre paso y paso y deja la GPU esperando. El bucle reproduce tres mecanismos:
+El modelo se define con Keras y se entrena con un bucle propio sobre PyTorch, que deja la GPU ocupada el 99,3 %
+del tiempo. El bucle incluye:
 
 | Mecanismo | Configuración |
 |---|---|
-| Parada temprana | `val_loss` sin mejora en 12 épocas; restaura los pesos de la mejor época |
-| Reducción de la tasa | A la mitad tras 4 épocas sin mejora de `val_loss`, mínimo 1e-5 |
-| Guardado del mejor modelo | La mejor época queda en `models_gpu/newDataset/` |
+| Parada temprana | `val_loss` sin mejora en 12 épocas (9 en los experimentos); restaura los pesos de la mejor época |
+| Reducción de la tasa | A la mitad tras 4 épocas sin mejora, mínimo 1e-5 |
+| Regularización L2 | Opcional (`l2`), sobre los núcleos de las convoluciones y de las capas densas |
+| Aumento de datos en línea | Opcional (`aumentar_lote()`), en la GPU sobre cada lote: espejo, giro de hasta 10°, escala de 0,9 a 1,1, desplazamiento de hasta un 8 % y cambio de brillo y contraste |
 
-Resultado del modelo base a 128 × 128: usa las 60 épocas (39,9 s cada una) y toca su mínimo de `val_loss`
-(0,824) en la época 53. La tasa baja a la mitad cinco veces; el primer escalón, tras la época 26, sube la
-accuracy de validación de 0,748 a 0,791 en una época. En la mejor época, la accuracy es 0,959 en entrenamiento
-y 0,797 en validación: una brecha de 0,162, menor que la de 0,211 a 64 × 64 y que la de 0,465 del MLP base. Las
-curvas están en «Curvas de aprendizaje del modelo base».
+### 8.2 Curvas del modelo base
 
 ![Curvas de aprendizaje del modelo base](figuras/curvas_modelo_base.png)
 
-## 8. Experimentación
+El modelo base se detiene en la época 52 de 60 con su mínimo de `val_loss` (1,087) en la 40. El primer escalón de
+la tasa, tras la época 33, sube la accuracy de validación de 0,684 a 0,727. En la mejor época la accuracy es de
+0,927 en entrenamiento y 0,729 en validación: **una brecha de 0,198, sobreajuste claro**, que es lo que la
+regularización debe atacar.
 
-Cada experimento cambia un factor respecto de la base y conserva todo lo demás. Los experimentos usan 35
-épocas y paciencia 9; la base, 60 y 12. Se elige por F1 macro de validación.
+### 8.3 Parada temprana
 
-| Exp. | Cambio | Accuracy val. | F1 macro val. |
-|---|---|---:|---:|
-| **Base** | RGB, 4 bloques de una convolución, pooling global | **0,797** | **0,734** |
-| S2 | Sin etiquetas de escena | 0,783 | 0,728 |
-| S1 | Sin suavizado de etiquetas | 0,782 | 0,726 |
-| A1 | Sin imágenes alteradas | 0,776 | 0,720 |
-| P1 | Sin pesos por clase | 0,789 | 0,718 |
-| E6 | Dropout de 0,5 | 0,764 | 0,705 |
-| P2 | Pesos balanceados completos | 0,726 | 0,687 |
-| E1 | 3 bloques (32, 64, 128) | 0,713 | 0,647 |
-| E7 | Aplanado en lugar de pooling global | 0,729 | 0,640 |
-| R1 | Escala de grises | 0,702 | 0,620 |
-| E3 | Activación tanh | 0,605 | 0,524 |
-| E4 | Tasa de aprendizaje 0,0001 | 0,585 | 0,493 |
-| E2 | Dos convoluciones por bloque | No cabe en los 8 GB de la GPU | |
-| E5 | Batch 512 | No cabe en los 8 GB de la GPU | |
+La parada ahorró 8 épocas, pero su aporte principal es la restauración: entre la época 40 y la 52 la pérdida de
+validación no mejoró (de 1,087 a 1,099) mientras la brecha subía de 0,198 a 0,218. Sin ella, el modelo final sería
+el de la última época, más sobreajustado.
 
-Ninguna variante supera a la base, así que la combinación C1 no se entrena y **el modelo final es el base**.
-Lo que más cuesta es bajar la tasa de aprendizaje (−24,1 puntos de F1), usar tanh (−21,0), quitar el color
-(−11,3), aplanar en lugar de promediar (−9,4) y quitar un bloque (−8,7). A 32 × 32 y 64 × 64, donde sí cabe,
-ganó E2, con dos convoluciones por bloque.
+### 8.4 Efecto de cada técnica de regularización
 
-## 9. Evaluación en test
+Cada técnica se mide frente a la base cambiando solo ese factor (35 épocas; la brecha de la base en la época 35 era
+de 0,176).
+
+| Técnica | Experimento | Accuracy val. | F1 macro val. | Δ F1 | Brecha |
+|---|---|---:|---:|---:|---:|
+| Ninguna: la base | Base (dropout 0,3, BatchNorm, suavizado, alteradas) | 0,729 | 0,705 | — | 0,198 |
+| Dropout | G1 · sin dropout | 0,671 | 0,644 | −6,0 | 0,312 |
+| Dropout | E6 · dropout 0,5 | 0,720 | 0,697 | −0,8 | 0,075 |
+| Batch Normalization | G2 · sin Batch Normalization | 0,710 | 0,687 | −1,8 | 0,062 |
+| Regularización L2 | G3 · L2 de 5·10⁻⁴ | 0,733 | 0,711 | +0,6 | 0,148 |
+| Aumento de datos | A1 · sin alteradas | 0,719 | 0,697 | −0,8 | 0,175 |
+| Aumento de datos | **G4 · aumento en línea** | **0,744** | **0,724** | **+1,9** | **0,020** |
+| Suavizado de etiquetas | S1 · sin suavizado | 0,720 | 0,698 | −0,6 | 0,114 |
+| Combinación | C1 · G3 + G4 | 0,739 | 0,712 | +0,7 | 0,014 |
+
+![Efecto de cada técnica de regularización](figuras/regularizacion.png)
+
+- **Dropout, imprescindible.** Sin él la red memoriza desde la tercera época (brecha mayor que 0,25) y la pérdida
+  de validación se estanca en torno a 1,4. Con 0,5 baja la brecha pero también el F1: 0,3 es el punto medio.
+- **Batch Normalization, poco aporte y mucho costo.** Sin ella se pierden 1,8 puntos, pero cada época cuesta
+  27,4 s en lugar de 56,6: el costo de esta red está en las operaciones elemento a elemento de BatchNorm.
+- **L2, mejora pequeña.** +0,6 puntos y una brecha de 0,148 frente a 0,176.
+- **Aumento de datos en línea, la única mejora clara.** +1,9 puntos de F1, +1,5 de accuracy y la menor pérdida de
+  validación de toda la experimentación (1,005). Su brecha de 0,020 se mide contra imágenes transformadas, más
+  difíciles; lo que la respalda es la validación.
+- **Las mejoras no se suman.** C1, con L2 y aumento en línea a la vez, rinde menos que G4 solo: dos restricciones
+  juntas frenan el aprendizaje en 35 épocas.
+
+**Conclusión.** La regularización mejora la generalización, pero no cualquiera: la que sirve es la que da
+variedad a los datos, no la que restringe más los pesos.
+
+## 9. Optimización
+
+**Estrategia de búsqueda.** Un *grid search* por ejes: alrededor del modelo base se recorre una grilla de valores
+para un factor a la vez, y después la combinación C1 junta los que superaron a la base. Una grilla completa no es
+viable —cada configuración cuesta unos 33 minutos y dos valores de cada uno de los 14 factores darían 16.384
+configuraciones—, y un *random search* con el mismo presupuesto cambiaría varios factores a la vez sin permitir
+atribuir cada diferencia a uno de ellos. Se selecciona por F1 macro de validación.
+
+| Exp. | Cambio | Accuracy val. | F1 macro val. | Brecha |
+|---|---|---:|---:|---:|
+| **G4** | **Aumento de datos en línea** | **0,744** | **0,724** | 0,020 |
+| C1 | L2 + aumento en línea | 0,739 | 0,712 | 0,014 |
+| G3 | L2 de 5·10⁻⁴ | 0,733 | 0,711 | 0,148 |
+| Base | RGB, 4 bloques de una convolución, pooling global | 0,729 | 0,705 | 0,198 |
+| P1 | Sin pesos por clase | 0,726 | 0,701 | 0,189 |
+| S1 | Sin suavizado de etiquetas | 0,720 | 0,698 | 0,114 |
+| E6 | Dropout 0,5 | 0,720 | 0,697 | 0,075 |
+| A1 | Sin imágenes alteradas | 0,719 | 0,697 | 0,175 |
+| P2 | Pesos balanceados completos | 0,711 | 0,688 | 0,131 |
+| G2 | Sin Batch Normalization | 0,710 | 0,687 | 0,062 |
+| E7 | Aplanado en lugar de pooling global | 0,680 | 0,651 | 0,300 |
+| E1 | 3 bloques (32, 64, 128) | 0,675 | 0,645 | 0,001 |
+| G1 | Sin dropout | 0,671 | 0,644 | 0,312 |
+| R1 | Escala de grises | 0,651 | 0,619 | 0,206 |
+| E3 | Activación tanh | 0,566 | 0,524 | 0,057 |
+| E4 | Tasa de aprendizaje 0,0001 | 0,566 | 0,522 | −0,043 |
+| E2 | Dos convoluciones por bloque | No cabe en los 8 GB de la GPU | | |
+| E5 | Batch 512 | No cabe en los 8 GB de la GPU | | |
+
+![Comparación de las configuraciones](figuras/experimentos.png)
+
+**Selección.** Gana **G4**: tiene el mayor F1 macro, la mayor accuracy y la menor pérdida de validación. Es la
+arquitectura de la base con aumento en línea al entrenar. Los factores propios de una CNN se confirman: quitar el
+color cuesta 8,6 puntos, quitar un bloque 6,0 y aplanar en lugar de promediar 5,4; la tasa de 0,0001 (−18,3) y
+tanh (−18,0) son las peores. El margen de G4 sobre la base, 1,9 puntos, es del orden de lo que cambió una misma
+configuración entre dos corridas (hasta 1,9 puntos, por el no determinismo de cuDNN): confirmarlo exigiría varias
+semillas, pero es coherente con la caída de la brecha y con el test, donde el modelo final de una corrida anterior
+sin aumento en línea llegaba a 0,726 de accuracy y 0,706 de F1.
+
+## 10. Evaluación y auditoría en test
 
 El test se abre una sola vez, con el modelo elegido.
 
-| Métrica | Criterio del proyecto | Criterio estricto |
-|---|---:|---:|
-| Accuracy | 0,847 | 0,797 |
-| Precision macro | 0,838 | 0,765 |
-| Recall macro | 0,795 | 0,727 |
-| F1 macro | 0,810 | 0,738 |
-| F1 ponderado | 0,846 | 0,796 |
-| Top-3 accuracy | 0,937 | 0,924 |
+| Métrica | Valor |
+|---|---:|
+| Accuracy | 0,747 |
+| Precision macro / ponderada | 0,741 / 0,759 |
+| Recall macro / ponderado | 0,734 / 0,747 |
+| F1 macro / ponderado | 0,731 / 0,747 |
+| Top-3 accuracy | 0,891 |
+| ROC-AUC macro / ponderada / micro | 0,986 / 0,985 / 0,988 |
+| Accuracy por escena (referencia) | 0,824 |
 
-Referencias: azar 1/64 = 0,016 y clase mayoritaria 0,078. La CNN las supera 54 y 11 veces.
+Referencias: azar 1/64 = 0,016 y clase mayoritaria 0,055. La CNN las supera 48 y 13,5 veces.
 
-- **Por personaje.** 62 de 64 personajes tienen F1 de 0,60 o más y ninguno queda bajo 0,30. Los mejores son
-  Krusty (0,95), Fat Tony, Kent Brockman y Sideshow Bob (0,93); los peores, Helen Lovejoy (0,50), Rod Flanders
-  (0,57), Disco Stu (0,61), Maggie (0,67) y Martin Prince (0,69). La correlación entre imágenes de
-  entrenamiento y F1 es de 0,39.
-- **Matriz de confusión.** Normalizada por fila, con recall medio de 0,795. Las confusiones que quedan son de
-  personajes dibujados casi iguales (Patty y Selma, Carl y Lenny, el abuelo y Homero) o que comparten escena
-  (Helen con el reverendo Lovejoy, Burns con Smithers).
-- **Criterio estricto.** Cambia las cifras entre 5 y 7 puntos, no las conclusiones: los cinco KPIs se
-  cumplen también con él. Pierden más los personajes que casi siempre salen acompañados —Louie (F1 de 0,923
-  a 0,625), Maude Flanders (0,811 a 0,514), Lou (0,845 a 0,578)—, porque nombrar al acompañante pasa a contar
-  como error. 55 de los 64 personajes conservan un F1 de 0,60 o más y solo Helen Lovejoy queda bajo 0,30; la
-  familia Simpson sigue entre 0,79 y 0,84.
+- **Por personaje.** 51 de 64 tienen F1 de 0,60 o más y ninguno queda bajo 0,30. Los mejores son Krusty (0,93),
+  Disco Stu (0,92), Kent Brockman (0,91) y Milhouse (0,90); los peores, Rod Flanders (0,33), Maude Flanders (0,40),
+  Kearney (0,44), Jimbo (0,44) y Helen Lovejoy (0,45). La correlación entre imágenes de entrenamiento y F1 es de solo
+  0,21: Maggie, con 130 imágenes de entrenamiento, llega a 0,90.
+- **ROC-AUC.** Ningún personaje queda bajo 0,90; los peores son Helen Lovejoy (0,927), Louie (0,948) y Rod Flanders
+  (0,952). Rod tiene 0,95 de ROC-AUC y 0,33 de F1: el modelo da a sus imágenes más probabilidad que a casi todas las
+  demás, pero Todd, que se le parece, queda por delante.
 
-## 10. Comparación entre el MLP y la CNN
+![Curvas ROC](figuras/curvas_roc.png)
 
-### 10.1 Misma resolución, mismo proceso
+- **Matriz de confusión.** Recall medio de 0,734. Las confusiones son de personajes dibujados casi iguales —Selma
+  como Patty en el 46,8 % de sus imágenes, Lenny como Carl en el 21,6 %, Rod como Todd en el 16,2 %— o que salen
+  juntos —Dolph como Jimbo en el 37,5 %, Wiggum como Lou en el 20,5 %, Louie como Fat Tony en el 20,8 %—. La familia
+  Simpson ya no es un problema: su única confusión entre las quince más frecuentes es Bart como Martin Prince (5,0 %).
+- **Escenas.** El 23,7 % del test tiene otro personaje presente; ahí la accuracy es 0,507, frente a 0,822 en el
+  resto, y el 30,3 % de los errores nombra a un personaje que sí está en la escena.
+- **Tipos de imagen.** Originales 0,753, parecidas 0,771 y alteradas 0,710: la red depende poco de haber visto una
+  toma parecida y pierde 4,3 puntos con el giro, el color y la textura.
+- **Errores.** 1.786 (25,3 %). La confianza separa aciertos (0,76) de errores (0,38), y solo 104 errores superan
+  0,80. En los diez más confiados el personaje predicho aparece en la imagen; en los de menor confianza, muchas veces
+  no hay personaje.
 
-| Concepto | MLP · GPU 128 × 128 | CNN · GPU 128 × 128 | Diferencia |
-|---|---:|---:|---|
-| Configuración final | C1, combinación de mejoras, sobre los 370 valores de color | Base | |
-| Parámetros | 1.059.648 | 473.120 | La CNN tiene menos de la mitad |
-| Accuracy | 0,586 | 0,847 | +26,1 puntos |
-| Accuracy estricta | 0,539 | 0,797 | +25,8 |
-| Top-3 accuracy | 0,751 | 0,937 | +18,7 |
-| F1 macro | 0,559 | 0,810 | +25,1 |
-| F1 macro estricto | 0,490 | 0,738 | +24,8 |
-| Accuracy en originales / parecidas / alteradas | 0,568 / 0,709 / 0,534 | 0,836 / 0,907 / 0,829 | |
-| Errores con confianza > 0,80 | 88 | 41 | |
-| Entrenamiento total | 15,9 min | 290,5 min | 18,3 veces más |
-| Segundos por época (benchmark) | 1,5 | 37,1 | 24,7 veces más |
-| Inferencia de la red sola | 88.027 img/s | 3.540 img/s | |
-| Inferencia de extremo a extremo | 1.285–1.557 img/s | 3.085 img/s | La CNN no calcula descriptores |
+## 11. Explicabilidad: mapas de activación y Grad-CAM
 
-La ventaja es estable: la CNN supera al MLP por 24,5 a 28,0 puntos de accuracy en las tres resoluciones
-(32 × 32, 64 × 64 y 128 × 128).
-
-![Accuracy por tipo de imagen del MLP y de la CNN](figuras/generalizacion_mlp_cnn.png)
-
-### 10.2 Todas las métricas y la generalización
-
-El resumen del MLP a 128 × 128 no guarda la precision, el recall ni la brecha de entrenamiento; las salidas de
-su notebook, de la corrida a 64 × 64, sí. A esa resolución:
-
-| Métrica en test | MLP · 64 × 64 (R2) | CNN · 64 × 64 (E2) | CNN · 128 × 128 (base) |
-|---|---:|---:|---:|
-| Accuracy | 0,550 | 0,830 | 0,847 |
-| Precision macro | 0,543 | 0,817 | 0,838 |
-| Recall macro | 0,516 | 0,774 | 0,795 |
-| F1 macro | 0,522 | 0,788 | 0,810 |
-| F1 ponderado | 0,547 | 0,828 | 0,846 |
-| Top-3 accuracy | 0,731 | 0,932 | 0,937 |
-| Brecha entrenamiento − validación del modelo base | 0,465 | 0,211 | 0,162 |
-
-Capacidad de generalización, con los resúmenes de las corridas:
-
-| Indicador | MLP 64 | CNN 64 | MLP 128 | CNN 128 |
-|---|---:|---:|---:|---:|
-| Caída en las alteradas frente a las originales (puntos) | 3,4 | 3,4 | 3,3 | 0,7 |
-| Ventaja de las parecidas sobre las originales (puntos) | 9,3 | 6,0 | 14,2 | 7,1 |
-| Errores con confianza > 0,80 por cada 1.000 imágenes | 6,9 | 12,6 | 17,4 | 8,1 |
-
-La CNN memoriza menos (brecha de 0,21 frente a 0,47 a 64 × 64) y depende menos de haber visto casi la misma
-toma en las tres resoluciones. Su ventaja frente a las alteradas y en errores confiados aparece solo a
-128 × 128; a 64 × 64 las dos redes pierden lo mismo en las alteradas y la CNN comete más errores confiados,
-aunque casi todos nombran a un personaje que sí está en la imagen.
-
-### 10.3 Ventajas y desventajas de cada arquitectura
-
-| | Ventajas | Desventajas |
-|---|---|---|
-| **MLP** | Entrena 18 veces más rápido y corre en CPU (su corrida completa a 128 × 128 tomó 53 minutos); la red sola infiere 88.027 imágenes por segundo; depende menos del número de imágenes por personaje (correlación de 0,19 entre imágenes de entrenamiento y F1) | No aprende de la imagen: combina histogramas de color calculados con reglas fijas y confunde a los personajes que comparten paleta (la familia Simpson, con F1 de 0,35 a 0,67 a 64 × 64); memoriza más (brecha de 0,465); calcular los descriptores en la CPU limita su velocidad de extremo a extremo |
-| **CNN** | Aprende sus propios filtros y reconoce la forma (la familia Simpson sube a F1 de 0,81 a 0,89); 26 puntos más de accuracy con menos de la mitad de parámetros; memoriza menos; es más rápida de extremo a extremo; Grad-CAM explica cada decisión sobre la imagen | Entrenar cuesta 18 veces más y exige GPU (en CPU, más de quince horas); a 128 × 128 dos configuraciones no caben en 8 GB; depende más del número de imágenes por personaje (correlación de 0,39); sigue sobreajustando (brecha de 0,16) |
-
-## 11. Mapas de características y de activación
-
-### 11.1 Recorrido de una imagen
-
-Una imagen de test de Martin Prince, predicha con 99,7 % de confianza, recorre la red bloque por bloque. El
-primer bloque responde a bordes, contornos y zonas de color con la resolución completa; en el segundo y el
-tercero los mapas combinan bordes en patrones más específicos; en el cuarto, de 16 × 16, los filtros más
-activos se encienden sobre la cabeza del personaje. La representación se vuelve más selectiva: el 37 % de los
-valores del primer bloque es distinto de cero, el 40 % del segundo, el 11 % del tercero y el 1 % del último.
-
-### 11.2 Cuatro imágenes de test
-
-Homero, Marge, Bart y Lisa —los cuatro personajes de la familia que el MLP confundía por la piel amarilla—
-recorren la red juntos, con su imagen original de test acertada con mayor confianza (99,2 a 99,6 %). Cada
-columna de la figura es el mismo filtro con la misma escala para los cuatro.
-
-- **Bloques 1 y 2.** Responden a zonas de color del encuadre —la lámpara y la alfombra de Homero, el fondo de
-  Bart— y a contornos, como la silueta de Marge o el borde del pelo de Bart.
-- **Bloque 3.** Combinaciones de bordes más específicas, todavía repartidas entre el personaje y el fondo.
-- **Bloque 4.** Solo el 1,0 % de los valores es distinto de cero, y lo que queda cae sobre los personajes.
-  Un mismo filtro ya no responde igual a todos: uno se enciende con Bart y con Lisa y casi nada con Homero y
-  Marge.
-
-La correlación de la activación media de los filtros entre las cuatro imágenes es de 0,18 a 0,33 en los
-tres primeros bloques y cae a 0,015 en el cuarto (0,031 en el vector del pooling global): cada personaje
-activa su propio conjunto de filtros. Es la extracción automática de características que el MLP no tenía.
+**Mapas de activación.** En la imagen de Quimby, el acierto más seguro del test, el primer bloque responde a zonas
+de color (el traje, las ventanas), el segundo a bordes, el tercero a combinaciones de bordes y el cuarto a unas pocas
+manchas sobre la boca y la mano con la copa. La representación se vuelve más selectiva: el 47 % de los valores es
+distinto de cero en el primer bloque y el 2 % en el último. Con cuatro imágenes de la familia, la correlación de la
+activación media de los filtros entre ellas baja de 0,35–0,50 en los tres primeros bloques a 0,23 en el cuarto: cada
+personaje activa su propio conjunto de filtros.
 
 ![Mapas de activación de cuatro imágenes de test](figuras/mapas_activacion_cuatro_imagenes.jpg)
 
-### 11.3 Grad-CAM
-
-Grad-CAM pondera los mapas del último bloque por el gradiente de la probabilidad de la clase. En los aciertos
-más seguros, la zona cálida cae sobre la cabeza del personaje. Sobre todo el test, el 10 % de píxeles más
-cálidos reúne el 71,5 % de la influencia (sería el 10 % si la red mirara toda la imagen por igual) y la mitad
-central el 48 % en los aciertos (25 % con un reparto uniforme). Los tres errores más confiados miran a un
-personaje que sí está en la imagen.
-
-### 11.4 Mapa de activación de cada clase
-
-Para cada uno de los 64 personajes se calcula el Grad-CAM de la clase de su carpeta, de dos formas: sobre su
-imagen original de test acertada con la mayor probabilidad (los 64 ejemplos son originales acertadas) y como
-mapa medio sobre todas sus imágenes de test.
-
-- En casi todos los ejemplos la zona más cálida cae sobre la cabeza: el peinado de Marge y de Sideshow Bob, el
-  bigote de Ned Flanders, los lentes de Milhouse. En unos pocos cae sobre la ropa: la corbata de Lionel Hutz,
-  el cuello de Frink, el pecho de Helen Lovejoy.
-- Con la clase de la carpeta, el 10 % de píxeles más cálidos reúne de media el 71,3 % del Grad-CAM y la mitad
-  central el 46,4 % (10 % y 25 % con un reparto uniforme).
-- Los mapas medios de los personajes con muchas imágenes son una mancha compacta en el centro y la parte alta
-  del encuadre; los de los que tienen pocas salen fragmentados porque promedian pocas tomas.
-- La concentración del calor no explica qué personajes cuestan más: su correlación con el recall es de 0,05.
-  Lo que pesa es el número de imágenes de entrenamiento (0,39 con el F1) y el parecido entre personajes.
+**Grad-CAM.** La red mira a los personajes, sobre todo a sus cabezas: el 10 % de píxeles más cálidos reúne el 73 %
+de la influencia (10 % si mirara toda la imagen por igual) y la mitad central, el 50 % en los aciertos (25 % con un
+reparto uniforme). Los tres errores más confiados miran a un personaje que sí está en la imagen. Calculado para la
+clase de cada carpeta, los 64 ejemplos caen sobre el personaje, y la concentración del calor acompaña al
+reconocimiento: su correlación con el recall de cada personaje es de 0,51. Los personajes de calor más disperso,
+como Rod Flanders, son los que comparten la evidencia con otro personaje parecido.
 
 ![Mapa de activación de cada clase](figuras/mapa_activacion_cada_clase.jpg)
 
-## 12. Análisis de resultados y errores
+## 12. Sesgos e impacto ético
 
-- **Aciertos.** La red acierta con confianza de 1,00 a personajes pequeños en el encuadre, de espaldas o que
-  comparten la piel amarilla con la familia: reconoce peinados, ropa y caras, no solo la paleta.
-- **Errores.** 775 de 5.063 imágenes (15,3 %). La confianza separa aciertos (0,78 de media) de errores (0,36),
-  y solo 15 errores superan 0,90. De los 41 que superan 0,80, en ocho de los diez más confiados el personaje
-  predicho sí aparece en la imagen, pero el criterio no lo detectó: la accuracy es una cota inferior.
-- **Clases difíciles.** Personajes con alrededor de cien imágenes de entrenamiento (Rod Flanders, Disco Stu,
-  Maggie, Helen Lovejoy), gemelos de diseño (Patty y Selma) y personajes que casi siempre salen acompañados
-  (el 35 % de las imágenes de Helen se predice como el reverendo Lovejoy, con quien comparte escena).
-- **Escenas.** El 14,7 % del test tiene otro personaje presente; ahí la accuracy estricta es 0,539 y la del
-  criterio del proyecto 0,877. Los aciertos por escena suben la accuracy 5,0 puntos.
-- **Tipos de imagen.** Las alteradas cuestan 0,7 puntos frente a las originales (0,829 frente a 0,836) y las
-  parecidas se aciertan 7,1 puntos más (0,907): la red reconoce al personaje y depende poco de la toma.
+- **Desbalance y parecido.** La razón de 21:1 no desaparece con los pesos por clase, pero ya no es lo que más pesa.
+  El sesgo cambia de forma: usado para medir presencia en pantalla, el catálogo contaría a Patty Bouvier 1,47 veces
+  sus apariciones reales y a su gemela Selma 0,52; a Homero, 0,84, y a Gil, 0,60. Ese error llegaría directamente a
+  decisiones de licencias o de merchandising.
+- **Ruido en las etiquetas.** La auditoría de errores encontró imágenes cuya carpeta no corresponde al personaje que
+  muestran: Bart en la carpeta de Barney, una hoja de presupuesto escolar tres veces en la de Otto. El modelo aprende
+  de ellas y la evaluación las cuenta como errores; hay que limpiarlas antes de usar el catálogo para medir algo.
+- **Revisión humana.** Se equivoca en el 25,3 % del test, 104 errores superan una confianza de 0,80 y siempre
+  responde algún personaje. Debe usarse como asistente: tres sugerencias (89,1 % de cobertura), revisión de las
+  predicciones de confianza baja y revisión manual de todo lo que afecte a terceros.
+- **Derechos de autor.** Personajes y fotogramas son obras protegidas; se usan solo con fines académicos y ni el
+  dataset ni los modelos se versionan.
+- **Fuera del dominio.** Con fotos de personas reales sería reconocimiento facial, con problemas de privacidad y
+  consentimiento que el proyecto no aborda: no debe usarse así.
 
-## 13. Impacto ético
+## 13. Comparación entre el MLP y la CNN
 
-- **Derechos de autor.** Personajes y fotogramas son obras protegidas, incluidos los que el equipo extrajo de
-  los episodios. Se usan solo con fines académicos; ni el dataset ni los modelos se versionan. Un uso comercial
-  exigiría la licencia del titular, y detectar a un personaje en material de terceros no prueba una infracción
-  (la cita o la parodia pueden estar permitidas).
-- **Sesgo por desbalance.** Con la razón de 33:1, el modelo encuentra a Helen Lovejoy en el 35 % de sus
-  imágenes y a Homero en el 90 %. Usado para medir presencia en pantalla, contaría a Homero 1,16 veces sus
-  apariciones reales y a Helen 0,41: un sesgo que llegaría a decisiones de licencias.
-- **Revisión humana.** Se equivoca en el 15,3 % del test, 41 errores superan una confianza de 0,80 y siempre
-  responde algo, aunque la imagen no tenga a ninguno de sus personajes. Debe usarse como asistente: mostrar
-  las tres sugerencias (93,7 % de cobertura) y revisar a mano lo que afecte a terceros.
-- **Fuera del dominio.** Con fotos de personas reales sería reconocimiento facial, con problemas de privacidad
-  y consentimiento que el proyecto no aborda: no debe usarse así.
+### 13.1 Desempeño y costo
 
-## 14. Limitaciones y mejoras
+| Concepto | MLP · GPU 128 × 128 | CNN · GPU 128 × 128 | Diferencia |
+|---|---:|---:|---|
+| Configuración final | C1, sobre 370 valores de color | G4, aumento de datos en línea | |
+| Parámetros | 1.059.648 | 473.120 | La CNN tiene menos de la mitad |
+| Accuracy | 0,544 | 0,747 | +20,3 puntos |
+| Precision / recall macro | 0,560 / 0,550 | 0,741 / 0,734 | |
+| F1 macro | 0,551 | 0,731 | +18,0 |
+| F1 ponderado | 0,542 | 0,747 | +20,5 |
+| Top-3 accuracy | 0,736 | 0,891 | +15,6 |
+| ROC-AUC macro | no medida | 0,986 | |
+| Accuracy por escena (referencia) | 0,632 | 0,824 | +19,2 |
+| Errores con confianza > 0,80 | 261 | 104 | |
+| Entrenamiento total | 20,0 min | 522,2 min | 26,1 veces más |
+| Segundos por época (benchmark) | 2,1 | 52,1 | 24,8 veces más |
+| Inferencia de la red sola | 74.193 img/s | 3.570 img/s | |
+| Inferencia de extremo a extremo | Limitada por los descriptores en la CPU: unas 430 img/s | 2.649 img/s | La CNN no calcula descriptores |
+| Uso de la GPU | 29,5 %, unos 11 W | 99,3 %, unos 73 W | |
 
-| Limitación | Mejora propuesta |
+Las cifras del MLP salen de su resumen JSON, salvo la precision y el recall, que salen de las salidas de su notebook.
+
+### 13.2 Capacidad de generalización
+
+| Indicador | MLP | CNN |
+|---|---:|---:|
+| Brecha entre entrenamiento y validación del modelo base | 0,378 | 0,198 |
+| Caída en las alteradas frente a las originales (puntos) | 8,7 | 4,3 |
+| Ventaja de las parecidas sobre las originales (puntos) | 6,3 | 1,8 |
+| Errores con confianza > 0,80 por cada 1.000 imágenes de test | 37,0 | 14,7 |
+
+![Accuracy por tipo de imagen del MLP y de la CNN](figuras/generalizacion_mlp_cnn.png)
+
+La CNN memoriza menos, resiste mejor las alteraciones, depende menos de haber visto casi la misma toma y comete
+menos errores confiados, casi todos nombrando a un personaje que sí está en la imagen.
+
+### 13.3 Interpretabilidad
+
+El MLP solo puede explicarse por bloques de descriptores, con la importancia por permutación: dice que pesa el
+color, no dónde. La CNN se explica sobre la propia imagen con Grad-CAM, de cada predicción y de cada clase, y sus
+mapas de activación muestran la jerarquía de lo que aprende. Además, sus errores son interpretables: mira a un
+personaje que está en la imagen.
+
+### 13.4 Ventajas, desventajas y arquitectura seleccionada
+
+| | Ventajas | Desventajas |
+|---|---|---|
+| **MLP** | Entrena 26 veces más rápido; la red sola infiere 74.193 imágenes por segundo; apenas ocupa la GPU | No aprende de la imagen: combina histogramas de color y confunde a los personajes que comparten paleta (la familia Simpson, con F1 de 0,34 a 0,64); memoriza más (brecha de 0,378); calcular los descriptores en la CPU limita su velocidad de extremo a extremo |
+| **CNN** | Aprende sus propios filtros y reconoce la forma (la familia Simpson sube a F1 de 0,71 a 0,83); 20 puntos más de accuracy con menos de la mitad de parámetros; generaliza mejor; es más rápida de extremo a extremo; Grad-CAM explica cada decisión | Entrenar cuesta 26 veces más y exige GPU; a 128 × 128 dos configuraciones no caben en 8 GB; el modelo base sobreajusta si no se le da variedad a los datos |
+
+**La CNN es la arquitectura seleccionada.** Para este problema, donde lo que separa a los personajes es su dibujo,
+la diferencia de desempeño —20 puntos de accuracy y 18 de F1 macro— y de generalización justifica un costo de
+entrenamiento que se paga una sola vez.
+
+## 14. Limitaciones y medidas para la robustez y la confiabilidad
+
+| Limitación | Medida propuesta |
 |---|---|
-| Resolución: a 128 × 128 un personaje en un plano general ocupa pocas decenas de píxeles | Recorte previo del personaje con un detector; medir resoluciones mayores con acumulación de gradientes o `bfloat16` |
-| Entrenada desde cero con unas 35.000 imágenes | Transfer learning (MobileNet, ResNet, EfficientNet) |
-| Sobreajuste: brecha de 0,16; más Dropout en la cabeza (E6) bajó el F1 2,9 puntos | Regularizar las capas convolucionales, que tienen el 82 % de los parámetros entrenables: L2 o *weight decay* (AdamW) y `SpatialDropout2D` tras cada bloque; aumento de datos en línea en lugar de una variante fija |
-| Invarianza solo aproximada a rotaciones y escala | Aumento de datos en línea: espejo, recorte y color distintos en cada época |
-| Una sola etiqueta por imagen | Salida multietiqueta con sigmoides |
-| Diferencias de menos de un punto entre configuraciones | Varias semillas o validación cruzada |
-| Criterio de acierto estimado | Anotar a mano las escenas de una muestra del test |
+| Personajes parecidos o que salen siempre juntos (Patty y Selma, Rod y Todd, Jimbo, Dolph y Kearney) | Nombrar a cada personaje en su propia caja (`scripts/newDataset/detectar_cajas.py`) o una salida multietiqueta con sigmoides |
+| Ruido en las etiquetas | Revisar las imágenes con errores de confianza muy alta o muy baja y sacar de su carpeta las que no muestran al personaje |
+| Variedad de los datos: el aumento en línea fue la mejor regularización | Aumento más fuerte (recortes, giros mayores, cambios de tono) con el presupuesto de épocas de la base |
+| Regularización de las capas convolucionales | `SpatialDropout2D` tras cada bloque y un barrido de la intensidad de L2 o del *weight decay* de AdamW |
+| Entrenada desde cero | Transfer learning (MobileNet, ResNet, EfficientNet) |
+| Resolución y memoria: E2 y E5 no caben en 8 GB | Acumulación de gradientes o precisión mixta (`bfloat16`) |
+| Variación entre corridas de hasta 1,9 puntos de F1 | Varias semillas o validación cruzada, reportando media y desviación |
+| El modelo siempre responde algún personaje | Umbral de confianza para derivar a revisión humana |
 
 ## 15. Reproducibilidad y estructura de entrega
 
-### 15.1 Archivos principales
-
 ```text
-CNN/docs/EP2_TLY1102_Instrucciones.docx       # encargo de la evaluación
-CNN/docs/newDataset/Informe.md                # este informe
-CNN/docs/newDataset/figuras/                  # figuras del informe, tomadas de las salidas del notebook
-CNN/notebooks/newDataset/LosSimpsons_GPU_4060M.ipynb   # notebook evaluado, con salidas
-CNN/notebooks/newDataset/README.md
+CNN/docs/EP3_TLY1102_Instrucciones Estudiante.docx    # encargo de la evaluación
+CNN/docs/newDataset/Informe.md                        # este informe
+CNN/docs/newDataset/figuras/                          # figuras del informe, tomadas de las salidas del notebook
+CNN/notebooks/LosSimpsons_GPU_4060M.ipynb             # notebook evaluado, con salidas
+CNN/notebooks/README.md
 CNN/resultados/newDataset/GPU/rendimiento_gpu_128x128.json
-CNN/scripts/newDataset/generar_presentacion.py         # genera la presentación
-CNN/scripts/newDataset/predecir_imagen.py              # clasifica imágenes con el modelo final
-CNN/presentacion_resultados_CNN.html
-scripts/newDataset/generar_imagenes_alteradas.py       # prepara el dataset para el MLP y la CNN
-PMC/notebooks/newDataset/                              # MLP de la comparación
+scripts/newDataset/generar_imagenes_alteradas.py      # prepara el dataset para el MLP y la CNN
+PMC/notebooks/LosSimpsons_GPU_4060M.ipynb             # MLP de la comparación
 ```
 
-### 15.2 Ejecución
+**Ejecución.** Crear el entorno `.venv-gpu` con `requirements-gpu-windows.txt`, ubicar el dataset (o fijar
+`SIMPSONS_DATASET`), ejecutar una vez `scripts/newDataset/generar_imagenes_alteradas.py` y ejecutar el notebook
+completo. En **Google Colab**, con un entorno de GPU, la primera celda de datos monta Google Drive y lee el dataset
+desde `MyDrive/simpsons_dataset`; la comparación con el MLP y la recreación de personajes necesitan el repositorio
+completo, y sin él esas celdas lo avisan y siguen.
 
-1. Crear el entorno `.venv-gpu` según `requirements-gpu-windows.txt`.
-2. Ubicar el dataset y fijar su ruta en `SIMPSONS_DATASET`, o dejarlo en la ruta por defecto del notebook.
-3. Ejecutar una vez `scripts/newDataset/generar_imagenes_alteradas.py`.
-4. Abrir el notebook con `CNN/scripts/newDataset/ejecutar_notebook_gpu.ps1` y ejecutarlo completo: unas cinco
-   horas a 128 × 128 en la RTX 4060 Laptop.
-
-### 15.3 Estado de las salidas
-
-Las salidas del notebook de GPU son las de la corrida a 128 × 128 del 19-10-2026. Cuatro celdas se agregaron
-después —las métricas con el criterio estricto, los mapas de activación de cuatro imágenes, el mapa de
-activación de cada clase y la capacidad de generalización— y se ejecutaron el 20-10-2026 con el modelo final
-que guardó esa corrida (`cnn_final.keras`), sobre la misma partición y sin reentrenar.
-
-Antes de guardar sus salidas se comprobó que reproducen la corrida: con el modelo guardado y los algoritmos
-deterministas de cuDNN, la evaluación repetida da exactamente el mismo reporte por clase, la misma accuracy,
-el mismo top-3 y los mismos aciertos por escena que las salidas del 19-10-2026. La comprobación dejó además un
-hallazgo de reproducibilidad: con `cudnn.benchmark` activado, como en el notebook, cuDNN elige el algoritmo de
-convolución por tiempo y esa elección varía entre ejecuciones. En 3 de 9 evaluaciones del mismo modelo con
-esa configuración la accuracy de test fue 0,8467 en lugar de 0,8469 y el top-3, 0,9368 en lugar de 0,9372; con
-algoritmos deterministas, las cinco evaluaciones hechas —incluida la de las celdas agregadas— reprodujeron
-la corrida. Las diferencias afectan a unas
-pocas imágenes con probabilidades casi empatadas y no cambian ninguna conclusión, pero quien quiera
-reproducir las cifras exactas debe evaluar con `torch.backends.cudnn.benchmark = False` y
-`torch.backends.cudnn.deterministic = True`.
-Las salidas de 64 × 64 están en el commit `6db8274`, y los resúmenes JSON de 32 × 32 y 64 × 64, en el commit `87aa0f4`.
+**Estado de las salidas.** Las salidas son las de la corrida completa del 13-11-2026 (de 21:40 a 06:52 del día
+siguiente, 9 h 11 min 40 s), ejecutada de principio a fin sin intervención: las 78 celdas de código terminaron sin
+errores. `cudnn.benchmark` elige el algoritmo de convolución por tiempo, así que una misma configuración puede
+variar entre corridas; para reproducir las cifras exactas de una evaluación hay que fijar
+`torch.backends.cudnn.benchmark = False` y `torch.backends.cudnn.deterministic = True`.
 
 ## 16. Conclusiones
 
-La CNN resuelve lo que el MLP no podía: reconocer a los personajes por su forma. Con el mismo proceso, los
-mismos datos y la misma resolución, sube la accuracy de test de 0,586 a 0,847 y el F1 macro de 0,559 a 0,810,
-cumple los cinco KPIs con margen y no deja a ningún personaje bajo 0,30 de F1. La familia Simpson, que el MLP
-confundía por la piel amarilla, pasa a la parte alta de la tabla: lo que separa a Bart de Lisa es el peinado.
+La CNN resuelve lo que el MLP no podía: reconocer a los personajes por su forma. Con el mismo pipeline, los mismos
+datos y la misma resolución, sube la accuracy de test de 0,544 a 0,747 y el F1 macro de 0,551 a 0,731, con una
+ROC-AUC macro de 0,986, cumple los cinco KPIs y no deja a ningún personaje bajo 0,30 de F1.
 
-Las decisiones propias de una CNN se notan en los experimentos: el pooling global supera al aplanado y quitar un
-bloque cuesta casi nueve puntos, porque la invarianza a la posición y la profundidad son las dos propiedades
-que el MLP no tenía. Los mapas de activación y Grad-CAM muestran el mismo mecanismo desde dentro: bordes y
-color en el primer bloque, partes del personaje en el último, y la evidencia de cada clase sobre su cabeza.
+La optimización y la auditoría de la EP3 dejan tres lecciones. **La regularización que sirve es la que da
+variedad**: el aumento de datos en línea fue la única mejora clara y bajó la brecha casi a cero, mientras que
+restringir los pesos aportó poco y combinar técnicas no sumó. **Lo difícil ya no es tener pocas imágenes, sino
+parecerse a otro**: los personajes que fallan comparten diseño o escena con otro, y Grad-CAM muestra que la red
+reparte entre ellos la evidencia. **La evaluación tiene límites que la auditoría hace visibles**: escenas con
+varios personajes e imágenes mal archivadas hacen que la accuracy de 0,747 sea una cota inferior de lo que acierta
+la red.
 
-Los límites que quedan son de datos y de costo: un sobreajuste todavía claro, una dependencia mayor del número
-de imágenes por personaje y un entrenamiento 18 veces más caro. Las mejoras más directas son el transfer
-learning, el aumento de datos en línea y regularizar las capas convolucionales.
+Los próximos pasos siguen esa evidencia: más variedad en los datos, limpieza de las etiquetas, nombrar a cada
+personaje en su propia caja, transfer learning y varias semillas para confirmar diferencias de un punto.
 
 ## Referencias
 
@@ -509,12 +481,14 @@ learning, el aumento de datos en línea y regularizar las capas convolucionales.
   recognition. *Proceedings of the IEEE, 86*(11), 2278-2324.
 - Ioffe, S. y Szegedy, C. (2015). Batch Normalization: Accelerating deep network training by reducing internal
   covariate shift. *ICML 2015*. https://arxiv.org/abs/1502.03167
+- Srivastava, N., Hinton, G., Krizhevsky, A., Sutskever, I. y Salakhutdinov, R. (2014). Dropout: A simple way to
+  prevent neural networks from overfitting. *Journal of Machine Learning Research, 15*, 1929-1958.
 - Simonyan, K. y Zisserman, A. (2015). Very deep convolutional networks for large-scale image recognition.
   *ICLR 2015*. https://arxiv.org/abs/1409.1556
 - Lin, M., Chen, Q. y Yan, S. (2014). Network in network. *ICLR 2014*. https://arxiv.org/abs/1312.4400
 - Selvaraju, R. R., Cogswell, M., Das, A., Vedantam, R., Parikh, D. y Batra, D. (2017). Grad-CAM: Visual
   explanations from deep networks via gradient-based localization. *ICCV 2017*. https://arxiv.org/abs/1610.02391
-- Tompson, J., Goroshin, R., Jain, A., LeCun, Y. y Bregler, C. (2015). Efficient object localization using
-  convolutional networks. *CVPR 2015*. https://arxiv.org/abs/1411.4280
 - Loshchilov, I. y Hutter, F. (2019). Decoupled weight decay regularization. *ICLR 2019*.
   https://arxiv.org/abs/1711.05101
+- Shorten, C. y Khoshgoftaar, T. M. (2019). A survey on image data augmentation for deep learning. *Journal of Big
+  Data, 6*, 60. https://doi.org/10.1186/s40537-019-0197-0

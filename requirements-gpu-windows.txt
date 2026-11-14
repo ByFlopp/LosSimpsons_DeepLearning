@@ -26,3 +26,5 @@ scikit-learn
 pillow
 jupyter
 ipykernel
+# Auditoría del MLP: valores SHAP de los descriptores (GradientExplainer sobre el modelo de Keras)
+shap>=0.54
