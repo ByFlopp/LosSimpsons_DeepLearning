@@ -25,7 +25,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 keras = pytest.importorskip("keras")
 torch = pytest.importorskip("torch")
 
-from pipeline_comun import auditoria, datos, entrenamiento, evaluacion, experimentacion  # noqa: E402
+from pipeline_comun import auditoria, comparacion, datos, entrenamiento, evaluacion, experimentacion  # noqa: E402
 
 
 def mlp(l2=0.0, entradas=8, clases=3):
@@ -64,6 +64,44 @@ def test_fuente_de_la_imagen_sale_del_nombre(archivo, fuente):
 def test_leer_fotograma():
     assert datos.leer_fotograma("lisa_simpson__S05E12__t1500.jpg") == ("lisa_simpson", "S05E12", 1500)
     assert datos.leer_fotograma("lisa_simpson_12.jpg") is None
+
+
+def _escena_y_fuente(dataset, monkeypatch):
+    """(personaje, escena, fuente) de cada original del dataset, ordenadas."""
+    monkeypatch.setattr(datos, "display", lambda *args, **kwargs: None)
+    indice = datos.construir_indice(dataset)
+    tabla = indice.assign(conjunto="test")
+    datos.anotar_escenas(tabla, indice, dataset, {"ana", "beto"}, ["test"])
+    fuente = datos.nombre_de_fotograma(tabla).map(datos.fuente_imagen)
+    return sorted(zip(tabla["personaje"], tabla["escena"], fuente))
+
+
+def test_la_escena_y_la_fuente_se_conservan_al_renombrar(tmp_path, monkeypatch):
+    import renombrar_imagenes as N
+
+    dataset = tmp_path / "dataset"
+    archivos = {
+        "ana": ["ana_0001.jpg", "ana__S01E01__t0010000.jpg", "beto__S01E02__t0050000.jpg"],
+        "beto": ["beto_0001.jpg", "beto__S01E01__t0012000.jpg"],
+    }
+    for personaje, nombres in archivos.items():
+        (dataset / personaje).mkdir(parents=True)
+        for nombre in nombres:
+            (dataset / personaje / nombre).write_bytes(b"")
+    antes = _escena_y_fuente(dataset, monkeypatch)
+    episodio, kaggle = datos.FUENTE_EPISODIO, datos.FUENTE_KAGGLE
+    assert antes == [
+        ("ana", "", kaggle),
+        ("ana", "beto", episodio),  # beto aparece 2 s después en el mismo episodio
+        ("ana", "beto", episodio),  # el fotograma se extrajo buscando a beto
+        ("beto", "", kaggle),
+        ("beto", "ana", episodio),
+    ]
+
+    for carpeta in (dataset / "ana", dataset / "beto"):
+        N.renombrar(dataset, {carpeta.name: N.planificar(carpeta)})
+    assert sorted(p.name for p in (dataset / "ana").iterdir()) == ["ana_0001.jpg", "ana_0002.jpg", "ana_0003.jpg"]
+    assert _escena_y_fuente(dataset, monkeypatch) == antes
 
 
 # --- Entrenamiento -----------------------------------------------------------------------------------------
@@ -119,10 +157,74 @@ def test_aumento_conserva_forma_y_rango_y_cambia_la_imagen():
 def test_aumento_sin_transformaciones_es_la_identidad():
     generador = torch.Generator().manual_seed(0)
     lote = torch.randint(0, 256, (3, 16, 16, 3), dtype=torch.uint8, generator=generador)
-    # Sin giro, sin zoom y sin contraste solo queda el volteo: cada imagen es la original o su espejo
-    aumentado = entrenamiento.aumentar_imagenes(lote, generador, giro_maximo=0, zoom_maximo=0, contraste_maximo=0)
+    # Sin giro, escala, desplazamiento ni color solo queda el espejo: cada imagen es la original o su reflejo
+    aumentado = entrenamiento.aumentar_imagenes(lote, generador, giro_maximo=0, escala=(1.0, 1.0), desplazamiento=0,
+                                                color=0)
     for original, resultado in zip(lote.float(), aumentado):
         assert torch.allclose(resultado, original, atol=1e-3) or torch.allclose(resultado, original.flip(1), atol=1e-3)
+
+
+def test_l2_generico_achica_los_pesos_sin_kernel_regularizer():
+    X, y = datos_de_juguete()
+    normas = {}
+    for l2 in (0.0, 1.0):
+        modelo = mlp()
+        historial = entrenamiento.entrenar(modelo, X, y, X[:64], y[:64], epocas=30, batch=32, paciencia=100, l2=l2,
+                                           verbose=0)
+        normas[l2] = float(modelo.layers[0].kernel.value.norm())
+    assert normas[1.0] < 0.6 * normas[0.0]
+    # La pérdida registrada es solo la de los datos: no incluye el término L2
+    assert all(np.isfinite(historial.history["loss"]))
+
+
+def test_filas_entrena_solo_con_el_subconjunto():
+    X, y = datos_de_juguete()
+    filas = np.arange(0, 100)
+    # Las filas fuera del subconjunto tienen etiquetas imposibles de aprender: si se usaran, el acierto caería
+    y_ruido = y.clone()
+    y_ruido[100:] = torch.roll(y[100:], shifts=1, dims=1)
+    con_filas = entrenamiento.entrenar(mlp(), X, y_ruido, X[:64], y[:64], epocas=20, batch=32, paciencia=100,
+                                       filas=filas, verbose=0)
+    sin_filas = entrenamiento.entrenar(mlp(), X, y_ruido, X[:64], y[:64], epocas=20, batch=32, paciencia=100,
+                                       verbose=0)
+    assert con_filas.history["val_accuracy"][-1] > sin_filas.history["val_accuracy"][-1]
+
+
+def test_entrenar_o_reanudar_carga_si_la_huella_coincide(tmp_path):
+    X, y = datos_de_juguete()
+    llamadas = []
+
+    def entrenar_fn():
+        llamadas.append(1)
+        modelo = mlp()
+        historial = entrenamiento.entrenar(modelo, X, y, X[:64], y[:64], epocas=2, batch=32,
+                                           ruta_modelo=tmp_path / "m.keras", verbose=0)
+        return modelo, historial
+
+    huella = entrenamiento.huella_configuracion(lr=1e-3, epocas=2)
+    argumentos = dict(cargar_modelo_fn=keras.models.load_model, directorio_historiales=tmp_path / "h",
+                      ruta_modelo=tmp_path / "m.keras")
+    _, h1, reanudado1 = entrenamiento.entrenar_o_reanudar("m", huella, entrenar_fn, **argumentos)
+    _, h2, reanudado2 = entrenamiento.entrenar_o_reanudar("m", huella, entrenar_fn, **argumentos)
+    otra = entrenamiento.huella_configuracion(lr=5e-4, epocas=2)
+    _, _, reanudado3 = entrenamiento.entrenar_o_reanudar("m", otra, entrenar_fn, **argumentos)
+    assert (reanudado1, reanudado2, reanudado3) == (False, True, False)
+    assert len(llamadas) == 2
+    assert h2.history == h1.history
+    assert h2.motivo_parada == h1.motivo_parada
+
+
+def test_resultado_de_entrenamiento_trae_brecha_y_experimento():
+    X, y = datos_de_juguete()
+    modelo = mlp()
+    historial = entrenamiento.entrenar(modelo, X, y, X[:64], y[:64], epocas=3, batch=32, verbose=0)
+    fila = experimentacion.resultado_de_entrenamiento(historial, modelo, X[:64], y[:64].argmax(1).numpy(), 3,
+                                                      segundos=1.0, experimento="Base")
+    mejor = historial.mejor_epoca - 1
+    assert fila["experimento"] == "Base"
+    assert fila["brecha"] == pytest.approx(
+        historial.history["accuracy"][mejor] - historial.history["val_accuracy"][mejor], abs=1e-4)
+    assert {"train_accuracy", "val_roc_auc", "parada", "mejor_epoca"} <= set(fila)
 
 
 def test_el_historial_se_guarda_y_se_lee_igual(tmp_path):
@@ -297,3 +399,31 @@ def test_tabla_impacto_lee_el_signo_segun_la_accion():
     assert "ayuda" in dropout["lectura"]
     assert l2["efecto de la técnica"] == pytest.approx(0.01)
     assert dropout["en el modelo final"] == "sí"
+
+
+# --- Comparación MLP–CNN y figuras -------------------------------------------------------------------------
+
+
+def test_comparar_redes_marca_la_mejor_y_lo_no_medido():
+    mlp_json = {"accuracy_test": 0.5, "ece_test": 0.10, "segundos_entrenamiento_total": 100.0}
+    cnn_json = {"accuracy_test": 0.7, "ece_test": 0.05, "segundos_entrenamiento_total": 2000.0,
+                "roc_auc_macro_test": 0.98}
+    tabla = comparacion.comparar_redes(mlp_json, cnn_json).set_index("Concepto")
+    assert tabla.loc["Accuracy en test", "Diferencia (CNN − MLP)"] == "+0.2000"
+    assert tabla.loc["Accuracy en test", "Mejor"] == "CNN"
+    assert tabla.loc["Error de calibración (ECE)", "Mejor"] == "CNN"
+    assert tabla.loc["Segundos: entrenamiento total", "Mejor"] == "MLP"
+    assert tabla.loc["ROC-AUC macro en test", "MLP"] == "no medida"
+
+
+def test_figura_para_informe_guarda_lo_que_se_muestra(tmp_path):
+    import matplotlib.pyplot as plt
+
+    with comparacion.figura_para_informe("prueba", tmp_path) as guardadas:
+        plt.plot([0, 1])
+        plt.show()
+        plt.plot([1, 0])
+        plt.show()
+    assert [ruta.name for ruta in guardadas] == ["prueba.png", "prueba_2.png"]
+    assert all(ruta.exists() for ruta in guardadas)
+    assert plt.show.__name__ == "show"

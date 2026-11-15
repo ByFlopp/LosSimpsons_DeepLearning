@@ -44,19 +44,21 @@ def a_gpu(arreglo, dispositivo="cuda"):
     return torch.as_tensor(np.ascontiguousarray(arreglo)).to(dispositivo)
 
 
-GIRO_MAXIMO_GRADOS = 18.0
-ZOOM_MAXIMO = 0.10
-CONTRASTE_MAXIMO = 0.10
+GIRO_MAXIMO_GRADOS = 10.0
+ESCALA = (0.9, 1.1)
+DESPLAZAMIENTO = 0.08
+COLOR = 0.15
 
 
-def aumentar_imagenes(lote, generador, giro_maximo=GIRO_MAXIMO_GRADOS, zoom_maximo=ZOOM_MAXIMO,
-                      contraste_maximo=CONTRASTE_MAXIMO):
+def aumentar_imagenes(lote, generador, giro_maximo=GIRO_MAXIMO_GRADOS, escala=ESCALA, desplazamiento=DESPLAZAMIENTO,
+                      color=COLOR):
     """Aumento de datos en línea sobre un lote de imágenes `(n, alto, ancho, 3)` en [0, 255], ya en la GPU.
 
-    Cada imagen recibe, con valores distintos en cada época: un volteo horizontal (con probabilidad 1/2), un giro
-    de hasta ±`giro_maximo` grados, un zoom de hasta ±`zoom_maximo` y un cambio de contraste de hasta
-    ±`contraste_maximo`. Los bordes que deja el giro se rellenan reflejando la imagen. Es el mismo aumento que las
-    capas `RandomFlip`, `RandomRotation`, `RandomZoom` y `RandomContrast` de Keras (material 3.2.2), pero escrito
+    A cada imagen le aplica, con valores al azar distintos en cada paso: un espejo horizontal con probabilidad 1/2,
+    un giro de hasta ±`giro_maximo` grados, un cambio de escala dentro de `escala`, un desplazamiento de hasta
+    `desplazamiento` (fracción del lado) y un cambio de brillo y de contraste de hasta ±`color`. Los bordes que
+    quedan vacíos se rellenan reflejando la imagen. Es el mismo aumento que las capas `RandomFlip`,
+    `RandomRotation`, `RandomZoom`, `RandomTranslation` y `RandomContrast` de Keras (material 3.2.2), pero escrito
     con `affine_grid` y `grid_sample` de PyTorch: con el backend de PyTorch esas capas tardan unos 440 ms por lote
     de 128 imágenes y esto, unos pocos. Va en el bucle de entrenamiento y no dentro del modelo, así que solo actúa
     al entrenar y el modelo guardado no cambia.
@@ -64,29 +66,35 @@ def aumentar_imagenes(lote, generador, giro_maximo=GIRO_MAXIMO_GRADOS, zoom_maxi
     Devuelve el lote en float32, en la misma escala [0, 255]: la capa `Rescaling` del modelo lo lleva a [0, 1]."""
     n = lote.shape[0]
     dispositivo = lote.device
-    x = lote.permute(0, 3, 1, 2).float()  # (n, 3, alto, ancho)
 
-    def uniforme(minimo, maximo):
-        return minimo + (maximo - minimo) * torch.rand(n, generator=generador, device=dispositivo)
+    def al_azar(minimo, maximo):
+        """Un valor uniforme en [minimo, maximo) para cada imagen del lote."""
+        return minimo + (maximo - minimo) * torch.rand(n, device=dispositivo, generator=generador)
 
-    volteo = torch.where(torch.rand(n, generator=generador, device=dispositivo) < 0.5, -1.0, 1.0)
-    angulo = torch.deg2rad(uniforme(-giro_maximo, giro_maximo))
-    escala = uniforme(1 - zoom_maximo, 1 + zoom_maximo)
-    coseno, seno = torch.cos(angulo) / escala, torch.sin(angulo) / escala
-    # Matriz afín de cada imagen: giro y zoom, con el volteo horizontal en la primera columna
-    theta = torch.zeros(n, 2, 3, device=dispositivo)
-    theta[:, 0, 0] = coseno * volteo
-    theta[:, 0, 1] = -seno
-    theta[:, 1, 0] = seno * volteo
-    theta[:, 1, 1] = coseno
-    rejilla = torch.nn.functional.affine_grid(theta, list(x.shape), align_corners=False)
-    x = torch.nn.functional.grid_sample(x, rejilla, mode="bilinear", padding_mode="reflection", align_corners=False)
-
-    # Contraste: se aleja o se acerca cada píxel a la media de su imagen y canal
-    factor = uniforme(1 - contraste_maximo, 1 + contraste_maximo).view(n, 1, 1, 1)
-    media = x.mean(dim=(2, 3), keepdim=True)
-    x = ((x - media) * factor + media).clamp(0, 255)
-    return x.permute(0, 2, 3, 1).contiguous()
+    imagenes = lote.permute(0, 3, 1, 2).float()  # (n, 3, alto, ancho), como espera grid_sample
+    angulo = torch.deg2rad(al_azar(-giro_maximo, giro_maximo))
+    factor = al_azar(*escala)
+    espejo = torch.where(torch.rand(n, device=dispositivo, generator=generador) < 0.5, -1.0, 1.0)
+    # affine_grid trabaja en coordenadas normalizadas [-1, 1]: desplazar una fracción f del lado es moverse 2f
+    dx = al_azar(-2 * desplazamiento, 2 * desplazamiento)
+    dy = al_azar(-2 * desplazamiento, 2 * desplazamiento)
+    coseno, seno = torch.cos(angulo) / factor, torch.sin(angulo) / factor
+    theta = torch.stack(
+        [
+            torch.stack([coseno * espejo, -seno * espejo, dx * espejo], dim=1),
+            torch.stack([seno, coseno, dy], dim=1),
+        ],
+        dim=1,
+    )
+    rejilla = torch.nn.functional.affine_grid(theta, list(imagenes.shape), align_corners=False)
+    imagenes = torch.nn.functional.grid_sample(imagenes, rejilla, mode="bilinear", padding_mode="reflection",
+                                               align_corners=False)
+    # Contraste alrededor de la media de cada imagen y brillo multiplicativo
+    media = imagenes.mean(dim=(1, 2, 3), keepdim=True)
+    contraste = al_azar(1 - color, 1 + color).view(n, 1, 1, 1)
+    brillo = al_azar(1 - color, 1 + color).view(n, 1, 1, 1)
+    imagenes = ((imagenes - media) * contraste + media) * brillo
+    return imagenes.clamp(0, 255).permute(0, 2, 3, 1).contiguous()
 
 
 def tiene_regularizacion(modelo):
@@ -106,19 +114,23 @@ def penalizacion(modelo):
 
 
 def _pasada(modelo, X, y, batch, entrenando, optimizador=None, pesos=None, generador=None, suavizado=0.0,
-            aumento=None):
+            aumento=None, filas=None, l2=0.0, kernels=None):
     """Recorre el conjunto una vez y devuelve `(perdida, accuracy, top_3)`.
 
-    Al entrenar suma la penalización L2 a la pérdida que se optimiza y, si se indica `aumento` (una función
-    `(lote, generador) -> lote`), transforma cada lote antes de pasarlo por la red. La pérdida que devuelve es solo
+    `filas` limita la pasada a esos índices sin copiar los datos (por ejemplo, solo las originales de
+    entrenamiento). Al entrenar suma a la pérdida que se optimiza la penalización L2: `l2 · Σk²` sobre `kernels`
+    (los pesos de las capas, no los sesgos) y, si el modelo tiene `kernel_regularizer`, también la suya. Si se
+    indica `aumento` (una función `(lote, generador) -> lote`), transforma cada lote antes de pasarlo por la red. La pérdida que devuelve es solo
     la entropía cruzada, para que las curvas de configuraciones con y sin L2 se puedan comparar. Los acumuladores
     son tensores en la GPU: convertirlos a float en cada lote obligaría a sincronizar con la CPU en cada paso."""
     modelo.train(entrenando)
-    n = len(X)
+    n = len(X) if filas is None else len(filas)
     if entrenando:
         orden = torch.randperm(n, device=X.device, generator=generador)
+        if filas is not None:
+            orden = filas[orden]
     else:
-        orden = torch.arange(n, device=X.device)
+        orden = torch.arange(n, device=X.device) if filas is None else filas
     regularizar = entrenando and tiene_regularizacion(modelo)
 
     suma_perdida = torch.zeros((), device=X.device)
@@ -145,6 +157,9 @@ def _pasada(modelo, X, y, batch, entrenando, optimizador=None, pesos=None, gener
             perdida = perdida_muestra.mean()
             if regularizar:
                 perdida = perdida + penalizacion(modelo)
+            if entrenando and l2:
+                # Regularización L2: el cuadrado de los pesos solo entra en el gradiente
+                perdida = perdida + l2 * sum((kernel ** 2).sum() for kernel in kernels)
 
         if entrenando:
             optimizador.zero_grad(set_to_none=True)
@@ -177,6 +192,8 @@ def entrenar(
     ruta_modelo=None,
     semilla=42,
     aumento=None,
+    l2=0.0,
+    filas=None,
     verbose=2,
 ):
     """Entrena el modelo y devuelve un `Historial` equivalente al de `model.fit()`.
@@ -187,6 +204,10 @@ def entrenar(
     - **ModelCheckpoint**: si se indica `ruta_modelo`, guarda ahí el modelo de la mejor época.
     - **Aumento en línea**: si se indica `aumento` (por ejemplo, `aumentar_imagenes`), cada lote de entrenamiento se
       transforma antes de pasar por la red; validación ve las imágenes intactas.
+    - **Regularización L2**: `l2` suma `l2 · Σk²` sobre los pesos de todas las capas (los parámetros de más de una
+      dimensión: kernels de convoluciones y de capas densas, no sesgos ni Batch Normalization). La pérdida que se
+      registra es solo la de los datos, comparable entre configuraciones con y sin L2.
+    - **Subconjunto**: `filas` (índices de `X_entrena`) entrena solo con esas filas sin copiar los datos.
 
     El historial registra la mejor época y el motivo de la parada: `paciencia` si la cortó la parada temprana, o
     `tope` si llegó a `epocas` y tal vez seguía mejorando."""
@@ -194,6 +215,10 @@ def entrenar(
 
     generador = torch.Generator(device=X_entrena.device)
     generador.manual_seed(semilla)
+    kernels = [p for p in modelo.parameters() if p.ndim > 1 and p.requires_grad] if l2 else None
+    if filas is not None:
+        filas = (filas if torch.is_tensor(filas) else torch.as_tensor(np.asarray(filas))).to(
+            device=X_entrena.device, dtype=torch.long)
 
     pesos = None
     if pesos_por_clase is not None:
@@ -215,7 +240,8 @@ def entrenar(
     for epoca in range(1, epocas + 1):
         inicio = time.perf_counter()
         perdida, acierto, top3 = _pasada(
-            modelo, X_entrena, y_entrena, batch, True, optimizador, pesos, generador, suavizado, aumento
+            modelo, X_entrena, y_entrena, batch, True, optimizador, pesos, generador, suavizado, aumento,
+            filas, l2, kernels,
         )
         val_perdida, val_acierto, val_top3 = _pasada(modelo, X_valida, y_valida, batch, False)
         duracion = time.perf_counter() - inicio
@@ -320,6 +346,36 @@ def cargar_historiales(directorio):
     }
 
 
+def huella_configuracion(**factores):
+    """Texto estable que identifica una configuración de entrenamiento: sus factores, el presupuesto, la semilla y
+    el tamaño del conjunto de entrenamiento. Si cambia cualquiera de ellos, el entrenamiento guardado ya no vale."""
+    return json.dumps(factores, sort_keys=True, ensure_ascii=False, default=_a_json)
+
+
+def entrenar_o_reanudar(identificador, huella, entrenar_fn, cargar_modelo_fn, directorio_historiales, ruta_modelo,
+                        reutilizar=True, **metadatos):
+    """Entrena una configuración y guarda su historial, o la recupera si ya se entrenó con la misma huella.
+
+    `entrenar_fn()` entrena y devuelve `(modelo, historial)`; el modelo de la mejor época queda en `ruta_modelo`.
+    `cargar_modelo_fn(ruta)` lee un modelo guardado. Si `reutilizar` y en `directorio_historiales` hay un historial
+    con la misma `huella` y existe `ruta_modelo`, no se entrena de nuevo: se cargan los dos. Así una corrida de
+    muchas horas que se corta se reanuda donde quedó. Devuelve `(modelo, historial, reanudado)`."""
+    ruta_historial = Path(directorio_historiales) / f"{identificador}.json"
+    ruta_modelo = Path(ruta_modelo)
+    if reutilizar and ruta_historial.exists() and ruta_modelo.exists():
+        guardado = json.loads(ruta_historial.read_text(encoding="utf-8"))
+        if guardado.get("huella") == huella:
+            historial = Historial(epocas_maximas=guardado.get("epocas_maximas"))
+            historial.history = guardado["history"]
+            historial.mejor_epoca = guardado.get("mejor_epoca")
+            historial.motivo_parada = guardado.get("motivo_parada")
+            historial.segundos = guardado.get("segundos")
+            return cargar_modelo_fn(ruta_modelo), historial, True
+    modelo, historial = entrenar_fn()
+    guardar_historial(directorio_historiales, identificador, historial, huella=huella, **metadatos)
+    return modelo, historial, False
+
+
 # --- Curvas de aprendizaje ---------------------------------------------------------------------------------
 
 
@@ -399,7 +455,8 @@ def evaluar_aprendizaje(historiales, referencia, configuraciones, titulos=None, 
 
 def diagnosticar_entrenamiento(historial, f1_macro_val, baseline_azar, baseline_mayoritaria):
     """Indicadores de la mejor época de un entrenamiento (pérdidas, accuracy, top-3, F1 macro y brecha entre
-    entrenamiento y validación) y una lectura de la brecha. Los baselines van en porcentaje."""
+    entrenamiento y validación) y una lectura de la brecha. Los baselines van en porcentaje. Devuelve
+    `(indice_optimo, diagnostico, brecha)`."""
     registro = _registro(historial)
     indice_optimo = int(np.argmin(registro["val_loss"]))
     brecha = registro["accuracy"][indice_optimo] - registro["val_accuracy"][indice_optimo]
@@ -431,7 +488,7 @@ def diagnosticar_entrenamiento(historial, f1_macro_val, baseline_azar, baseline_
         f"Accuracy de validacion ({registro['val_accuracy'][indice_optimo]:.3f}) frente a los baselines:"
         f" azar {baseline_azar / 100:.3f} y clase mayoritaria {baseline_mayoritaria / 100:.3f}."
     )
-    return indice_optimo, diagnostico
+    return indice_optimo, diagnostico, brecha
 
 
 def efecto_parada_temprana(historial):

@@ -14,6 +14,7 @@ vive aquí, una sola vez, y los dos notebooks lo importan. Cada módulo es una e
 | `experimentacion`   | Comparación de configuraciones, búsqueda de hiperparámetros, impacto |
 | `evaluacion`        | Métricas (con ROC-AUC), matriz de confusión, aciertos y errores      |
 | `auditoria`         | ROC, calibración, umbral de revisión, sesgos por subgrupo y SHAP     |
+| `comparacion`       | Comparación MLP–CNN desde los JSON y figuras del informe             |
 | `rendimiento`       | Entorno de ejecución, tiempos y uso de la GPU                        |
 | `prediccion`        | Clasificar una imagen cualquiera con el modelo final                 |
 

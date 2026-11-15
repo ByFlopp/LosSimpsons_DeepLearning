@@ -18,19 +18,25 @@ from .evaluacion import evaluar_metricas
 # --- Resultado de una configuración ------------------------------------------------------------------------
 
 
-def resultado_de_entrenamiento(historial, modelo, X_valida, y_valida_idx, numero_clases, segundos=None):
+def resultado_de_entrenamiento(historial, modelo, X_valida, y_valida_idx, numero_clases, segundos=None,
+                                experimento=None):
     """Fila de la tabla de experimentos con lo que dejó un entrenamiento: épocas, mejor época, motivo de la parada,
-    parámetros, segundos y las métricas de validación del modelo de su mejor época (accuracy, precision y recall
-    macro, F1 macro y ROC-AUC macro)."""
+    parámetros, segundos, la accuracy de entrenamiento y la brecha con la de validación en la mejor época, y las
+    métricas de validación del modelo de su mejor época (accuracy, precision y recall macro, F1 macro y ROC-AUC
+    macro)."""
     registro = _registro(historial)
     indice = int(np.argmin(registro["val_loss"]))
     metricas = evaluar_metricas(y_valida_idx, modelo.predict(X_valida, batch_size=256, verbose=0), numero_clases)
+    fila = {} if experimento is None else {"experimento": experimento}
     return {
+        **fila,
         "epocas": len(registro["loss"]),
         "mejor_epoca": indice + 1,
         "parada": getattr(historial, "motivo_parada", None) or "-",
         "parametros": int(modelo.count_params()),
         "val_loss": round(registro["val_loss"][indice], 4),
+        "train_accuracy": round(registro["accuracy"][indice], 4),
+        "brecha": round(registro["accuracy"][indice] - registro["val_accuracy"][indice], 4),
         "val_accuracy": round(metricas["accuracy"], 4),
         "val_precision_macro": round(metricas["precision_macro"], 4),
         "val_recall_macro": round(metricas["recall_macro"], 4),
@@ -214,7 +220,7 @@ def generar_configuraciones(espacio, estrategia="grid", n_configuraciones=None, 
 
 
 def optimizar_modelo(entrenar_configuracion, espacio, estrategia="grid", n_configuraciones=None, semilla=42,
-                     prefijo="B", etiquetas=None, fijos=None):
+                     prefijo="B", etiquetas=None, fijos=None, antes_de_entrenar=None):
     """Búsqueda de hiperparámetros sobre el pipeline: Grid Search o Random Search.
 
     1. Define el espacio de búsqueda con `generar_configuraciones` (todas las combinaciones, o una muestra
@@ -226,7 +232,9 @@ def optimizar_modelo(entrenar_configuracion, espacio, estrategia="grid", n_confi
     4. Devuelve `(tabla, modelos, historiales)`: la tabla comparativa ordenada por F1 macro de validación, con la
        columna `factores` para volver a entrenar cualquier fila, y los modelos e historiales por nombre.
 
-    Una configuración que no cabe en la GPU queda fuera de la tabla con un aviso, sin detener la búsqueda."""
+    Una configuración que no cabe en la GPU queda fuera de la tabla con un aviso, sin detener la búsqueda:
+    `antes_de_entrenar(factores)` puede descartarla de antemano (devolviendo False), y un error de memoria al
+    entrenar también la descarta."""
     etiquetas = etiquetas or {}
     fijos = fijos or {}
     configuraciones = generar_configuraciones(espacio, estrategia, n_configuraciones, semilla)
@@ -239,11 +247,15 @@ def optimizar_modelo(entrenar_configuracion, espacio, estrategia="grid", n_confi
         nombre = f"{prefijo}{numero:02d} - " + ", ".join(
             f"{etiquetas.get(factor, factor)} {_formatear(valor)}" for factor, valor in factores.items()
         )
+        if antes_de_entrenar is not None and not antes_de_entrenar({**factores, **fijos}):
+            print(f"   {nombre}: no cabe en la memoria de la GPU, queda fuera de la búsqueda")
+            continue
         try:
             modelo, historial, resultado = entrenar_configuracion(nombre, **factores, **fijos)
         except Exception as error:  # noqa: BLE001 - sin memoria en la GPU u otro fallo de una sola configuración
             if "OutOfMemory" not in type(error).__name__:
                 raise
+            _liberar_memoria_gpu()
             print(f"   {nombre}: sin memoria suficiente en la GPU, queda fuera de la búsqueda")
             continue
         modelos[nombre] = modelo
@@ -255,6 +267,17 @@ def optimizar_modelo(entrenar_configuracion, espacio, estrategia="grid", n_confi
     tabla = pd.DataFrame(resultados).sort_values("val_f1_macro", ascending=False).reset_index(drop=True)
     print(f"Búsqueda terminada en {time.perf_counter() - inicio:.0f} s")
     return tabla, modelos, historiales
+
+
+def _liberar_memoria_gpu():
+    """Devuelve al driver la memoria que dejó un entrenamiento fallido, si hay GPU."""
+    try:
+        import torch
+
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+    except ImportError:
+        pass
 
 
 def tabla_comparativa(tabla, referencia=None, n=None):

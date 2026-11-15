@@ -96,7 +96,7 @@ VERSION_CACHE = 1
 PASOS_INSTANTANEAS = (0, 50, 200, 500)
 # Los de la figura de evolución: los cuatro de los mapas de activación del notebook de la CNN
 PERSONAJES_EVOLUCION = ("homer_simpson", "marge_simpson", "bart_simpson", "lisa_simpson")
-# Los doce de la diapositiva «Por personaje» (F1 en test) de CNN/scripts/newDataset/generar_presentacion.py
+# Doce personajes de F1 variado en test, elegidos para la presentación de octubre (EP2)
 PERSONAJES_F1 = (
     "apu_nahasapeemapetilon", "comic_book_guy", "chief_wiggum", "sideshow_bob", "marge_simpson",
     "homer_simpson", "lisa_simpson", "bart_simpson", "martin_prince", "maggie_simpson",
