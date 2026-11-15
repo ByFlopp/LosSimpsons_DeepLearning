@@ -1,8 +1,10 @@
 # Notebooks del dataset nuevo (64 personajes)
 
 Esta carpeta contiene la versión del MLP para el dataset ampliado por el equipo: **una carpeta por
-personaje**, sin partición previa en `train` y `test`. El trabajo con el dataset anterior (25 personajes)
-se conserva intacto en [`../oldDataset/`](../oldDataset/).
+personaje**, sin partición previa en `train` y `test`. El notebook del dataset anterior (25 personajes, EP1)
+quedó en el historial de Git (`PMC/notebooks/oldDataset/`, commit `4b8b80e`), y su informe en
+[`../docs/oldDataset/Informe.md`](../docs/oldDataset/Informe.md). El informe de la EP3 está en
+[`../docs/newDataset/Informe.md`](../docs/newDataset/Informe.md).
 
 | Notebook | Entorno | Resolución de trabajo |
 |---|---|---|
@@ -20,7 +22,7 @@ notebook no depende de ese script.
 
 1. **Partición propia, con todo el dataset.** El notebook reparte todas las imágenes originales de
    cada personaje en entrenamiento (70 %), validación (20 %) y test (10 %), de forma estratificada y con
-   semilla fija, sin tope por personaje. El desbalance (33:1, de 3.118 imágenes de Homer a 94 de Louie) se
+   semilla fija, sin tope por personaje. El desbalance (unos 20:1, de 3.118 imágenes de Homer a 151 de Maggie) se
    compensa con pesos por clase suavizados, la raíz cuadrada de los balanceados.
 2. **Imágenes alteradas.** Un cuarto de las imágenes de cada personaje tiene una variante con un giro de 10
    a 20°, un cambio de color (brillo, contraste, saturación o tono) y un filtro de textura (desenfoque,
@@ -34,6 +36,9 @@ notebook no depende de ese script.
    píxeles crudos (R1), con el color solo (R2) y con la textura sola (R3), además de las variantes de
    arquitectura E1–E5 de siempre. El notebook suma dropout (E6), pesos por clase (P1, P2),
    suavizado de etiquetas (S1), entrenamiento sin alteradas (A1) y una combinación de los cambios que mejoran al modelo base (C1).
+   La EP3 suma las variantes de regularización G1 (sin dropout), G2 (sin Batch Normalization) y G3 (L2), un Grid
+   Search de 36 configuraciones, la ROC-AUC, la auditoría (calibración, umbral de revisión y sesgos por subgrupo),
+   SHAP y la comparación con la CNN, todo con el mismo presupuesto: 60 épocas y paciencia 12.
 5. **Escenas con varios personajes.** Los fotogramas de episodio y las imágenes casi idénticas
    guardadas en la carpeta de otro personaje (gemelas) indican quién más sale en cada imagen. No cambian
    el acierto: solo alimentan la accuracy por escena, una referencia para comparar con la corrida del
@@ -104,7 +109,8 @@ raíz del dataset. Con el dataset del 15-10-2026 (39.000 originales) generó 9.7
 parecidas, de 5.573 grupos, en unos 3 minutos, y bajó los pares casi idénticos de 11.223 a 237. El
 16-10-2026 (38.999 originales) encontró además 756 pares de gemelas en 1.174 imágenes y dejó 1.233 copias
 para revisar. En las corridas del 16-10-2026 el dataset ya tenía 40.123 originales, con 10.043 alteradas,
-9.041 parecidas y 3.326 pares de gemelas.
+9.041 parecidas y 3.326 pares de gemelas. Con el dataset del 15-11-2026 (56.268 originales) hay 14.077 alteradas,
+9.040 parecidas y 6.101 pares de gemelas.
 
 - **Las originales no se modifican nunca**: el script solo las lee. Tampoco mueve nada a otra carpeta de
   personaje: eso lo hace el equipo desde `gemelas_por_revisar/`.
@@ -132,12 +138,26 @@ docker run --rm -v "${PWD}:/workspace" -v "C:/ruta/al/simpsons_dataset:/data/sim
 
 ## Paso 3: ejecutar el notebook
 
-**En Windows, con la GPU.** El entorno `.venv-gpu` es el mismo del dataset anterior
-([`../oldDataset/README_GPU.md`](../oldDataset/README_GPU.md)), más una dependencia:
+La ejecución es local, en la RTX 4060 Laptop: se acordó con el profesor en lugar de Google Colab.
+
+**En Windows, con la GPU.** El entorno `.venv-gpu` se crea con `requirements-gpu-windows.txt` (sus pasos de
+instalación quedaron en `PMC/notebooks/oldDataset/README_GPU.md`, en el historial de Git, commit `4b8b80e`), más una
+dependencia:
 
 ```powershell
 .\.venv-gpu\Scripts\python.exe -m pip install -r requirements-newDataset.txt
 .\PMC\scripts\newDataset\ejecutar_notebook_gpu.ps1
+```
+
+**Sin VS Code**, desde `PMC/notebooks/`, el notebook se puede ejecutar completo y guardar en otro archivo. Con
+`SIMPSONS_PRUEBA=1` corre de punta a punta en un par de minutos, con 40 imágenes por personaje, 2 épocas y una grilla
+de 2 configuraciones, y escribe en carpetas `prueba/` aparte, para comprobarlo antes de la corrida completa:
+
+```powershell
+$env:KERAS_BACKEND = "torch"
+$env:SIMPSONS_PRUEBA = "1"   # quitar para la corrida completa
+..\..\.venv-gpu\Scripts\python.exe -m nbconvert --to notebook --execute --ExecutePreprocessor.timeout=-1 `
+    --ExecutePreprocessor.kernel_name=python3 --output corrida.ipynb LosSimpsons_GPU_4060M.ipynb
 ```
 
 **En Docker.** Copia `.env.example` como `.env`, pon en `SIMPSONS_DATASET_HOST` la ruta del dataset y
@@ -200,41 +220,50 @@ Más opciones:
 | Qué | Dónde |
 |---|---|
 | Modelos `.keras` de la corrida y el modelo final con sus archivos (`mlp_final.keras`, `.json`, `_entrada.py` y `_particion.csv`) | `PMC/models_gpu/newDataset/`, ignorados por Git |
+| Historial de cada configuración | `PMC/models_gpu/newDataset/historiales/`, ignorados por Git |
 | Resumen de la corrida | `PMC/resultados/newDataset/GPU/rendimiento_gpu_128x128.json`; cada corrida reemplaza el de la anterior |
+| Figuras del informe | `PMC/docs/newDataset/figuras/`, guardadas por el notebook al ejecutarse |
+| Recreación de cada personaje (anexo del notebook) | `PMC/resultados/newDataset/recreaciones/` |
+| Presentación de resultados | `PMC/presentacion_resultados_PMC.html`, generada con `scripts/newDataset/generar_presentacion.py --modelo mlp` |
 | Cajas de cada personaje, después del notebook (paso 4) | `PMC/models_gpu/newDataset/cajas_mlp_final/`, ignoradas por Git |
 
 `mlp_final.json` guarda la representación, la resolución y el orden de las clases del modelo final, y
 `mlp_final_entrada.py` repite su pre-procesamiento. La sección «Probar el modelo con una imagen cualquiera»
 y el script de cajas los usan para clasificar sin volver a entrenar.
 
-## Resultados de la corrida del 16-10-2026, con la imagen completa
+## Resultados de la corrida del 15-11-2026
 
-El notebook se ejecutó completo con el dataset real (64 personajes, 40.123 originales) en la GPU a
-128 × 128, con la imagen completa, como ahora. La accuracy usa el criterio de acierto de entonces (el personaje
-de la carpeta o uno presente en la escena); la estricta solo acepta el de la carpeta y es la comparable con
-el criterio actual.
+El notebook de GPU se ejecutó completo con el dataset real (64 personajes, 56.268 originales) a 128 × 128, con la
+imagen completa. Sus salidas guardadas son las de esa corrida.
 
-| Corrida | Configuración final | Accuracy | Estricta | Top-3 | F1 macro | Duración |
+| Corrida | Configuración final | Accuracy | Top-3 | F1 macro | ROC-AUC macro | Duración |
 |---|---|---:|---:|---:|---:|---:|
-| GPU 128 × 128 | C1 - combinación | 0,586 | 0,539 | 0,751 | 0,559 | 28 min 14 s |
+| GPU 128 × 128 | GS01 - solo color, 3 capas, dropout 0,2 | **0,556** | **0,732** | **0,557** | **0,940** | 2 h 2 min 44 s |
 
-- **El color solo gana.** El modelo final usa solo los 370 histogramas de color, con las tres capas de E2.
-- **La red es pequeña para la tarjeta.** A batch 128 la GPU trabaja el 33,7 % del tiempo, y el
-  pre-procesamiento, que corre en la CPU, toma 11 minutos: el 39 % de la corrida.
-- **Los KPIs de calidad se cumplen**, también con el criterio estricto (0,539 de accuracy).
-- **Frente a la corrida del 15-10-2026** (0,643 de accuracy estricta), la caída a 0,539 con la misma
-  configuración mide sobre todo la fuga que se eliminó: aquel test no filtraba las imágenes casi idénticas
-  a otras de entrenamiento ni tenía alteradas.
+- **Representación.** El color solo (R2) supera a color y textura por 6,9 puntos de F1 macro de validación; la
+  textura sola (−17,4) y los píxeles crudos (−24,6) quedan muy atrás.
+- **Regularización.** Sin dropout (G1) el F1 macro cae 7,5 puntos; sin suavizado (S1), 3,5; sin alteradas (A1), 2,6;
+  sin Batch Normalization (G2), 1,1. L2 (G3) resta 0,7 y el dropout 0,5 (E6) no cambia nada.
+- **Optimización.** Gana GS01, del Grid Search: la entrada y las tres capas de C1 con dropout 0,2 en lugar de 0,5,
+  5,8 puntos sobre C1 y 10,5 sobre la base. El dropout es lo único que mueve la grilla; 35 de sus 36 configuraciones
+  llegaron al tope de 60 épocas.
+- **Auditoría.** ECE de 0,044 (levemente sobreconfiado); con el umbral de 0,958 elegido en validación resuelve solo
+  el 14,3 % del test al 89,7 % de acierto. Accuracy de 0,627 en Kaggle y de 0,508 en los fotogramas de episodio, y
+  11,3 puntos menos en la familia Simpson que en el resto.
+- **Frente a la CNN** en la GPU a 128 × 128 (G4, corrida del 14-11-2026): accuracy −22,0, top-3 −17,7 y F1 macro
+  −19,8; la CNN cataloga 3.567 imágenes por segundo de extremo a extremo y el MLP 1.360.
 
-El detalle, con los tiempos de cada etapa, está al final del notebook, en «Corrida con la imagen completa
-del 16-10-2026».
+La [presentación de resultados](../presentacion_resultados_PMC.html) y el [informe](../docs/newDataset/Informe.md)
+usan las cifras de esta corrida.
 
 ## Estado y tiempos de referencia
 
-- La corrida del 16-10-2026, con la imagen completa, tardó 28 minutos en la GPU. La carga de las imágenes y
-  el cálculo de los descriptores, que se hacen en la CPU, tomaron 11 minutos.
-- El notebook no tiene salidas guardadas: las de su última corrida eran de 64 × 64 y se borraron. Vuelven a
-  aparecer al ejecutarlo. Las lecturas de resultados todavía describen la corrida del 16-10-2026 y se
-  revisan con las salidas nuevas.
-- El cálculo de descriptores es la etapa más lenta del pre-procesamiento. El KPI de costo de catalogación
-  incluye ese cálculo, porque es parte del costo real de clasificar una imagen nueva.
+- La corrida del 15-11-2026 tardó 2 h 2 min en la GPU: 11,4 minutos en cargar las imágenes y 2,7 en calcular los
+  descriptores, ambos en la CPU, y 1 h 46 min en entrenar las 54 configuraciones (76 minutos de ellos, el Grid
+  Search). Las 84 celdas de código terminaron sin errores.
+- Después de la corrida solo se volvió a ejecutar la celda de los KPIs, con la medición del costo corregida: la
+  primera versión medía una sola vez en frío y daba 988 imágenes por segundo; la mediana de tres repeticiones,
+  después de un calentamiento, da 1.360.
+- La red es pequeña para la tarjeta: a batch 128 la GPU trabaja el 27,8 % del tiempo. El cálculo de descriptores
+  es la etapa más lenta de catalogar una imagen nueva, y el KPI de costo lo incluye.
+- El anexo «Corrida del 15-11-2026 frente a la del 09-11-2026», al final del notebook, compara las dos corridas.

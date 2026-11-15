@@ -13,11 +13,11 @@ Este repositorio es una **comparativa entre dos redes neuronales** que identific
 | Carpeta | [PMC/](PMC/) | [CNN/](CNN/) |
 | Qué recibe | 2.462 descriptores de color y textura de la imagen completa, calculados en la CPU; el modelo final usa los 370 de color | La imagen completa, de 128 × 128 × 3, sin aplanar |
 | Cómo obtiene sus características | Elegidas a mano: histogramas HSV y Lab, LBP, Gabor y HOG | Aprendidas: filtros de 3 × 3 que recorren la imagen |
-| Corrida con la imagen completa | GPU a 128 × 128, del 09-11-2026 | GPU a 128 × 128, del 14-11-2026 (EP3) |
-| Resultado en test, con la imagen completa | Accuracy 0,544 y F1 macro 0,551 (C1) | **Accuracy 0,775, F1 macro 0,755 y ROC-AUC 0,987** (G4) |
+| Corrida con la imagen completa | GPU a 128 × 128, del 15-11-2026 (EP3) | GPU a 128 × 128, del 14-11-2026 (EP3) |
+| Resultado en test, con la imagen completa | Accuracy 0,556, F1 macro 0,557 y ROC-AUC 0,940 (GS01) | **Accuracy 0,775, F1 macro 0,755 y ROC-AUC 0,987** (G4) |
 | Cajas alrededor de cada personaje | Después de entrenar: `detectar_cajas.py --modelo mlp` | Después de entrenar: `detectar_cajas.py --modelo cnn` |
 | Presentación de resultados | [presentacion_resultados_PMC.html](PMC/presentacion_resultados_PMC.html) | [presentacion_resultados_CNN.html](CNN/presentacion_resultados_CNN.html) |
-| Informe técnico | [Informe de la EP1](PMC/docs/oldDataset/Informe.md), sobre el dataset anterior de 25 personajes | [Informe de la EP3](CNN/docs/newDataset/Informe.md): la CNN optimizada y auditada, y su comparación con el MLP |
+| Informe técnico | [Informe de la EP3](PMC/docs/newDataset/Informe.md): el MLP optimizado y auditado; el [de la EP1](PMC/docs/oldDataset/Informe.md) usa el dataset anterior de 25 personajes | [Informe de la EP3](CNN/docs/newDataset/Informe.md): la CNN optimizada y auditada, y su comparación con el MLP |
 
 Las presentaciones son archivos HTML de un solo archivo: descárgalos y ábrelos en el navegador (GitHub solo muestra su código). El botón **Presentar** muestra una diapositiva a la vez en pantalla completa. Las genera [scripts/newDataset/generar_presentacion.py](scripts/newDataset/generar_presentacion.py) desde el resumen JSON y las figuras de cada corrida.
 
@@ -74,13 +74,13 @@ flowchart TD
     G --> K["Modelo final guardado<br/>lo usa después el script de cajas"]
 ```
 
-Las cifras de 49.148 / 14.130 / 7.067 imágenes son las de la corrida de la CNN del 14-11-2026; cambian si el dataset crece, por ejemplo con Frinkiac. Las funciones de cada etapa son las mismas para las dos redes y viven en [scripts/newDataset/pipeline_comun/](scripts/newDataset/pipeline_comun/).
+Las cifras de 49.148 / 14.130 / 7.067 imágenes son las de las corridas del 14-11-2026 (CNN) y del 15-11-2026 (MLP); cambian si el dataset crece, por ejemplo con Frinkiac. Las funciones de cada etapa son las mismas para las dos redes y viven en [scripts/newDataset/pipeline_comun/](scripts/newDataset/pipeline_comun/).
 
 ## Cómo funciona cada modelo
 
 ### MLP: descriptores elegidos a mano
 
-Cada imagen se resume primero en un vector fijo que calcula la CPU: histogramas de color HSV y Lab, en la imagen completa y en sus cuatro cuadrantes, y descriptores de textura LBP, Gabor y HOG. La red solo ve ese vector. Cada neurona se conecta con todas las entradas y no sabe qué parte de la imagen describe cada una, así que el MLP distingue paletas, no formas. En su corrida del 09-11-2026 ganó una entrada de solo color (370 valores).
+Cada imagen se resume primero en un vector fijo que calcula la CPU: histogramas de color HSV y Lab, en la imagen completa y en sus cuatro cuadrantes, y descriptores de textura LBP, Gabor y HOG. La red solo ve ese vector. Cada neurona se conecta con todas las entradas y no sabe qué parte de la imagen describe cada una, así que el MLP distingue paletas, no formas. En su corrida del 15-11-2026 ganó una entrada de solo color (370 valores), con tres capas ocultas y dropout 0,2, elegida por un Grid Search de 36 configuraciones.
 
 ```mermaid
 flowchart LR
@@ -124,12 +124,12 @@ Cada bloque es Conv2D 3 × 3 → BatchNorm → ReLU → MaxPool 2 × 2; la varia
 | Estructura espacial | Se pierde: cada neurona ve todo el vector | Se conserva: cada filtro mira una vecindad de 3 × 3 |
 | Características | Fijas, elegidas a mano | Aprendidas junto con el resto de la red |
 | Dónde se calcula la entrada | En la CPU, antes de la red | Dentro de la red, en la GPU |
-| Parámetros del modelo final | 1.059.648 (C1) | 473.120 (G4) |
+| Parámetros del modelo final | 1.059.648 (GS01) | 473.120 (G4) |
 | Explicación de la decisión | SHAP agrupado por canal de color y zona de la imagen | Grad-CAM sobre la imagen |
 
 ## Cómo se entrena y se elige cada modelo
 
-Los dos modelos pasan por el mismo protocolo, con un bucle de entrenamiento propio sobre PyTorch: Adam con tasa `1e-3`, batch 128, pesos por clase (la raíz cuadrada de los balanceados), suavizado de etiquetas 0,1, parada temprana y `ReduceLROnPlateau`. Todas las configuraciones tienen el mismo presupuesto: hasta 60 épocas, con paciencia 12. Cada variante cambia un solo factor respecto del modelo base: la entrada, la profundidad, la activación, la tasa de aprendizaje, el batch, el dropout, Batch Normalization, L2, el aumento de datos, los pesos por clase o el suavizado. Después, una búsqueda de hiperparámetros explora cómo interactúan: Random Search en dos etapas en la CNN y Grid Search en el MLP, cuya época es 25 veces más barata.
+Los dos modelos pasan por el mismo protocolo, con un bucle de entrenamiento propio sobre PyTorch: Adam con tasa `1e-3`, batch 128, pesos por clase (la raíz cuadrada de los balanceados), suavizado de etiquetas 0,1, parada temprana y `ReduceLROnPlateau`. Todas las configuraciones tienen el mismo presupuesto: hasta 60 épocas, con paciencia 12. Cada variante cambia un solo factor respecto del modelo base: la entrada, la profundidad, la activación, la tasa de aprendizaje, el batch, el dropout, Batch Normalization, L2, el aumento de datos, los pesos por clase o el suavizado. Después, una búsqueda de hiperparámetros explora cómo interactúan: Random Search en dos etapas en la CNN y Grid Search en el MLP, cuya época es 23 veces más barata.
 
 ```mermaid
 flowchart TD
@@ -151,24 +151,25 @@ Corridas en GPU (NVIDIA GeForce RTX 4060 Laptop) a 128 × 128, con la imagen com
 
 | Modelo | Corrida | Configuración final | Parámetros | Accuracy | Top-3 | F1 macro | Segundos por época | Duración |
 |---|---|---|---:|---:|---:|---:|---:|---:|
-| MLP | 09-11-2026 | C1 - combinación | 1.059.648 | 0,544 | 0,736 | 0,551 | 2,1 | 37 min 34 s |
+| MLP | 15-11-2026 | GS01 - Grid Search | 1.059.648 | 0,556 | 0,732 | 0,557 | 2,25 | 2 h 02 min |
 | CNN | 14-11-2026 | G4 - aumento de datos en línea | 473.120 | **0,775** | **0,908** | **0,755** | 51,7 | 16 h 28 min |
 
 Los cinco KPIs tienen umbrales fijados antes de entrenar:
 
 | KPI | Métrica en test | Umbral | MLP | CNN |
 |---|---|---:|---:|---:|
-| Cobertura de asistencia | Top-3 accuracy | ≥ 0,70 | 0,736 | 0,908 |
-| Equidad entre personajes | F1 macro | ≥ 0,45 | 0,551 | 0,755 |
-| Automatización sin revisión | Accuracy | ≥ 0,50 | 0,544 | 0,775 |
-| Ventaja sobre lo trivial | Accuracy / clase mayoritaria | ≥ 4× | 9,8× | 13,2× |
-| Costo de catalogación | Imágenes por segundo, de extremo a extremo | ≥ 1.000 | unas 430 (descriptores en la CPU) | 3.567 |
+| Cobertura de asistencia | Top-3 accuracy | ≥ 0,70 | 0,732 | 0,908 |
+| Equidad entre personajes | F1 macro | ≥ 0,45 | 0,557 | 0,755 |
+| Automatización sin revisión | Accuracy | ≥ 0,50 | 0,556 | 0,775 |
+| Ventaja sobre lo trivial | Accuracy / clase mayoritaria | ≥ 4× | 9,4× | 13,2× |
+| Costo de catalogación | Imágenes por segundo, de extremo a extremo | ≥ 1.000 | 1.360 (con los descriptores en la CPU) | 3.567 |
 
 **Lo que muestra la comparación**
 
-- **La CNN gana:** 23,1 puntos más de accuracy y 20,4 de F1 macro, con el mismo proceso y los mismos datos. Lo que decide es la representación: dentro de la CNN, la mejor variante (el aumento de datos en línea) sube el F1 macro de validación 3,8 puntos.
-- **La forma separa lo que el color confunde.** Homero, Marge, Bart y Lisa comparten la piel amarilla, y el MLP, que solo ve sus histogramas de color, los confunde entre sí; la CNN los sube a un F1 de 0,78 a 0,82, y la auditoría no encuentra sesgo para la familia Simpson.
-- **El costo se mueve al entrenamiento.** Una época de la CNN cuesta 25 veces lo que una del MLP, y la corrida completa de la EP3 tomó 16 h 28 min. A cambio, la CNN usa la GPU de verdad (el 99,4 % del tiempo, frente al 29,5 % del MLP) y no calcula descriptores en la CPU antes de clasificar.
+- **La CNN gana:** 22,0 puntos más de accuracy y 19,8 de F1 macro, con el mismo proceso y los mismos datos. Lo que decide es la representación: dentro de la CNN, la mejor variante (el aumento de datos en línea) sube el F1 macro de validación 3,8 puntos, y dentro del MLP, pasar a solo color sube 6,9.
+- **Los dos cumplen los cinco KPIs**, pero el MLP por poco: con un umbral elegido en validación para un 90 % de acierto, resuelve sin revisión solo el 14,3 % del test, frente al 71,6 % de la CNN.
+- **La forma separa lo que el color confunde.** Homero, Marge, Bart y Lisa comparten la piel amarilla, y el MLP, que solo ve sus histogramas de color, los confunde entre sí: acierta 11,3 puntos menos en la familia que en el resto. La CNN los sube a un F1 de 0,78 a 0,82, y la auditoría no encuentra sesgo para la familia Simpson.
+- **El costo se mueve al entrenamiento.** Una época de la CNN cuesta 23 veces lo que una del MLP, y la corrida completa de la EP3 tomó 16 h 28 min. A cambio, la CNN usa la GPU de verdad (el 99,4 % del tiempo, frente al 27,8 % del MLP) y no calcula descriptores en la CPU antes de clasificar: cataloga 2,6 veces más rápido de extremo a extremo.
 - **La auditoría encuentra lo que la accuracy esconde.** La CNN acierta el 93 % de las imágenes de Kaggle y el 67 % de los fotogramas de episodio; es subconfiada, y con un umbral elegido en validación resuelve sola el 71,6 % del test con un 90,4 % de acierto. Casi todos sus errores confiados nombran a otro personaje que sí está en la imagen.
 
 Las lecturas completas están en el [README del MLP](PMC/README.md), el [README de la CNN](CNN/README.md), sus informes y las dos presentaciones.
@@ -215,8 +216,8 @@ También puede correr en una EC2 con S3. Solo agrega originales: las variantes s
 │   ├── resultados/<oldDataset|newDataset>/GPU/
 │   ├── scripts/                    # Lanzadores de los notebooks de GPU
 │   ├── images/                     # Imágenes de los notebooks y del README del MLP
-│   ├── docs/                       # Informe, pauta de la EP1 y material de la unidad
-│   ├── presentacion_resultados_PMC.html  # Presentación de resultados del MLP (19 diapositivas)
+│   ├── docs/                       # Informes de la EP1 y la EP3 (con sus figuras), pauta de la EP1 y material
+│   ├── presentacion_resultados_PMC.html  # Presentación de resultados del MLP (23 diapositivas)
 │   └── README.md
 ├── CNN/                            # Red convolucional: mismo dataset y mismo proceso, con su propio README
 │   ├── notebooks/                  # Notebook de GPU a 128 × 128 del dataset nuevo

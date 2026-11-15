@@ -7,13 +7,13 @@ Evaluación Parcial 3 · Técnicas Avanzadas de Machine Learning · 15-11-2026
 | Tema | Lo importante | Dónde |
 |---|---|---|
 | Qué se entrega | El Pipeline Integrado de la EP2, optimizado y auditado: una CNN de cuatro bloques convolucionales (473.120 parámetros) que reconoce a 64 personajes, comparada con un MLP entrenado con las mismas imágenes y el mismo proceso | §4, §13 |
-| Resultado | Accuracy de test 0,775, F1 macro 0,755, top-3 0,908 y ROC-AUC macro 0,987, frente a 0,544, 0,551 y 0,736 del MLP: 23, 20 y 17 puntos más. Los cinco KPIs se cumplen | §10, §13 |
+| Resultado | Accuracy de test 0,775, F1 macro 0,755, top-3 0,908 y ROC-AUC macro 0,987, frente a 0,556, 0,557 y 0,732 del MLP: 22, 20 y 18 puntos más. Los cinco KPIs se cumplen | §10, §13 |
 | Presupuesto | Todas las configuraciones se entrenaron con el mismo máximo de 60 épocas y paciencia 12: la comparación es en igualdad de condiciones | §8, §9 |
 | Regularización | Se midió cada técnica con y sin ella. El dropout es imprescindible (sin él, −5,7 puntos de F1 y brecha de 0,31), Batch Normalization aporta 2,5 puntos y el aumento de datos en línea es la mejora clara (+3,8 puntos, brecha de 0,033); L2 y más dropout no cambian nada | §8 |
 | Optimización | Un factor a la vez (14 variantes y una combinación) más un Random Search en dos etapas. Gana G4, el modelo base con aumento de datos en línea, empatado en la práctica con la mejor del Random Search, que también usa aumento en línea | §9 |
 | Auditoría | Métricas por clase, matriz de confusión, ROC-AUC, curvas de aprendizaje, calibración (ECE de 0,078, subconfiado), umbral de revisión (resuelve solo el 71,6 % del test al 90,4 % de acierto), sesgos por subgrupo y Grad-CAM | §10, §11, §12 |
 | Sesgos | El sesgo grande es el origen: 0,93 de accuracy en las imágenes de Kaggle y 0,67 en los fotogramas de episodio. El desbalance (20:1) deja una huella pequeña y la familia Simpson ya no es un problema | §12 |
-| Arquitectura seleccionada | La CNN: gana en desempeño, generalización, interpretabilidad, catalogación de extremo a extremo y parámetros; el MLP solo en costo de entrenamiento (25 veces menor por época) | §13 |
+| Arquitectura seleccionada | La CNN: gana en desempeño, generalización, interpretabilidad, catalogación de extremo a extremo y parámetros; el MLP solo en costo de entrenamiento (23 veces menor por época) y en calibración | §13 |
 | Uso responsable | Asistente con revisión humana: se equivoca en el 22,5 % del test, siempre responde algún personaje y no debe usarse con fotos de personas | §12 |
 
 ## 1. Identificación del proyecto
@@ -24,7 +24,7 @@ Evaluación Parcial 3 · Técnicas Avanzadas de Machine Learning · 15-11-2026
 | Unidad de predicción | Una imagen recibe una sola etiqueta entre 64 personajes. |
 | Implementación evaluada | `CNN/notebooks/LosSimpsons_GPU_4060M.ipynb`: Keras 3 sobre PyTorch, en Windows con una GPU NVIDIA GeForce RTX 4060 Laptop de 8 GB; con las salidas de la corrida a 128 × 128 del 14-11-2026. |
 | Módulo común | `scripts/newDataset/pipeline_comun/`: las funciones del pipeline que importan los dos notebooks, con sus pruebas en `scripts/newDataset/tests/`. |
-| MLP de la comparación | `PMC/notebooks/LosSimpsons_GPU_4060M.ipynb`: el MLP sobre el mismo dataset y con el mismo proceso, corrida del 09-11-2026. |
+| MLP de la comparación | `PMC/notebooks/LosSimpsons_GPU_4060M.ipynb`: el MLP sobre el mismo dataset y con el mismo proceso, corrida del 15-11-2026. |
 | Evidencia de ejecución | Salidas guardadas de los dos notebooks; resúmenes JSON en `CNN/resultados/newDataset/GPU/` y `PMC/resultados/newDataset/GPU/`; historiales de cada configuración en `CNN/models_gpu/newDataset/historiales/`. |
 | Framework | Keras 3.15.1 sobre PyTorch 2.14.0 (CUDA 13.0), Python 3.13. |
 | Ejecución | Local, en la RTX 4060 Laptop, acordada con el profesor en lugar de Google Colab: la corrida completa tomó 16 h 28 min. |
@@ -101,17 +101,18 @@ Los umbrales se fijaron antes de entrenar y son los mismos para el MLP y la CNN.
 
 | KPI | Qué mide en el negocio | Métrica técnica | Umbral | CNN | MLP |
 |---|---|---|---|---:|---:|
-| Cobertura de asistencia | Si el catalogador encuentra la respuesta entre tres sugerencias | Top-3 accuracy en test | ≥ 0,70 | 0,908 | 0,736 |
-| Equidad entre personajes | Que el catálogo sirva para todos los personajes | F1 macro en test | ≥ 0,45 | 0,755 | 0,551 |
-| Automatización sin revisión | Imágenes que el sistema resuelve solo | Accuracy en test | ≥ 0,50 | 0,775 | 0,544 |
-| Ventaja sobre el criterio trivial | Información real frente a etiquetar todo como Homero | Accuracy / clase mayoritaria | ≥ 4× | 13,2× | 9,8× |
-| Costo de catalogación | Procesar el archivo en un tiempo razonable | Imágenes por segundo, entrada + red | ≥ 1.000 | 3.567 | ver §13.1 |
+| Cobertura de asistencia | Si el catalogador encuentra la respuesta entre tres sugerencias | Top-3 accuracy en test | ≥ 0,70 | 0,908 | 0,732 |
+| Equidad entre personajes | Que el catálogo sirva para todos los personajes | F1 macro en test | ≥ 0,45 | 0,755 | 0,557 |
+| Automatización sin revisión | Imágenes que el sistema resuelve solo | Accuracy en test | ≥ 0,50 | 0,775 | 0,556 |
+| Ventaja sobre el criterio trivial | Información real frente a etiquetar todo como Homero | Accuracy / clase mayoritaria | ≥ 4× | 13,2× | 9,4× |
+| Costo de catalogación | Procesar el archivo en un tiempo razonable | Imágenes por segundo, entrada + red | ≥ 1.000 | 3.567 | 1.360 |
 
-La CNN cumple los cinco. El de costo se mide con una pasada de calentamiento y la mediana de tres repeticiones, tras
+Las dos redes cumplen los cinco. El de costo se mide con una pasada de calentamiento y la mediana de tres repeticiones, tras
 liberar la memoria que el entrenamiento dejó reservada en la GPU. En la corrida, la primera versión de la celda medía
 una sola vez en frío y dio 569 imágenes por segundo: medía la reserva de memoria, no la catalogación. La celda se
 corrigió y se volvió a ejecutar sola; el benchmark de inferencia, medido aparte, da lo mismo para la red sola
-(3.553 imágenes por segundo).
+(3.553 imágenes por segundo). El MLP se mide igual: su catalogación incluye calcular los descriptores de color en la
+CPU, y una sola medición en frío daba 988 imágenes por segundo, por el arranque de los procesos que los calculan.
 
 ## 4. Pipeline Integrado
 
@@ -432,39 +433,40 @@ en validación y el desempeño por subgrupo.
 
 | Concepto | MLP · GPU 128 × 128 | CNN · GPU 128 × 128 | Diferencia |
 |---|---:|---:|---|
-| Configuración final | C1, sobre 370 valores de color | G4, aumento de datos en línea | |
+| Configuración final | GS01 del Grid Search, sobre 370 valores de color | G4, aumento de datos en línea | |
 | Parámetros | 1.059.648 | 473.120 | La CNN tiene menos de la mitad |
-| Accuracy | 0,544 | 0,775 | +23,1 puntos |
-| Precision / recall macro | 0,560 / 0,550 | 0,754 / 0,762 | |
-| F1 macro | 0,551 | 0,755 | +20,4 |
-| F1 ponderado | 0,542 | 0,776 | +23,4 |
-| Top-3 accuracy | 0,736 | 0,908 | +17,3 |
-| ROC-AUC macro | no medida | 0,987 | |
-| Accuracy por escena (referencia) | 0,632 | 0,848 | +21,6 |
-| Errores con confianza > 0,80 | 261 | 137 | |
-| Segundos por época (benchmark) | 2,1 | 51,7 | 24,6 veces más |
-| Inferencia de la red sola | 74.193 img/s | 3.553 img/s | |
-| Catalogación de extremo a extremo | Limitada por los descriptores en la CPU: unas 430 img/s | 3.567 img/s | La CNN no calcula descriptores |
-| Uso de la GPU | 29,5 %, unos 11 W | 99,4 %, unos 70 W | |
+| Accuracy | 0,556 | 0,775 | +22,0 puntos |
+| Precision / recall macro | 0,558 / 0,560 | 0,754 / 0,762 | +19,6 / +20,2 |
+| F1 macro | 0,557 | 0,755 | +19,8 |
+| F1 ponderado | 0,554 | 0,776 | +22,2 |
+| Top-3 accuracy | 0,732 | 0,908 | +17,7 |
+| ROC-AUC macro | 0,940 | 0,987 | +4,7 |
+| Accuracy por escena (referencia) | 0,648 | 0,848 | +20,0 |
+| Error de calibración (ECE) | 0,044 | 0,078 | El MLP está mejor calibrado |
+| Errores con confianza > 0,80 | 401 | 137 | |
+| Segundos por época (benchmark) | 2,25 | 51,7 | 23 veces más |
+| Inferencia de la red sola | 76.661 img/s | 3.553 img/s | |
+| Catalogación de extremo a extremo | 1.360 img/s, limitada por los descriptores en la CPU | 3.567 img/s | La CNN, 2,6 veces más rápida |
+| Uso de la GPU | 27,8 %, unos 11 W | 99,4 %, unos 70 W | |
 
-Las cifras del MLP son de su corrida del 09-11-2026 y salen de su resumen JSON, salvo la precision y el recall, que
-salen de las salidas de su notebook. El tiempo total de entrenamiento no se compara: la CNN entrenó 26
-configuraciones con hasta 60 épocas.
+Las cifras del MLP son de su corrida del 15-11-2026 (`PMC/docs/newDataset/Informe.md`) y salen de su resumen JSON y
+de las salidas de su notebook. El tiempo total de entrenamiento no se compara: la CNN entrenó 26 configuraciones y el
+MLP 54, con su Grid Search.
 
 ### 13.2 Capacidad de generalización
 
 | Indicador | MLP | CNN |
 |---|---:|---:|
-| Brecha entre entrenamiento y validación del modelo base | 0,378 | 0,142 |
-| Brecha del modelo final | no medida | 0,033 |
-| Caída en las alteradas frente a las originales (puntos) | 8,7 | 1,2 |
-| Ventaja de las parecidas sobre las originales (puntos) | 6,3 | 6,1 |
-| Errores con confianza > 0,80 por cada 1.000 imágenes de test | 37,0 | 19,4 |
+| Brecha entre entrenamiento y validación del modelo base | 0,397 | 0,142 |
+| Brecha del modelo final | 0,337 | 0,033 |
+| Caída en las alteradas frente a las originales (puntos) | 9,0 | 1,2 |
+| Ventaja de las parecidas sobre las originales (puntos) | 7,8 | 6,1 |
+| Errores con confianza > 0,80 por cada 1.000 imágenes de test | 56,7 | 19,4 |
 
 ![Accuracy por tipo de imagen del MLP y de la CNN](figuras/generalizacion_mlp_cnn.png)
 
 La CNN memoriza menos, resiste mejor las alteraciones y comete menos errores confiados, casi todos nombrando a un
-personaje que sí está en la imagen. Las dos redes ganan lo mismo con las tomas casi idénticas a otra: haber visto
+personaje que sí está en la imagen. Las dos redes ganan algo parecido con las tomas casi idénticas a otra: haber visto
 casi la misma toma ayuda a cualquier modelo, y por eso la partición por grupo de tomas es una de las propuestas.
 
 ### 13.3 Interpretabilidad
@@ -478,18 +480,19 @@ casi la misma toma ayuda a cualquier modelo, y por eso la partición por grupo d
 
 Grad-CAM confirma que la CNN mira al personaje, y hasta sus errores más confiados miran a un personaje presente. En
 el MLP, la explicación solo puede repartir la decisión entre canales de color y zonas, porque su entrada no tiene
-forma ni textura: es exacta sobre lo que la red usa, pero lo que usa no es lo que una persona mira para reconocer a un
+forma ni textura: SHAP muestra que el tono pesa más que el brillo (el canal H y el eje b* de Lab reúnen el 44 % de la
+explicación) y que la zona en que aparece cada color pesa más que el histograma de la imagen completa. Es exacta sobre lo que la red usa, pero lo que usa no es lo que una persona mira para reconocer a un
 personaje. La CNN es la más interpretable para quien usa el catálogo: su explicación está sobre la misma imagen.
 
 ### 13.4 Ventajas, desventajas y arquitectura seleccionada
 
 | | Ventajas | Desventajas |
 |---|---|---|
-| **MLP** | Cada época cuesta 25 veces menos; la red sola infiere 74.193 imágenes por segundo; apenas ocupa la GPU | No aprende de la imagen: combina histogramas de color y confunde a los personajes que comparten paleta (la familia Simpson, con F1 de 0,34 a 0,64); memoriza más (brecha de 0,378); calcular los descriptores en la CPU limita su velocidad de extremo a extremo |
-| **CNN** | Aprende sus propios filtros y reconoce la forma (la familia Simpson sube a F1 de 0,78 a 0,82); 23 puntos más de accuracy con menos de la mitad de parámetros; generaliza mejor; cataloga 8 veces más rápido de extremo a extremo; Grad-CAM explica cada decisión | Entrenar cuesta 25 veces más por época y exige GPU; a 128 × 128 dos configuraciones no caben en 8 GB; el modelo base sobreajusta si no se le da variedad a los datos |
+| **MLP** | Cada época cuesta 23 veces menos; la red sola infiere 76.661 imágenes por segundo; apenas ocupa la GPU; mejor calibrado (ECE de 0,044) | No aprende de la imagen: combina histogramas de color y confunde a los personajes que comparten paleta (la familia Simpson, con F1 de 0,37 a 0,64 y 11,3 puntos de sesgo); memoriza más (brecha de 0,397); calcular los descriptores en la CPU limita su velocidad de extremo a extremo (1.360 imágenes por segundo) |
+| **CNN** | Aprende sus propios filtros y reconoce la forma (la familia Simpson sube a F1 de 0,78 a 0,82); 22 puntos más de accuracy con menos de la mitad de parámetros; generaliza mejor; cataloga 2,6 veces más rápido de extremo a extremo; Grad-CAM explica cada decisión | Entrenar cuesta 23 veces más por época y exige GPU; a 128 × 128 dos configuraciones no caben en 8 GB; el modelo base sobreajusta si no se le da variedad a los datos |
 
 **La CNN es la arquitectura seleccionada**, en su configuración G4. Gana en todos los criterios menos en el costo de
-entrenamiento, que se paga una sola vez —unos 50 minutos por configuración en la RTX 4060—, mientras que la calidad y
+entrenamiento y en la calibración. El costo se paga una sola vez —unos 50 minutos por configuración en la RTX 4060—, mientras que la calidad y
 la velocidad de catalogación se aprovechan en cada imagen del archivo.
 
 ## 14. Limitaciones y medidas para la robustez y la confiabilidad
@@ -543,7 +546,7 @@ entre corridas; para reproducir las cifras exactas hay que fijar `torch.backends
 ## 16. Conclusiones
 
 La CNN resuelve lo que el MLP no podía: reconocer a los personajes por su forma. Con el mismo pipeline, los mismos
-datos y la misma resolución, sube la accuracy de test de 0,544 a 0,775 y el F1 macro de 0,551 a 0,755, con una
+datos y la misma resolución, sube la accuracy de test de 0,556 a 0,775 y el F1 macro de 0,557 a 0,755, con una
 ROC-AUC macro de 0,987, cumple los cinco KPIs y no deja a ningún personaje bajo 0,30 de F1.
 
 La optimización y la auditoría de la EP3 dejan cuatro lecciones. **La regularización que sirve es la que da

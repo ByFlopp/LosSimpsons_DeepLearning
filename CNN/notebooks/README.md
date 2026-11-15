@@ -147,8 +147,8 @@ con la imagen completa. Sus salidas guardadas son las de esa corrida.
 - **Auditoría.** ECE de 0,078 (subconfiada); con el umbral de 0,529 elegido en validación resuelve sola el 71,6 %
   del test al 90,4 % de acierto. Accuracy de 0,933 en las imágenes de Kaggle y de 0,670 en los fotogramas de
   episodio.
-- **Frente al MLP** en la GPU a 128 × 128 (C1, solo color, corrida del 09-11-2026): accuracy +23,1, top-3 +17,3 y
-  F1 macro +20,4.
+- **Frente al MLP** en la GPU a 128 × 128 (GS01, solo color, corrida del 15-11-2026): accuracy +22,0, top-3 +17,7 y
+  F1 macro +19,8.
 - **Costo.** Cargar las imágenes toma 11,9 minutos y entrenar, 946,6. La GPU trabaja el 99,4 % del tiempo y no cabe
   más que batch 128.
 

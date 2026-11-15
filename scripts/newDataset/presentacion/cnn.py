@@ -219,7 +219,7 @@ def diapositivas(ctx):
         + columna(cifras([
             ("Errores", entero(1589), "22,5 % del test"),
             ("Nombran a otro presente", "513", "32,3 % de los errores"),
-            ("Confiados (> 0,80)", entero(j["errores_confiados_test"]), "261 en el MLP"),
+            ("Confiados (> 0,80)", entero(j["errores_confiados_test"]), f"{_mlp(ctx, 'errores_confiados_test', entero)} en el MLP"),
         ], 3), lista([
             "Ninguna de las quince confusiones más frecuentes es de la familia Simpson.",
             "Los diez errores más confiados nombran a un personaje que está en la imagen; algunos muestran ruido en "
@@ -282,26 +282,29 @@ def diapositivas(ctx):
 
     # 18. Comparación con el MLP
     filas = [
-        ["Configuración final", m.get("configuracion_final", "—"), j["configuracion_final"]],
+        ["Configuración final", m.get("configuracion_final", "—").split(" - ")[0], j["configuracion_final"].split(" - ")[0]],
         ["Parámetros", _mlp(ctx, "parametros_modelo_final", entero), entero(j["parametros_modelo_final"])],
         ["Accuracy", _mlp(ctx, "accuracy_test"), f"<strong>{num(j['accuracy_test'])}</strong>"],
         ["F1 macro", _mlp(ctx, "f1_macro_test"), f"<strong>{num(j['f1_macro_test'])}</strong>"],
         ["Top-3", _mlp(ctx, "top3_test"), num(j["top3_test"])],
+        ["ROC-AUC macro", _mlp(ctx, "roc_auc_macro_test"), num(j["roc_auc_macro_test"])],
         ["Accuracy en alteradas", _mlp(ctx, "accuracy_alteradas_test"), num(j["accuracy_alteradas_test"])],
         ["Errores confiados", _mlp(ctx, "errores_confiados_test", entero), entero(j["errores_confiados_test"])],
-        ["Segundos por época", _mlp(ctx, "benchmark_segundos_por_epoca", lambda v: num(v, 1)),
+        ["ECE", _mlp(ctx, "ece_test"), num(j["ece_test"])],
+        ["Segundos por época", _mlp(ctx, "benchmark_segundos_por_epoca", lambda v: num(v, 2)),
          num(j["benchmark_segundos_por_epoca"], 1)],
-        ["Inferencia de la red (img/s)", _mlp(ctx, "inferencia_imagenes_por_segundo", entero),
-         entero(j["inferencia_imagenes_por_segundo"])],
+        ["Catalogación (img/s)", "1.360", "3.567"],
     ]
     diferencia = puntos_de(j["f1_macro_test"] - m["f1_macro_test"]) if m.get("f1_macro_test") else "—"
+    veces = (num(j["benchmark_segundos_por_epoca"] / m["benchmark_segundos_por_epoca"], 1)
+             if m.get("benchmark_segundos_por_epoca") else "—")
     d.append(("Comparación con el MLP", "Mismos datos, mismo proceso: solo cambia el modelo", (
         tabla(["Concepto", "MLP", "CNN"], filas, numericas=(1, 2), densa=True)
         + columna(cifras([("F1 macro", diferencia, "puntos a favor de la CNN"),
-                          ("Por época", "×24,6", "más cara la CNN")], 2),
+                          ("Por época", f"×{veces}", "más cara la CNN")], 2),
                   lista([
                       "El MLP recibe 370 descriptores de color: confunde a los personajes que comparten paleta.",
-                      "La red del MLP infiere más rápido, pero sus descriptores en la CPU lo limitan a unas 430 "
+                      "La red del MLP infiere 21 veces más rápido, pero sus descriptores en la CPU lo dejan en 1.360 "
                       "imágenes por segundo de extremo a extremo; la CNN cataloga 3.567.",
                       f"MLP: corrida del {fecha(m['inicio_corrida']) if m.get('inicio_corrida') else '—'}.",
                   ], chicos=True))
@@ -311,10 +314,11 @@ def diapositivas(ctx):
     d.append(("Comparación · generalización e interpretabilidad", "La CNN memoriza menos y se explica sobre la imagen", (
         ctx.fig("generalizacion_mlp_cnn.png", "Accuracy por tipo de imagen del MLP y de la CNN")
         + columna(tabla(["Indicador", "MLP", "CNN"], [
-            ["Brecha del modelo base", "0,378", "0,142"],
-            ["Caída en alteradas (pts)", "8,7", "1,2"],
-            ["Ventaja de las parecidas (pts)", "6,3", "6,1"],
-            ["Errores confiados / 1.000", "37,0", "19,4"],
+            ["Brecha del modelo base", "0,397", "0,142"],
+            ["Brecha del modelo final", "0,337", "0,033"],
+            ["Caída en alteradas (pts)", "9,0", "1,2"],
+            ["Ventaja de las parecidas (pts)", "7,8", "6,1"],
+            ["Errores confiados / 1.000", "56,7", "19,4"],
         ], numericas=(1, 2), densa=True), lista([
             "<strong>Grad-CAM (CNN):</strong> dónde mira la red, sobre la misma imagen; se verifica a simple vista.",
             "<strong>SHAP (MLP):</strong> qué canal de color y qué zona pesan; exacto, pero sin forma ni textura.",
@@ -324,16 +328,18 @@ def diapositivas(ctx):
     # 20. Arquitectura seleccionada
     d.append(("Arquitectura seleccionada", "La CNN, en su configuración G4", (
         tabla(["Criterio", "A favor de"], [
-            ["Desempeño (F1 +20, accuracy +23 puntos)", "CNN"],
+            ["Desempeño (F1 +19,8, accuracy +22,0 puntos)", "CNN"],
             ["Generalización (brecha, alteradas, errores confiados)", "CNN"],
+            ["Automatización (71,6 % frente a 14,3 % sin revisión)", "CNN"],
             ["Interpretabilidad (Grad-CAM sobre la imagen)", "CNN"],
-            ["Catalogación de extremo a extremo (3.567 frente a 430 img/s)", "CNN"],
+            ["Catalogación de extremo a extremo (3.567 frente a 1.360 img/s)", "CNN"],
             ["Parámetros (473.120 frente a 1.059.648)", "CNN"],
-            ["Costo de entrenamiento (51,7 frente a 2,1 s por época)", "MLP"],
+            ["Calibración (ECE 0,078 frente a 0,044)", "MLP"],
+            ["Costo de entrenamiento (51,7 frente a 2,25 s por época)", "MLP"],
         ], densa=True)
         + columna(lista([
-            "Gana en todo menos en el costo de entrenamiento, que se paga una sola vez: unos 50 minutos por "
-            "configuración en la RTX 4060.",
+            "Gana en todo menos en el costo de entrenamiento y la calibración. El costo se paga una sola vez: unos "
+            "50 minutos por configuración en la RTX 4060.",
             "La calidad y la velocidad de catalogación se aprovechan en cada imagen del archivo.",
             "El MLP solo convendría sin GPU para entrenar y con personajes de paleta única.",
         ]))
@@ -367,7 +373,7 @@ def diapositivas(ctx):
     # 23. Conclusiones
     d.append(("Conclusiones", "Qué deja la EP3", lista([
         f"La CNN llega a <strong>{num(j['accuracy_test'])} de accuracy y {num(j['f1_macro_test'])} de F1 macro</strong> "
-        "en test, 23 y 20 puntos sobre el MLP con las mismas imágenes, y cumple los cinco KPIs.",
+        "en test, 22 y 20 puntos sobre el MLP con las mismas imágenes, y cumple los cinco KPIs.",
         "<strong>La regularización que sirve es la que da variedad:</strong> el aumento en línea (+3,8 puntos, brecha "
         "0,033); el Random Search llega a lo mismo.",
         "<strong>El mismo presupuesto cambia la lectura:</strong> con 60 épocas para todas, la ventaja de G4 se duplica.",

@@ -49,14 +49,14 @@ carpeta.
 |---|---|---:|---:|---:|---:|---:|
 | GPU 128 × 128 | G4 - aumento de datos en línea | **0,775** | **0,908** | **0,755** | **0,987** | 16 h 28 min 18 s |
 
-Frente al MLP, también en GPU a 128 × 128 (corrida del 09-11-2026; diferencias en puntos):
+Frente al MLP, también en GPU a 128 × 128 (corrida del 15-11-2026; diferencias en puntos):
 
 | Accuracy MLP | Accuracy CNN | Diferencia | F1 macro MLP | F1 macro CNN | Diferencia | Segundos por época MLP → CNN |
 |---:|---:|---:|---:|---:|---:|---:|
-| 0,544 | **0,775** | +23,1 | 0,551 | **0,755** | +20,4 | 2,1 → 51,7 |
+| 0,556 | **0,775** | +22,0 | 0,557 | **0,755** | +19,8 | 2,25 → 51,7 |
 
 - **La forma es lo que le faltaba al MLP.** Con el mismo proceso y los mismos datos, la CNN sube la accuracy
-  23,1 puntos y el F1 macro 20,4. Homero, Marge, Bart y Lisa, que el MLP confundía por la piel amarilla
+  22,0 puntos y el F1 macro 19,8. Homero, Marge, Bart y Lisa, que el MLP confundía por la piel amarilla
   compartida, llegan a un F1 de 0,78 a 0,82, y ningún personaje queda por debajo de 0,30.
 - **Gana el aumento de datos en línea (G4).** Sube el F1 macro de validación 3,8 puntos sobre la base y baja la
   brecha entre entrenamiento y validación de 0,142 a 0,033. El Random Search llega a lo mismo: su mejor
