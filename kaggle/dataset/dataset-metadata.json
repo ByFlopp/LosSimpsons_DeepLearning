@@ -1,0 +1,206 @@
+{
+  "id": "diegopyll/los-simpsons-dataset",
+  "title": "The Simpsons Characters: 64 Classes, 56K Images",
+  "subtitle": "56,268 images of 64 characters: curated images + 34,106 episode frames",
+  "description": "## The Simpsons Characters: 64 classes, 56,268 images\n\nAn image classification dataset with **64 characters** from *The Simpsons*, one folder per character. The label of every image is the name of its folder.\n\n- **56,268 original RGB images**\n  - **22,162 curated character images**, mostly from [Los Simpson (alfaro96)](https://www.kaggle.com/datasets/alfaro96/los-simpson), plus a few screenshots added by the team.\n  - **34,106 episode frames** from **557 episodes** (seasons 1 to 28).\n- **23,117 synthetic variants**, used by the training pipeline:\n  - 14,077 augmented copies (`__alterada`);\n  - 9,040 de-duplicated replacements (`__parecida`).\n- **Class imbalance of about 20:1**: from 3,118 images of `homer_simpson` down to 151 of `maggie_simpson`.\n\n### Folder structure\n\n```\n/kaggle/input/los-simpsons-dataset/\n\u251c\u2500\u2500 homer_simpson/\n\u2502   \u251c\u2500\u2500 homer_simpson_0001.jpg             original\n\u2502   \u251c\u2500\u2500 homer_simpson_0003__alterada.jpg   augmented copy of homer_simpson_0003.jpg\n\u2502   \u2514\u2500\u2500 homer_simpson_0017__parecida.jpg   replaces the near-duplicate homer_simpson_0017.jpg\n\u251c\u2500\u2500 ... 63 more character folders\n\u251c\u2500\u2500 _renombres.csv      original file name of every renamed image (episode and timestamp of each frame)\n\u251c\u2500\u2500 _alteraciones.csv   transformation applied to every __alterada image\n\u251c\u2500\u2500 _parecidas.csv      near-duplicate groups and the __parecida image that replaces each duplicate\n\u2514\u2500\u2500 _gemelas.csv        near-identical images found in the folders of two different characters\n```\n\nEvery original is named `{character}_{number}.{ext}`. Most files are `.jpg`; there are 40 `.png` and 2 `.webp`.\n\n### How to use the variants\n\n| Suffix | What it is | How to use it |\n|---|---|---|\n| none | Original image | Split these first: stratified by character |\n| `__alterada` | Copy of 25% of each character's originals with a 10-20\u00b0 rotation, one color change and one texture filter (seed 42) | Put it in the **same split as its original**, or drop it if you use your own augmentation |\n| `__parecida` | Inside one folder, near-identical originals (cosine similarity >= 0.90 between 16x16 color thumbnails) form a group. One image per group stays intact; each of the others gets a transformed version that no longer looks like the group | Use it **instead of** its original, so a split never holds two near-identical images |\n\nTo work only with the originals, keep the files whose name has no `__`.\n\n### Where the images come from\n\n1. **Curated images.** These come from [Los Simpson](https://www.kaggle.com/datasets/alfaro96/los-simpson) by Juan Carlos Alfaro Jim\u00e9nez. The character usually fills the frame.\n2. **Episode frames.** The team took frames from [Frinkiac](https://frinkiac.com) at the moments when a character speaks.\n   - **Finding the moments.** The script lines of [The Simpsons by the Data](https://www.kaggle.com/datasets/prashant111/the-simpsons-dataset) say who speaks, in which episode and when.\n   - **Filtering.** A CNN sorted the frames into safe, doubtful and noise; only the doubtful ones were checked by hand.\n   - **Tracing a frame.** `_renombres.csv` keeps the original name `{character}__SxxEyy__t{milliseconds}.jpg`, so every frame can be traced back to its episode and timestamp.\n3. **Variants.** The script `generar_imagenes_alteradas.py` generated the `__alterada` and `__parecida` images and the three `_*.csv` logs. It is deterministic: with seed 42 it gives the same output every time.\n\n### Baselines\n\nBoth models were trained on the same stratified 70/20/10 split (seed 42) at 128x128, on the same GPU (RTX 4060 Laptop). A prediction is correct when it names the character of the folder.\n\n| Model | Input | Accuracy | Top-3 | F1 macro |\n|---|---|---:|---:|---:|\n| CNN, 4 convolutional blocks, 473k parameters | The 128x128 image | **0.775** | **0.908** | **0.755** |\n| MLP, 1.06M parameters | 370 hand-crafted color descriptors (HSV and Lab histograms) | 0.556 | 0.732 | 0.557 |\n\nThe code, both notebooks and the technical reports (in Spanish) are on [GitHub](https://github.com/ByFlopp/LosSimpsons_DeepLearning).\n\n### Known limitations\n\n- **Source bias.** Episode frames are much harder than curated images: the CNN reaches 0.67 accuracy on frames and 0.93 on curated images. Report both numbers.\n- **Several characters in one image.** Many frames show more than one character. `_gemelas.csv` lists 6,101 pairs of near-identical images stored under two different characters.\n- **Label noise.** The label of a frame is the character who speaks at that moment, so a small share of frames may show that character only partially, or not at all.\n\n### License and copyright\n\nAll images are frames or artwork from *The Simpsons* \u00a9 20th Television / Disney. They are shared **only for non-commercial research and education**. No ownership of the images is claimed. The CSV metadata and the curation work by the team are released under CC BY-NC-SA 4.0.\n\n### Authors\n\nDiego Pe\u00f1a y Lillo L\u00fchrs, Vincent Farenden Cer\u00f3n, Rodrigo Mart\u00ednez Becker and Iv\u00e1n Pav\u00f3n Barr\u00eda. Duoc UC, course *T\u00e9cnicas Avanzadas para Machine Learning*, 2026.\n",
+  "isPrivate": false,
+  "licenses": [
+    {
+      "name": "other"
+    }
+  ],
+  "keywords": [
+    "computer vision",
+    "deep learning",
+    "multiclass classification",
+    "cnn",
+    "movies and tv shows"
+  ],
+  "expectedUpdateFrequency": "annually",
+  "userSpecifiedSources": "Curated images: Los Simpson by alfaro96 (https://www.kaggle.com/datasets/alfaro96/los-simpson). Episode frames: Frinkiac (https://frinkiac.com), located with the script lines of The Simpsons by the Data (https://www.kaggle.com/datasets/prashant111/the-simpsons-dataset): each frame is taken when the character speaks, filtered by a CNN, and the doubtful ones were checked by hand. Variants and logs generated with generar_imagenes_alteradas.py (seed 42) from https://github.com/ByFlopp/LosSimpsons_DeepLearning",
+  "data": [
+    {
+      "name": "_renombres.csv",
+      "description": "Original name of every renamed image. For the 34,106 episode frames it keeps the season, episode and timestamp.",
+      "columns": [
+        {
+          "name": "personaje",
+          "description": "Character folder (the label), e.g. homer_simpson",
+          "type": "string"
+        },
+        {
+          "name": "antiguo",
+          "description": "Name before renaming; episode frames use {character}__SxxEyy__t{milliseconds}.jpg (season, episode, time in the episode)",
+          "type": "string"
+        },
+        {
+          "name": "nuevo",
+          "description": "Current file name inside the character folder: {character}_{number}.{ext}",
+          "type": "string"
+        }
+      ],
+      "totalBytes": 2507052
+    },
+    {
+      "name": "_alteraciones.csv",
+      "description": "One row per __alterada image: the augmented copy generated for 25% of each character's originals (seed 42).",
+      "columns": [
+        {
+          "name": "personaje",
+          "description": "Character folder (the label), e.g. homer_simpson",
+          "type": "string"
+        },
+        {
+          "name": "original",
+          "description": "Original image the variant comes from",
+          "type": "string"
+        },
+        {
+          "name": "alterada",
+          "description": "File name of the augmented copy ({original}__alterada.{ext})",
+          "type": "string"
+        },
+        {
+          "name": "rotacion",
+          "description": "Rotation in degrees, between 10 and 20 in either direction; the borders are cropped and the image is resized back to its original size",
+          "type": "decimal"
+        },
+        {
+          "name": "color",
+          "description": "Color change: brillo (brightness), contraste (contrast), saturacion (saturation) or tono (hue)",
+          "type": "string"
+        },
+        {
+          "name": "parametro_color",
+          "description": "Factor for brillo and contraste (0.7-1.3) and saturacion (0.6-1.4); for tono, hue shift as a fraction of the color wheel (-0.04 to 0.04)",
+          "type": "decimal"
+        },
+        {
+          "name": "textura",
+          "description": "Texture filter: desenfoque (Gaussian blur), nitidez (unsharp mask), ruido (Gaussian noise) or bordes (edge enhance)",
+          "type": "string"
+        },
+        {
+          "name": "parametro_textura",
+          "description": "Blur radius in px (0.5-1.5), unsharp percent (100-200), noise sigma (5-15) or 1.0 for bordes",
+          "type": "decimal"
+        }
+      ],
+      "totalBytes": 1511583
+    },
+    {
+      "name": "_parecidas.csv",
+      "description": "Near-duplicate groups inside one character folder (cosine similarity >= 0.90 between 16x16 color thumbnails) and the __parecida image that replaces each duplicate.",
+      "columns": [
+        {
+          "name": "personaje",
+          "description": "Character folder (the label), e.g. homer_simpson",
+          "type": "string"
+        },
+        {
+          "name": "grupo",
+          "description": "Id of the near-duplicate group within the character",
+          "type": "integer"
+        },
+        {
+          "name": "representante",
+          "description": "Image of the group that stays intact",
+          "type": "string"
+        },
+        {
+          "name": "original",
+          "description": "Near-duplicate original that is replaced",
+          "type": "string"
+        },
+        {
+          "name": "parecida",
+          "description": "File that replaces it ({original}__parecida.{ext}); use it instead of the original",
+          "type": "string"
+        },
+        {
+          "name": "similitud_original",
+          "description": "Highest cosine similarity between the original and the rest of its group",
+          "type": "decimal"
+        },
+        {
+          "name": "similitud_final",
+          "description": "Highest similarity between the replacement and the final images of the group (always below 0.90)",
+          "type": "decimal"
+        },
+        {
+          "name": "intentos",
+          "description": "Random transformations drawn until the replacement stopped looking like the group",
+          "type": "integer"
+        },
+        {
+          "name": "rotacion",
+          "description": "Rotation in degrees, between 10 and 20 in either direction; the borders are cropped and the image is resized back to its original size",
+          "type": "decimal"
+        },
+        {
+          "name": "color",
+          "description": "Color change: brillo (brightness), contraste (contrast), saturacion (saturation) or tono (hue)",
+          "type": "string"
+        },
+        {
+          "name": "parametro_color",
+          "description": "Factor for brillo and contraste (0.7-1.3) and saturacion (0.6-1.4); for tono, hue shift as a fraction of the color wheel (-0.04 to 0.04)",
+          "type": "decimal"
+        },
+        {
+          "name": "textura",
+          "description": "Texture filter: desenfoque (Gaussian blur), nitidez (unsharp mask), ruido (Gaussian noise) or bordes (edge enhance)",
+          "type": "string"
+        },
+        {
+          "name": "parametro_textura",
+          "description": "Blur radius in px (0.5-1.5), unsharp percent (100-200), noise sigma (5-15) or 1.0 for bordes",
+          "type": "decimal"
+        }
+      ],
+      "totalBytes": 1391989
+    },
+    {
+      "name": "_gemelas.csv",
+      "description": "Near-identical originals stored in the folders of two different characters (similarity >= 0.90): the same scene, where both characters appear.",
+      "columns": [
+        {
+          "name": "personaje",
+          "description": "Character folder (the label), e.g. homer_simpson",
+          "type": "string"
+        },
+        {
+          "name": "original",
+          "description": "Image in this character's folder",
+          "type": "string"
+        },
+        {
+          "name": "otro_personaje",
+          "description": "The other character folder",
+          "type": "string"
+        },
+        {
+          "name": "otro_original",
+          "description": "The near-identical image in the other folder",
+          "type": "string"
+        },
+        {
+          "name": "similitud",
+          "description": "Cosine similarity between both 16x16 color thumbnails",
+          "type": "decimal"
+        },
+        {
+          "name": "copia_original",
+          "description": "Path of the copy proposed for manual review outside the dataset; empty if not copied. Can be ignored",
+          "type": "string"
+        },
+        {
+          "name": "copia_otro",
+          "description": "Same as copia_original, for otro_original. Can be ignored",
+          "type": "string"
+        }
+      ],
+      "totalBytes": 687722
+    }
+  ]
+}

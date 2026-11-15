@@ -1,0 +1,14 @@
+{
+  "id": "diegopyll/the-simpsons-characters-starter-eda",
+  "title": "The Simpsons Characters Starter EDA",
+  "code_file": "the-simpsons-characters-starter-eda.ipynb",
+  "language": "python",
+  "kernel_type": "notebook",
+  "is_private": true,
+  "enable_gpu": false,
+  "enable_internet": false,
+  "dataset_sources": ["diegopyll/los-simpsons-dataset"],
+  "competition_sources": [],
+  "kernel_sources": [],
+  "model_sources": []
+}

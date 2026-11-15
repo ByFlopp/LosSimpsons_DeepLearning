@@ -1,6 +1,6 @@
 # Clasificador de personajes de Los Simpson: MLP frente a CNN
 
-Este repositorio es una **comparativa entre dos redes neuronales** que identifican qué personaje de Los Simpson aparece en una imagen RGB: un **perceptrón multicapa (MLP)** y una **red neuronal convolucional (CNN)**. Las dos se entrenan y se evalúan con exactamente el mismo proceso, a 128 × 128 en la misma GPU (NVIDIA GeForce RTX 4060 Laptop): el mismo dataset de 64 personajes, la misma partición, las mismas imágenes alteradas y parecidas, la misma imagen completa como entrada, el mismo bucle de entrenamiento, los mismos experimentos, el mismo criterio de acierto y los mismos KPIs. Así, la diferencia entre sus resultados se debe al modelo: el MLP recibe descriptores de color y textura elegidos a mano, calculados sobre la imagen; la CNN recibe la imagen y aprende sus propios filtros. Las cajas alrededor de cada personaje se ponen después, con el modelo ya entrenado.
+Este repositorio es una **comparativa entre dos redes neuronales** que identifican qué personaje de Los Simpson aparece en una imagen RGB: un **perceptrón multicapa (MLP)** y una **red neuronal convolucional (CNN)**. Las dos se entrenan y se evalúan con exactamente el mismo proceso, a 128 × 128 en la misma GPU (NVIDIA GeForce RTX 4060 Laptop): el mismo [dataset de 64 personajes](https://www.kaggle.com/datasets/diegopyll/los-simpsons-dataset), la misma partición, las mismas imágenes alteradas y parecidas, la misma imagen completa como entrada, el mismo bucle de entrenamiento, los mismos experimentos, el mismo criterio de acierto y los mismos KPIs. Así, la diferencia entre sus resultados se debe al modelo: el MLP recibe descriptores de color y textura elegidos a mano, calculados sobre la imagen; la CNN recibe la imagen y aprende sus propios filtros. Las cajas alrededor de cada personaje se ponen después, con el modelo ya entrenado.
 
 <p align="center">
   <img src="images/logoLosSimpsons.png" alt="Logo de Los Simpson" width="480">
@@ -176,7 +176,17 @@ Las lecturas completas están en el [README del MLP](PMC/README.md), el [README 
 
 ## Lo que comparten los modelos
 
-**Dataset.** 64 personajes y 56.268 imágenes originales, una carpeta por personaje, sin partición previa. No se versiona: por defecto se busca en `~/Desktop/simpsons_dataset`, o en la ruta de la variable de entorno `SIMPSONS_DATASET`. La etiqueta de cada imagen es siempre el nombre de su carpeta.
+**Dataset.** 64 personajes y 56.268 imágenes originales, una carpeta por personaje, sin partición previa. La etiqueta de cada imagen es siempre el nombre de su carpeta.
+
+Está publicado en Kaggle: **[diegopyll/los-simpsons-dataset](https://www.kaggle.com/datasets/diegopyll/los-simpsons-dataset)** (6,6 GB). Viene ya preparado, así que los notebooks lo usan tal cual. Trae:
+- las variantes alteradas y parecidas;
+- los registros `_renombres.csv`, `_alteraciones.csv`, `_parecidas.csv` y `_gemelas.csv`.
+
+En el repositorio no se versiona: por defecto se busca en `~/Desktop/simpsons_dataset`, o en la ruta de la variable de entorno `SIMPSONS_DATASET`. Para descargarlo hace falta la CLI de Kaggle: se instala con `pipx install kaggle` y se inicia sesión con `kaggle auth login`.
+
+```powershell
+kaggle datasets download diegopyll/los-simpsons-dataset -p $HOME\Desktop\simpsons_dataset --unzip
+```
 
 **Preparación del dataset.** Cada original se llama `<personaje>_<número>` (`homer_simpson_2294.jpg`). [scripts/newDataset/renombrar_imagenes.py](scripts/newDataset/renombrar_imagenes.py) deja así las que lleguen con otro nombre (por ejemplo, desde Frinkiac): sin `--aplicar` muestra cómo quedarían; con `--aplicar` borra las variantes anteriores, renombra y guarda el nombre anterior en `_renombres.csv`. Después, [scripts/newDataset/generar_imagenes_alteradas.py](scripts/newDataset/generar_imagenes_alteradas.py) genera dentro del dataset las variantes alteradas y las versiones filtradas de las imágenes casi idénticas, con el nombre de su original, y registra las imágenes repetidas entre carpetas de personajes distintos. Nunca modifica las originales y se detiene si alguna no tiene el formato. Se ejecutan desde la raíz del repositorio cada vez que cambia el dataset:
 
