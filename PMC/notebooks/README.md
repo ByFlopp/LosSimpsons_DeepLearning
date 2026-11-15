@@ -59,19 +59,28 @@ simpsons_dataset/
 Por defecto los notebooks y el script buscan el dataset en `~/Desktop/simpsons_dataset`.
 Si está en otra ruta, defínela en la variable de entorno `SIMPSONS_DATASET` antes de abrir Jupyter.
 
-La etiqueta de cada imagen es siempre el nombre de su carpeta. Algunas carpetas contienen fotogramas cuyo
-nombre de archivo es el de otro personaje: los añadió el equipo a propósito, porque en ellos el
-protagonista es el personaje de la carpeta.
+La etiqueta de cada imagen es siempre el nombre de su carpeta, y cada original se llama
+`<personaje>_<número>.<ext>` (`homer_simpson_2294.jpg`). Antes los fotogramas de Frinkiac se llamaban por el
+episodio y el instante (`apu_nahasapeemapetilon__S21E21__t0659367.jpg`), a veces con el nombre de otro personaje:
+ese nombre anterior queda en `_renombres.csv`, en la raíz del dataset, y de ahí lo leen los notebooks para saber
+quién más aparece en la escena.
 
 Si se amplió el dataset con Frinkiac ([scripts/newDataset/frinkiac/](../../scripts/newDataset/frinkiac/README.md)), copia primero las aprobadas de `final/` a cada carpeta de personaje. Son originales y deben estar en su carpeta antes del paso 2, que genera las sintéticas a partir de ellas.
 
-## Paso 2: generar las imágenes alteradas y parecidas
+## Paso 2: renombrar las originales y generar las imágenes alteradas y parecidas
 
 Desde la raíz del repositorio:
 
 ```powershell
+.\.venv-gpu\Scripts\python.exe scripts\newDataset\renombrar_imagenes.py             # vista previa
+.\.venv-gpu\Scripts\python.exe scripts\newDataset\renombrar_imagenes.py --aplicar
 .\.venv-gpu\Scripts\python.exe scripts\newDataset\generar_imagenes_alteradas.py
 ```
+
+`renombrar_imagenes.py` sin `--aplicar` solo muestra cómo quedaría cada carpeta. Con `--aplicar` borra las
+alteradas y parecidas anteriores, deja cada original como `<personaje>_<número>` (las que ya lo cumplen
+conservan su número) y anota cada cambio en `_renombres.csv`. `generar_imagenes_alteradas.py` se detiene si
+alguna original no cumple ese formato, así que las variantes siempre llevan el nombre de su original.
 
 El script hace tres cosas. Cada imagen que genera en las dos primeras lleva un giro de 10 a 20° (con las
 esquinas vacías recortadas), un cambio de color y un filtro de textura:

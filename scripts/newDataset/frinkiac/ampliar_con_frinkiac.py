@@ -60,7 +60,7 @@ import guiones as G
 import inventario as inv
 from almacen import (CONFIG_BOTO, Almacen, AlmacenLocal, Candado, CandadoOcupado, CerrojoLocal, Conflicto,
                      bloqueo_archivo, crear_sin_sobrescribir, identidad_host)
-from comun import MARGEN, MENCIONES, OBJETIVO, REPO, configurar_logs, escribir_atomico, sha256_hex
+from comun import MARGEN, MENCIONES, OBJETIVO, REPO, configurar_logs, escribir_atomico, leer_renombres, sha256_hex
 from estado import Estado
 from fuentes import ClienteFrinkiac, contar_personajes, leer_episodios, leer_lineas
 from generar_imagenes_alteradas import RUTA_POR_DEFECTO
@@ -619,11 +619,13 @@ def cmd_aplicar_revision(args) -> int:
 
 def cmd_exportar(args) -> int:
     """Copia las aprobadas de final/<personaje>/ a la carpeta del personaje en el dataset. Nunca
-    sobrescribe: un archivo que ya está en el dataset se deja como está."""
+    sobrescribe: un archivo que ya está en el dataset se deja como está, también si ya se renombró a
+    <personaje>_<número> (su nombre de Frinkiac figura en _renombres.csv)."""
     almacen = crear_almacen(args)
     dataset = Path(args.dataset)
     if not dataset.is_dir():
         sys.exit(f"No existe el dataset: {dataset}")
+    renombradas = {(fila["personaje"], fila["antiguo"]) for fila in leer_renombres(dataset)}
     pedidos = set(args.personajes or [])
     copiadas = existentes = 0
     personajes = sorted({c.split("/")[-2] for c in almacen.listar(almacen.clave("final") + "/") if c.endswith(".jpg")})
@@ -638,14 +640,15 @@ def cmd_exportar(args) -> int:
             if not clave.endswith(".jpg"):
                 continue
             destino = dataset / personaje / clave.rsplit("/", 1)[-1]
-            if destino.exists():
+            if destino.exists() or (personaje, destino.name) in renombradas:
                 existentes += 1
                 continue
             if crear_sin_sobrescribir(destino, almacen.leer_bytes(clave)):
                 nuevas += 1
         copiadas += nuevas
         print(f"  {personaje}: {nuevas} copiadas")
-    print(f"{copiadas} imágenes copiadas a {dataset} ({existentes} ya estaban). Ahora vuelve a ejecutar "
+    print(f"{copiadas} imágenes copiadas a {dataset} ({existentes} ya estaban). Ahora ejecuta "
+          "scripts/newDataset/renombrar_imagenes.py --aplicar, para dejarlas como <personaje>_<número>, y luego "
           "scripts/newDataset/generar_imagenes_alteradas.py para regenerar las sintéticas.")
     return 0
 

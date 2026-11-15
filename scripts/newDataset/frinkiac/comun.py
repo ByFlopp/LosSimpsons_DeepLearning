@@ -29,9 +29,12 @@ from generar_imagenes_alteradas import (  # noqa: E402
     miniatura,
     originales_de,
 )
+# El dataset renombra cada original a <personaje>_<número>; el nombre de Frinkiac queda en _renombres.csv
+from renombrar_imagenes import leer_nombres_anteriores, leer_renombres  # noqa: E402
 
 __all__ = [
     "UMBRAL", "abrir_rgb", "carpetas_personaje", "es_generado", "miniatura", "originales_de",
+    "leer_nombres_anteriores", "leer_renombres",
     "OBJETIVO", "MARGEN", "REPO", "MENCIONES", "nombre_fotograma", "clave_de_nombre", "sha256_hex",
     "escribir_atomico", "meta_recoleccion", "configurar_logs", "ahora",
 ]
@@ -41,7 +44,8 @@ OBJETIVO = 1000
 MARGEN = 0.15
 REPO = "ByFlopp/LosSimpsons_DeepLearning"
 MENCIONES = ("DiegoPyLL",)
-# Mismo formato de nombre que ya usan las imágenes de Frinkiac del dataset:
+# Nombre con que se descargan los fotogramas; al exportarlos al dataset, renombrar_imagenes.py los deja como
+# <personaje>_<número> y guarda este en _renombres.csv:
 #     apu_nahasapeemapetilon__S21E21__t0659367.jpg
 PATRON_FOTOGRAMA = re.compile(r"__(S\d{2,}E\d{2,})__t(\d+)")
 SUFIJO_TEMPORAL = ".tmp"

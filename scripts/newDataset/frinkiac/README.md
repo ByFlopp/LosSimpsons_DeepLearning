@@ -95,7 +95,8 @@ En la primera recolección quedaron 3.876 seguras (14 %), 9.956 dudosas (37 %) y
 
 Con todo completo:
 1. Ejecuta `pnpm frinkiac exportar`.
-2. Ejecuta [generar_imagenes_alteradas.py](../generar_imagenes_alteradas.py) para regenerar las sintéticas.
+2. Ejecuta [renombrar_imagenes.py](../renombrar_imagenes.py) `--aplicar`: deja las nuevas como `<personaje>_<número>` y guarda su nombre de Frinkiac en `_renombres.csv` (sin `--aplicar` muestra antes cómo quedarían).
+3. Ejecuta [generar_imagenes_alteradas.py](../generar_imagenes_alteradas.py) para regenerar las sintéticas.
 
 ## Cómo se obtienen las imágenes
 
@@ -112,7 +113,7 @@ Con todo completo:
 | Riesgo | Protección |
 |---|---|
 | Corte de luz, cierre o Ctrl+C a mitad de una imagen | Una imagen solo cuenta como guardada cuando el almacén confirma su escritura y su sha256. Ctrl+C termina la imagen en curso y guarda el estado. Al volver a ejecutar se retoma. |
-| Guardar dos veces la misma imagen | El nombre sale del episodio y del instante (`louie__S05E10__t0123456.jpg`, el formato del dataset). Se crea de forma atómica y **nunca** sobrescribe: en S3 con `If-None-Match: *`; en local con un enlace o rename que falla si el archivo ya existe. |
+| Guardar dos veces la misma imagen | El nombre sale del episodio y del instante (`louie__S05E10__t0123456.jpg`). Se crea de forma atómica y **nunca** sobrescribe: en S3 con `If-None-Match: *`; en local con un enlace o rename que falla si el archivo ya existe. En el dataset la imagen pasa a llamarse `<personaje>_<número>`, pero el inventario y `exportar` la siguen reconociendo por el nombre anterior, que queda en `_renombres.csv`. |
 | Se pierde la base interna | Se reconstruye desde `staging\`, que es la fuente de verdad. Además se respalda cada 5 minutos. |
 | Dos ejecuciones a la vez | Un cerrojo por máquina más un candado con lease en el almacén. La segunda se detiene con un aviso. |
 | Frinkiac falla o limita | Un máximo de 2 peticiones por segundo y backoff exponencial que respeta `Retry-After`. Tras 20 fallos seguidos, una pausa de 10 minutos. |

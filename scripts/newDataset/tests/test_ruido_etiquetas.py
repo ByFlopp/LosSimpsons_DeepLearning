@@ -229,3 +229,24 @@ def test_main_marca_el_ruido_del_dataset_de_juguete(tmp_path, monkeypatch):
     assert R.main(argumentos + ["--personajes", "ana", "--sin-hojas"]) == 0
     with open(salida / "ruido.csv", newline="", encoding="utf-8") as archivo:
         assert [fila["archivo"] for fila in csv.DictReader(archivo)] == ["ana_ruido.jpg"]
+
+
+def test_main_lee_la_escena_del_nombre_anterior(tmp_path, monkeypatch):
+    """La imagen verde de la carpeta de ana se renombró; antes se llamaba como un fotograma extraído buscando a
+    beto, así que beto está en su escena y deja de ser «otro personaje»."""
+    dataset, ruta_modelo = _dataset_de_juguete(tmp_path)
+    (dataset / "ana" / "ana_ruido.jpg").rename(dataset / "ana" / "ana_0006.jpg")
+    particion = ruta_modelo.with_name("falso_particion.csv")
+    particion.write_text(particion.read_text(encoding="utf-8").replace("ana_ruido.jpg", "ana_0006.jpg"),
+                         encoding="utf-8")
+    (dataset / "_renombres.csv").write_text(
+        "personaje,antiguo,nuevo\nana,beto__S01E01__t0010000.jpg,ana_0006.jpg\n", encoding="utf-8")
+    monkeypatch.setattr(D, "resolver_modelo", lambda texto: ruta_modelo)
+    monkeypatch.setattr(D, "Modelo", _Modelo)
+    salida = tmp_path / "salida"
+
+    assert R.main(["--dataset", str(dataset), "--salida", str(salida), "--umbral-dudosa", "0.4", "--sin-hojas"]) == 0
+    with open(salida / "ruido.csv", newline="", encoding="utf-8") as archivo:
+        marcadas = {fila["archivo"]: fila for fila in csv.DictReader(archivo)}
+    assert marcadas["ana_0006.jpg"]["motivo"] == R.ESCENA
+    assert marcadas["ana_0006.jpg"]["escena"] == "beto"

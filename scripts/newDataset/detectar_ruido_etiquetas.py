@@ -65,6 +65,7 @@ if str(CARPETA) not in sys.path:
 
 import detectar_cajas as D  # noqa: E402
 import generar_imagenes_alteradas as G  # noqa: E402
+import renombrar_imagenes as N  # noqa: E402
 
 OTRO = "otro personaje"
 ESCENA = "otro personaje de la escena"
@@ -412,7 +413,9 @@ def main(argv=None) -> int:
     confusiones = tasas_de_confusion(probabilidades_umbral, etiquetas_umbral, len(clases))
 
     nombres_clases = set(clases)
-    lineas = lineas_de_tiempo((p, r.name) for p, r in todas)
+    # El episodio de un fotograma está en el nombre que tenía antes de renombrarlo; las gemelas usan el actual
+    anteriores = N.leer_nombres_anteriores(args.dataset)
+    lineas = lineas_de_tiempo((p, anteriores.get(r.name, r.name)) for p, r in todas)
     gemelas = leer_gemelas(args.dataset, nombres_clases)
 
     filas, por_personaje = [], {}
@@ -421,7 +424,8 @@ def main(argv=None) -> int:
             continue
         probabilidades = cache[str(ruta)]
         etiqueta = clase_a_indice[personaje]
-        escena = en_escena(personaje, ruta.name, lineas, nombres_clases) | gemelas.get((personaje, ruta.name), set())
+        escena = (en_escena(personaje, anteriores.get(ruta.name, ruta.name), lineas, nombres_clases)
+                  | gemelas.get((personaje, ruta.name), set()))
         motivo, candidata, puntaje = clasificar(probabilidades, etiqueta, umbrales, clases, escena,
                                                 args.confianza_minima, args.umbral_dudosa, confusiones,
                                                 args.confusion_habitual)

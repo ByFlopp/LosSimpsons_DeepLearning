@@ -23,6 +23,8 @@ MARCA_PARECIDA = "__parecida"
 
 # Fotogramas de episodio: <personaje>__<episodio>__t<milisegundos>. El resto viene del dataset de Kaggle
 PATRON_FOTOGRAMA = re.compile(r"^(?P<nombre>.+?)__(?P<episodio>S\d+E\d+)__t(?P<ms>\d+)$", re.IGNORECASE)
+# Nombre anterior de cada imagen renombrada a <personaje>_<número>: ahí queda el episodio de los fotogramas
+REGISTRO_RENOMBRES = "_renombres.csv"
 VENTANA_ESCENA_MS = 3000
 FUENTE_EPISODIO = "fotograma de episodio"
 FUENTE_KAGGLE = "Kaggle"
@@ -36,7 +38,10 @@ def construir_indice(directorio):
     su personaje y, para las alteradas, la original de la que provienen.
 
     Si el script reemplazó una original casi idéntica a otra por su versión __parecida, la fila de esa original
-    apunta a la versión parecida. La etiqueta sale siempre de la carpeta, nunca del nombre del archivo."""
+    apunta a la versión parecida. La etiqueta sale siempre de la carpeta, nunca del nombre del archivo.
+    `nombre_anterior` es el nombre que tenía el origen antes de renombrarlo a <personaje>_<número> (o el mismo,
+    si no se renombró): ahí quedan el episodio y el instante de los fotogramas."""
+    anteriores = leer_nombres_anteriores(directorio)
     registros = []
 
     for carpeta_clase in sorted(Path(directorio).iterdir()):
@@ -61,6 +66,7 @@ def construir_indice(directorio):
                     "alterada": alterada,
                     "parecida": parecida,
                     "origen": origen,
+                    "nombre_anterior": anteriores.get(origen, origen),
                 }
             )
 
@@ -101,8 +107,9 @@ def resumir_indice(indice):
 
 
 def fuente_imagen(nombre_archivo):
-    """De dónde viene una imagen según su nombre: un fotograma de episodio (`nombre__SxxEyy__tN.jpg`, sumado por el
-    equipo con la herramienta de Frinkiac) o el dataset de Kaggle (`nombre_N.jpg`)."""
+    """De dónde viene una imagen según su nombre anterior al renombrado: un fotograma de episodio
+    (`nombre__SxxEyy__tN.jpg`, sumado por el equipo con la herramienta de Frinkiac) o el dataset de Kaggle
+    (`nombre_N.jpg`)."""
     return FUENTE_EPISODIO if leer_fotograma(nombre_archivo) is not None else FUENTE_KAGGLE
 
 
@@ -161,7 +168,7 @@ def repartir(indice, proporciones, semilla, minimo_por_personaje):
     clase_a_indice = {clase: indice_clase for indice_clase, clase in enumerate(clases)}
     # Etiqueta numérica de cada imagen: la de su carpeta
     datos["etiqueta"] = datos["personaje"].map(clase_a_indice)
-    datos["fuente"] = datos["origen"].map(fuente_imagen)
+    datos["fuente"] = nombre_de_fotograma(datos).map(fuente_imagen)
     return datos, originales, clases
 
 
@@ -348,11 +355,17 @@ def leer_fotograma(nombre_archivo):
     return coincidencia["nombre"], coincidencia["episodio"].upper(), int(coincidencia["ms"])
 
 
+def nombre_de_fotograma(tabla):
+    """Nombre del que se leen el episodio y el instante de cada fila: el que tenía antes de renombrarla a
+    <personaje>_<número> (`nombre_anterior`, de construir_indice) o, si la tabla no lo trae, el de su origen."""
+    return tabla["nombre_anterior"] if "nombre_anterior" in tabla else tabla["origen"]
+
+
 def construir_lineas_tiempo(tabla):
     """Fotogramas de cada episodio ordenados por instante: {episodio: (instantes, personajes)}."""
     por_episodio = {}
-    for personaje, origen in zip(tabla["personaje"], tabla["origen"]):
-        fotograma = leer_fotograma(origen)
+    for personaje, nombre in zip(tabla["personaje"], nombre_de_fotograma(tabla)):
+        fotograma = leer_fotograma(nombre)
         if fotograma is not None:
             por_episodio.setdefault(fotograma[1], []).append((fotograma[2], personaje))
     lineas = {}
@@ -376,6 +389,16 @@ def personajes_en_escena(personaje, origen, lineas_tiempo, clases_validas, venta
         hasta = np.searchsorted(instantes, ms + ventana_ms, side="right")
         acompanantes.update(otro for otro in personajes[desde:hasta] if otro != personaje)
     return frozenset(acompanantes)
+
+
+def leer_nombres_anteriores(dataset_base):
+    """{nombre actual: nombre anterior} según `_renombres.csv`, que deja renombrar_imagenes.py al dejar cada imagen
+    como <personaje>_<número>. Sin ese registro, cada imagen conserva su nombre."""
+    registro = Path(dataset_base) / REGISTRO_RENOMBRES
+    if not registro.exists():
+        return {}
+    renombres = pd.read_csv(registro, dtype=str, keep_default_na=False)
+    return dict(zip(renombres["nuevo"], renombres["antiguo"]))
 
 
 def leer_gemelas(dataset_base, clases_validas):
@@ -411,13 +434,15 @@ def anotar_escenas(datos, indice, dataset_base, clases_validas, conjuntos):
     # Línea de tiempo con todos los fotogramas originales del dataset
     originales_indexados = indice[~indice["alterada"] & indice["personaje"].isin(clases_validas)]
     lineas_tiempo = construir_lineas_tiempo(originales_indexados)
+    # El episodio sale del nombre anterior al renombrado; las gemelas ya usan el nombre actual
+    fotogramas = list(nombre_de_fotograma(datos))
     escena = [
-        personajes_en_escena(p, o, lineas_tiempo, clases_validas) | personajes_gemelos(p, o, gemelas)
-        for p, o in zip(datos["personaje"], datos["origen"])
+        personajes_en_escena(p, f, lineas_tiempo, clases_validas) | personajes_gemelos(p, o, gemelas)
+        for p, o, f in zip(datos["personaje"], datos["origen"], fotogramas)
     ]
     datos["escena"] = [", ".join(sorted(acompanantes)) for acompanantes in escena]
 
-    es_fotograma = np.array([leer_fotograma(origen) is not None for origen in datos["origen"]])
+    es_fotograma = np.array([leer_fotograma(f) is not None for f in fotogramas])
     con_gemela = np.array(
         [bool(personajes_gemelos(p, o, gemelas)) for p, o in zip(datos["personaje"], datos["origen"])]
     )

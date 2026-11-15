@@ -6,22 +6,25 @@ Uso:
     .venv-gpu/Scripts/python.exe scripts/newDataset/generar_imagenes_alteradas.py --dataset RUTA --fraccion 0.25 --umbral 0.90 --umbral-gemelas 0.90 --semilla 42
     .venv-gpu/Scripts/python.exe scripts/newDataset/generar_imagenes_alteradas.py --limpiar
 
-El dataset es una carpeta por personaje. El script hace tres cosas con las imágenes originales; cada
-imagen que genera en los pasos 1 y 2 lleva un giro de 10 a 20 grados, un cambio de color y un filtro de
-textura:
+El dataset es una carpeta por personaje y cada original se llama <personaje>_<número> (homer_simpson_0012.jpg).
+Si alguna no cumple ese formato el script se detiene sin tocar nada: hay que ejecutar antes
+renombrar_imagenes.py --aplicar. Así las variantes también lo cumplen, porque llevan el nombre de su original.
+
+El script hace tres cosas con las imágenes originales; cada imagen que genera en los pasos 1 y 2 lleva un giro
+de 10 a 20 grados, un cambio de color y un filtro de textura:
 
 1. Variantes alteradas. Para cada personaje elige al azar una fracción de sus originales y guarda,
    junto a cada elegida, una variante en el mismo formato. El notebook de GPU pone cada variante en el
    mismo conjunto que su original (entrenamiento, validación o test); el de CPU solo la usa para entrenar:
 
-       homer_simpson/pic_0012.jpg  ->  homer_simpson/pic_0012__alterada.jpg
+       homer_simpson/homer_simpson_0012.jpg  ->  homer_simpson/homer_simpson_0012__alterada.jpg
 
 2. Imágenes parecidas. Compara entre sí las imágenes de cada personaje con miniaturas a color de
    16 x 16 y agrupa las casi idénticas (similitud coseno >= --umbral): fotogramas seguidos de una
    misma escena o recortes repetidos. En cada grupo una imagen queda intacta y cada una de las demás
    recibe su propia variante, que se vuelve a sortear hasta que deja de parecerse a las del grupo:
 
-       homer_simpson/pic_0013.jpg  ->  homer_simpson/pic_0013__parecida.jpg
+       homer_simpson/homer_simpson_0013.jpg  ->  homer_simpson/homer_simpson_0013__parecida.jpg
 
    El notebook usa la variante __parecida EN LUGAR de su original, en cualquier conjunto: así el
    dataset deja de tener dos imágenes casi idénticas del mismo personaje.
@@ -33,8 +36,8 @@ textura:
    FUERA del dataset, en la subcarpeta del otro personaje y con su nombre original, para que el
    equipo decida a mano si la agrega también a esa carpeta:
 
-       homer_simpson/homer_simpson__S18E11__t1225141.jpg  (gemela de una imagen de rich_texan)
-           ->  gemelas_por_revisar/rich_texan/homer_simpson__S18E11__t1225141.jpg
+       homer_simpson/homer_simpson_2480.jpg  (gemela de una imagen de rich_texan)
+           ->  gemelas_por_revisar/rich_texan/homer_simpson_2480.jpg
 
    Una imagen no se copia si la carpeta del otro personaje ya la tiene (similitud >= 0,999).
 
@@ -56,6 +59,7 @@ import argparse
 import csv
 import math
 import os
+import re
 import shutil
 import sys
 import time
@@ -256,6 +260,28 @@ def originales_de(carpeta: Path) -> list[Path]:
         p for p in carpeta.iterdir()
         if p.is_file() and p.suffix.lower() in EXTENSIONES_VALIDAS and not es_generado(p)
     )
+
+
+def numeradas(carpeta: Path) -> tuple[dict[Path, int], list[Path]]:
+    """Separa las originales de la carpeta en las que ya se llaman <carpeta>_<número>, con su número, y las que
+    no. Si dos comparten número (la misma imagen en .jpg y en .png), la primera en orden alfabético lo conserva
+    y la otra cuenta como sin formato."""
+    patron = re.compile(rf"{re.escape(carpeta.name)}_([0-9]+)")
+    con_numero, sin_formato, usados = {}, [], set()
+    for ruta in originales_de(carpeta):
+        coincidencia = patron.fullmatch(ruta.stem)
+        numero = int(coincidencia.group(1)) if coincidencia else None
+        if numero is None or numero in usados:
+            sin_formato.append(ruta)
+        else:
+            con_numero[ruta] = numero
+            usados.add(numero)
+    return con_numero, sin_formato
+
+
+def originales_sin_formato(carpetas: list[Path]) -> list[Path]:
+    """Originales que no se llaman <carpeta>_<número> o que repiten el número de otra."""
+    return [ruta for carpeta in carpetas for ruta in numeradas(carpeta)[1]]
 
 
 def semilla_de(*partes: str) -> list[int]:
@@ -540,6 +566,13 @@ def main() -> None:
 
     carpetas = validar(dataset)
     print(f"Dataset: {dataset}  ({len(carpetas)} personajes)")
+
+    # Las variantes llevan el nombre de su original: se comprueba antes de borrar nada
+    sin_formato = [] if args.limpiar else originales_sin_formato(carpetas)
+    if sin_formato:
+        ejemplos = "\n".join(f"  {ruta.parent.name}/{ruta.name}" for ruta in sin_formato[:5])
+        sys.exit(f"{len(sin_formato)} originales sin el formato <personaje>_<número>, por ejemplo:\n{ejemplos}\n"
+                 "Ejecuta antes scripts/newDataset/renombrar_imagenes.py --aplicar")
 
     borrados = limpiar(dataset)
     borrados_revision = limpiar_revision(revision)

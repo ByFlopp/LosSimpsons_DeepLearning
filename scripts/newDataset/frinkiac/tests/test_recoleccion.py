@@ -82,6 +82,20 @@ def test_inventario_solo_cuenta_originales(dataset, tmp_path):
     assert np.allclose(cargado.miniaturas[PERSONAJE], inventario.miniaturas[PERSONAJE], atol=1e-3)
 
 
+def test_inventario_reconoce_los_fotogramas_renombrados(dataset):
+    """renombrar_imagenes.py deja el fotograma como louie_0003.jpg y guarda su nombre de Frinkiac en
+    _renombres.csv: el inventario sigue sabiendo qué fotograma es."""
+    carpeta = dataset / PERSONAJE
+    (carpeta / "louie__S01E01__t0010000.jpg").rename(carpeta / "louie_0003.jpg")
+    (dataset / "_renombres.csv").write_text(
+        "personaje,antiguo,nuevo\nlouie,louie__S01E01__t0010000.jpg,louie_0003.jpg\n", encoding="utf-8")
+    inventario = inv.construir(dataset, objetivo=10, progreso=lambda *_: None)
+    assert inventario.conteos[PERSONAJE] == 3
+    assert inventario.claves[PERSONAJE] == {("S01E01", 10000)}
+    # Una exportada por esta misma ampliación no cuenta dos veces aunque ya tenga el nombre nuevo
+    assert inv.conteos_actuales(dataset, {PERSONAJE: {"louie__S01E01__t0010000.jpg"}})[PERSONAJE] == 2
+
+
 def test_recolecta_hasta_la_meta_sin_repetir(entorno, almacen):
     nuevo, _ = entorno
     recolector = nuevo()

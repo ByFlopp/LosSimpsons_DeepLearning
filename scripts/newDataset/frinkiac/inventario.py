@@ -11,7 +11,8 @@ from pathlib import Path
 
 import numpy as np
 
-from comun import abrir_rgb, carpetas_personaje, clave_de_nombre, escribir_atomico, miniatura, originales_de
+from comun import (abrir_rgb, carpetas_personaje, clave_de_nombre, escribir_atomico, leer_nombres_anteriores,
+                   miniatura, originales_de)
 
 
 @dataclass
@@ -30,18 +31,21 @@ def _miniatura_de(ruta: Path) -> np.ndarray:
     return miniatura(abrir_rgb(ruta))
 
 
-def originales_propias(carpeta: Path, excluir: set[str]) -> list[Path]:
+def originales_propias(carpeta: Path, excluir: set[str], anteriores: dict[str, str] | None = None) -> list[Path]:
     """Originales de la carpeta sin las que vienen de esta misma ampliación (ya exportadas): esas ya
-    están contadas en staging/ y contarlas dos veces adelantaría la meta."""
-    return [r for r in originales_de(carpeta) if r.name not in excluir]
+    están contadas en staging/ y contarlas dos veces adelantaría la meta. Una exportada que ya se renombró
+    se reconoce por su nombre anterior (`anteriores`, de _renombres.csv)."""
+    anteriores = anteriores or {}
+    return [r for r in originales_de(carpeta) if anteriores.get(r.name, r.name) not in excluir]
 
 
 def conteos_actuales(dataset: Path, excluir: dict[str, set[str]] | None = None) -> dict[str, int]:
     """Conteo rápido (sin abrir imágenes) para saber si el dataset cambió desde el inventario."""
     excluir = excluir or {}
+    anteriores = leer_nombres_anteriores(dataset)
     conteos = {}
     for carpeta in carpetas_personaje(dataset):
-        n = len(originales_propias(carpeta, excluir.get(carpeta.name, set())))
+        n = len(originales_propias(carpeta, excluir.get(carpeta.name, set()), anteriores))
         if n:
             conteos[carpeta.name] = n
     return conteos
@@ -51,13 +55,15 @@ def construir(dataset: Path, objetivo: int, hilos: int = 8, progreso=print,
               excluir: dict[str, set[str]] | None = None) -> Inventario:
     conteos, claves, miniaturas = {}, {}, {}
     excluir = excluir or {}
+    # El episodio y el instante de un fotograma renombrado están en su nombre anterior
+    anteriores = leer_nombres_anteriores(dataset)
     for carpeta in carpetas_personaje(dataset):
-        originales = originales_propias(carpeta, excluir.get(carpeta.name, set()))
+        originales = originales_propias(carpeta, excluir.get(carpeta.name, set()), anteriores)
         if not originales:
             continue
         personaje = carpeta.name
         conteos[personaje] = len(originales)
-        claves[personaje] = {c for c in (clave_de_nombre(r.name) for r in originales) if c}
+        claves[personaje] = {c for c in (clave_de_nombre(anteriores.get(r.name, r.name)) for r in originales) if c}
         # Las miniaturas solo hacen falta para los personajes que se van a ampliar
         if len(originales) < objetivo:
             with ThreadPoolExecutor(hilos) as grupo:

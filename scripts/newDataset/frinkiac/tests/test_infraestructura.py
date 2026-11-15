@@ -201,6 +201,20 @@ def test_exportar_copia_final_sin_sobrescribir(almacen, opcion_almacen, tmp_path
     assert main(["exportar", *opcion_almacen, "--dataset", str(dataset)]) == 0  # repetir es inofensivo
 
 
+def test_exportar_no_repite_un_fotograma_ya_renombrado(almacen, opcion_almacen, tmp_path):
+    dataset = tmp_path / "dataset"
+    (dataset / "louie").mkdir(parents=True)
+    (dataset / "louie" / "louie_0001.jpg").write_bytes(imagen_ruido(99))  # antes louie__S01E01__t0000001.jpg
+    (dataset / "_renombres.csv").write_text(
+        "personaje,antiguo,nuevo\nlouie,louie__S01E01__t0000001.jpg,louie_0001.jpg\n", encoding="utf-8")
+    for i in range(3):
+        datos = imagen_ruido(i)
+        almacen.subir_fotograma(f"final/louie/louie__S01E01__t{i:07d}.jpg", datos, sha256_hex(datos), {})
+    assert main(["exportar", *opcion_almacen, "--dataset", str(dataset)]) == 0
+    assert sorted(p.name for p in (dataset / "louie").iterdir()) == [
+        "louie_0001.jpg", "louie__S01E01__t0000000.jpg", "louie__S01E01__t0000002.jpg"]
+
+
 def test_almacen_local_no_puede_estar_dentro_del_dataset(tmp_path):
     dataset = tmp_path / "dataset"
     (dataset / "louie").mkdir(parents=True)
